@@ -1,0 +1,73 @@
+import { describe, expect, it } from "vitest";
+import { evidenceSchema, isNswPostcode, propertySchema, signUpSchema } from "./validation";
+import { safeNextPath, isProtectedPath } from "./routes";
+
+describe("isNswPostcode", () => {
+  it.each(["2000", "2150", "2750", "2619", "2999", "1100"])("accepts %s", (p) => expect(isNswPostcode(p)).toBe(true));
+  it.each(["2600", "2618", "2900", "2920", "3000", "0800", "215", "21500", "abcd"])("rejects %s", (p) =>
+    expect(isNswPostcode(p)).toBe(false),
+  );
+});
+
+describe("propertySchema", () => {
+  it("normalises an empty lot/DP to null", () => {
+    const r = propertySchema.parse({ address: "12 Example St", suburb: "Parramatta", postcode: "2150", lotDp: "" });
+    expect(r.lotDp).toBeNull();
+  });
+  it("rejects non-NSW postcodes", () => {
+    expect(propertySchema.safeParse({ address: "1 Collins St", suburb: "Melbourne", postcode: "3000" }).success).toBe(false);
+  });
+});
+
+describe("evidenceSchema", () => {
+  const today = new Date("2026-10-29T00:00:00Z");
+  const base = { title: "Cert", sourceType: "planning_certificate", sourceUrl: "https://example.com/c.pdf", fetchedAt: "2026-10-01" };
+
+  it("accepts a well-formed record", () => {
+    expect(evidenceSchema(today).safeParse(base).success).toBe(true);
+  });
+  it("rejects http sources", () => {
+    expect(evidenceSchema(today).safeParse({ ...base, sourceUrl: "http://example.com" }).success).toBe(false);
+  });
+  it("rejects javascript: URLs", () => {
+    expect(evidenceSchema(today).safeParse({ ...base, sourceUrl: "javascript:alert(1)" }).success).toBe(false);
+  });
+  it("rejects future retrieval dates", () => {
+    expect(evidenceSchema(today).safeParse({ ...base, fetchedAt: "2026-11-01" }).success).toBe(false);
+  });
+  it("rejects unknown source types", () => {
+    expect(evidenceSchema(today).safeParse({ ...base, sourceType: "zoning_ai_guess" }).success).toBe(false);
+  });
+});
+
+describe("signUpSchema", () => {
+  it("requires a 12+ character password with a letter and a number", () => {
+    const base = { displayName: "Ivy", email: "ivy@example.com" };
+    expect(signUpSchema.safeParse({ ...base, password: "short1" }).success).toBe(false);
+    expect(signUpSchema.safeParse({ ...base, password: "onlylettersssss" }).success).toBe(false);
+    expect(signUpSchema.safeParse({ ...base, password: "correct horse 42" }).success).toBe(true);
+  });
+});
+
+describe("safeNextPath", () => {
+  it.each([
+    ["/investor/properties", "/investor/properties"],
+    ["/firm?tab=queue", "/firm?tab=queue"],
+    ["//evil.example", "/dashboard"],
+    ["/\\evil.example", "/dashboard"],
+    ["https://evil.example", "/dashboard"],
+    ["javascript:alert(1)", "/dashboard"],
+    [undefined, "/dashboard"],
+  ])("%s → %s", (input, expected) => expect(safeNextPath(input)).toBe(expected));
+});
+
+describe("isProtectedPath", () => {
+  it("protects app areas but not marketing pages", () => {
+    expect(isProtectedPath("/investor")).toBe(true);
+    expect(isProtectedPath("/firm/review")).toBe(true);
+    expect(isProtectedPath("/settings")).toBe(true);
+    expect(isProtectedPath("/")).toBe(false);
+    expect(isProtectedPath("/pricing")).toBe(false);
+    expect(isProtectedPath("/investorship")).toBe(false);
+  });
+});

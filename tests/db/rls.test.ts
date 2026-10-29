@@ -1,0 +1,415 @@
+import { afterAll, describe, expect, it } from "vitest";
+import { actAs, as, closePool, ids, inTx } from "./db";
+import { AUTH, DOCUMENT, FINDING, MATTER, ORG, PROPERTY, USER } from "./fixtures";
+
+afterAll(closePool);
+
+const RLS_VIOLATION = /row-level security|permission denied/;
+
+describe("anonymous access", () => {
+  it.each(["properties", "organisations", "documents", "findings", "matters", "audit_events", "users"])(
+    "cannot read %s",
+    async (table) => {
+      await expect(as(null, (c) => c.query(`select * from public.${table}`))).rejects.toThrow(/permission denied/);
+    },
+  );
+
+  it("cannot call create_organisation", async () => {
+    await expect(
+      as(null, (c) => c.query("select public.create_organisation('x', 'investor')")),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("organisation isolation", () => {
+  it("investor sees only their organisation's properties", async () => {
+    const ivy = await as(AUTH.ivy, (c) => ids(c, "select id from public.properties"));
+    expect(ivy).toEqual([PROPERTY.invitedOnly, PROPERTY.sharedActive].sort());
+
+    const oscar = await as(AUTH.oscar, (c) => ids(c, "select id from public.properties"));
+    expect(oscar).toEqual([PROPERTY.westside]);
+  });
+
+  it("another tenant cannot read evidence, documents or findings", async () => {
+    await as(AUTH.oscar, async (c) => {
+      const evidence = await c.query("select 1 from public.evidence where property_id = $1", [PROPERTY.invitedOnly]);
+      const docs = await c.query("select 1 from public.documents where owner_org_id = $1", [ORG.harbourview]);
+      const findings = await c.query("select 1 from public.findings where document_id = $1", [DOCUMENT.matterContract]);
+      expect(evidence.rowCount).toBe(0);
+      expect(docs.rowCount).toBe(0);
+      expect(findings.rowCount).toBe(0);
+    });
+  });
+
+  it("another tenant cannot create a property in someone else's organisation", async () => {
+    await expect(
+      as(AUTH.oscar, (c) =>
+        c.query("insert into public.properties (owner_org_id, address) values ($1, '1 Intruder St')", [ORG.harbourview]),
+      ),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+
+  it("another tenant cannot update or delete someone else's property", async () => {
+    await as(AUTH.oscar, async (c) => {
+      const upd = await c.query("update public.properties set address = 'hijacked' where id = $1", [PROPERTY.invitedOnly]);
+      const del = await c.query("delete from public.properties where id = $1", [PROPERTY.invitedOnly]);
+      expect(upd.rowCount).toBe(0);
+      expect(del.rowCount).toBe(0);
+    });
+  });
+
+  it("cannot move a property into another organisation", async () => {
+    await expect(
+      as(AUTH.ivy, (c) =>
+        c.query("update public.properties set owner_org_id = $1 where id = $2", [ORG.westside, PROPERTY.invitedOnly]),
+      ),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+
+  it("professional organisations cannot own property workspaces", async () => {
+    await expect(
+      as(AUTH.connie, (c) =>
+        c.query("insert into public.properties (owner_org_id, address) values ($1, '9 Firm St')", [ORG.firm]),
+      ),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+
+  it("users only see profiles they share an organisation with", async () => {
+    const oscarSees = await as(AUTH.oscar, (c) => ids(c, "select id from public.users"));
+    expect(oscarSees).toEqual([USER.oscar]);
+
+    const connieSees = await as(AUTH.connie, (c) => ids(c, "select id from public.users"));
+    expect(connieSees).toEqual([USER.connie, USER.sam].sort());
+  });
+});
+
+describe("investor workspace permissions", () => {
+  it("investor can create a property and attach evidence", async () => {
+    await as(AUTH.ivy, async (c) => {
+      const { rows } = await c.query(
+        "insert into public.properties (owner_org_id, address, suburb, postcode) values ($1, '1 New St', 'Ryde', '2112') returning id, created_by",
+        [ORG.harbourview],
+      );
+      expect(rows[0].created_by).toBe(USER.ivy);
+      const ev = await c.query(
+        "insert into public.evidence (property_id, title, source_type, source_url, fetched_at) values ($1, 'Cert', 'planning_certificate', 'https://example.com/c.pdf', current_date) returning verification_status",
+        [rows[0].id],
+      );
+      expect(ev.rows[0].verification_status).toBe("unverified");
+    });
+  });
+
+  it("verification is stamped by the server, not the client", async () => {
+    await as(AUTH.ivy, async (c) => {
+      const { rows } = await c.query(
+        "update public.evidence set verification_status = 'verified', verified_by = $1 where id = 'e0000000-0000-4000-8000-000000000002' returning verified_by, verified_at",
+        [USER.oscar],
+      );
+      expect(rows[0].verified_by).toBe(USER.ivy);
+      expect(rows[0].verified_at).not.toBeNull();
+    });
+  });
+
+  it("rejects non-https evidence URLs and non-NSW jurisdictions", async () => {
+    await expect(
+      as(AUTH.ivy, (c) =>
+        c.query(
+          "insert into public.evidence (property_id, title, source_type, source_url, fetched_at) values ($1, 'x', 'other', 'http://insecure.example', current_date)",
+          [PROPERTY.invitedOnly],
+        ),
+      ),
+    ).rejects.toThrow(/evidence_source_url_check/);
+    await expect(
+      as(AUTH.ivy, (c) =>
+        c.query("insert into public.properties (owner_org_id, address, jurisdiction) values ($1, '1 Vic St', 'VIC')", [
+          ORG.harbourview,
+        ]),
+      ),
+    ).rejects.toThrow(/properties_jurisdiction_check/);
+  });
+
+  it("scenarios are private to the investor organisation, even on shared matters", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      await c.query(
+        "insert into public.scenarios (property_id, name, formula_version) values ($1, 'Duplex', 'fixture-0')",
+        [PROPERTY.sharedActive],
+      );
+      await actAs(c, AUTH.connie);
+      const seen = await c.query("select 1 from public.scenarios");
+      expect(seen.rowCount).toBe(0);
+    });
+  });
+});
+
+describe("matter-level grants", () => {
+  it("granted professional can read the shared property, matter documents and findings", async () => {
+    await as(AUTH.connie, async (c) => {
+      expect(await ids(c, "select id from public.properties")).toEqual([PROPERTY.sharedActive]);
+      expect(await ids(c, "select id from public.documents")).toEqual([DOCUMENT.matterContract]);
+      const findings = await c.query("select 1 from public.findings");
+      expect(findings.rowCount).toBe(2);
+    });
+  });
+
+  it("an invitation alone grants no access to the property", async () => {
+    await as(AUTH.connie, async (c) => {
+      const r = await c.query("select 1 from public.properties where id = $1", [PROPERTY.invitedOnly]);
+      expect(r.rowCount).toBe(0);
+    });
+  });
+
+  it("documents not attached to the matter stay private", async () => {
+    await as(AUTH.connie, async (c) => {
+      const r = await c.query("select 1 from public.documents where id = $1", [DOCUMENT.privateNotes]);
+      expect(r.rowCount).toBe(0);
+    });
+  });
+
+  it("firm members see firm matters but not client files without an explicit grant", async () => {
+    await as(AUTH.sam, async (c) => {
+      expect(await ids(c, "select id from public.matters")).toEqual([MATTER.invited, MATTER.active].sort());
+      expect((await c.query("select 1 from public.properties")).rowCount).toBe(0);
+      expect((await c.query("select 1 from public.documents")).rowCount).toBe(0);
+      expect((await c.query("select 1 from public.findings")).rowCount).toBe(0);
+    });
+  });
+
+  it("revoking the matter removes the professional's access", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      const r = await c.query("update public.matters set status = 'revoked' where id = $1", [MATTER.active]);
+      expect(r.rowCount).toBe(1);
+      await actAs(c, AUTH.connie);
+      expect((await c.query("select 1 from public.documents")).rowCount).toBe(0);
+      expect((await c.query("select 1 from public.properties")).rowCount).toBe(0);
+    });
+  });
+
+  it("deleting the grant removes the professional's access", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      await c.query("delete from public.matter_access where matter_id = $1 and user_id = $2", [MATTER.active, USER.connie]);
+      await actAs(c, AUTH.connie);
+      expect((await c.query("select 1 from public.documents")).rowCount).toBe(0);
+    });
+  });
+
+  it("investors can only grant access to members of the engaged firm", async () => {
+    await expect(
+      as(AUTH.ivy, (c) =>
+        c.query("insert into public.matter_access (matter_id, user_id, permission) values ($1, $2, 'manage')", [
+          MATTER.active,
+          USER.oscar,
+        ]),
+      ),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+
+  it("professionals cannot grant themselves access", async () => {
+    await expect(
+      as(AUTH.sam, (c) =>
+        c.query("insert into public.matter_access (matter_id, user_id, permission) values ($1, $2, 'manage')", [
+          MATTER.active,
+          USER.sam,
+        ]),
+      ),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+});
+
+describe("matter lifecycle", () => {
+  it("firm admin can accept an invitation", async () => {
+    await as(AUTH.connie, async (c) => {
+      const r = await c.query("update public.matters set status = 'active' where id = $1 returning status", [MATTER.invited]);
+      expect(r.rows[0].status).toBe("active");
+    });
+  });
+
+  it("firm members who are not admins cannot accept", async () => {
+    await as(AUTH.sam, async (c) => {
+      const r = await c.query("update public.matters set status = 'active' where id = $1", [MATTER.invited]);
+      expect(r.rowCount).toBe(0);
+    });
+  });
+
+  it("the investor cannot accept on the firm's behalf", async () => {
+    await expect(
+      as(AUTH.ivy, (c) => c.query("update public.matters set status = 'active' where id = $1", [MATTER.invited])),
+    ).rejects.toThrow(/cannot move from invited to active|row-level security/);
+  });
+
+  it("a revoked matter cannot be re-activated by the firm", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      await c.query("update public.matters set status = 'revoked' where id = $1", [MATTER.active]);
+      await actAs(c, AUTH.connie);
+      await expect(
+        c.query("update public.matters set status = 'active' where id = $1", [MATTER.active]),
+      ).rejects.toThrow(/cannot move from revoked to active/);
+    });
+  });
+
+  it("only the property owner's organisation can invite a firm", async () => {
+    await expect(
+      as(AUTH.oscar, (c) =>
+        c.query(
+          "insert into public.matters (property_id, investor_org_id, professional_org_id) values ($1, $2, $3)",
+          [PROPERTY.invitedOnly, ORG.westside, ORG.firm],
+        ),
+      ),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+});
+
+describe("AI findings review", () => {
+  it("granted professional can confirm a finding; reviewer is stamped by the server", async () => {
+    await as(AUTH.connie, async (c) => {
+      const { rows } = await c.query(
+        "update public.findings set status = 'confirmed', reviewer_note = 'Checked p3' where id = $1 returning reviewer_id, reviewed_at",
+        [FINDING.settlement],
+      );
+      expect(rows[0].reviewer_id).toBe(USER.connie);
+      expect(rows[0].reviewed_at).not.toBeNull();
+    });
+  });
+
+  it("reviewers cannot alter the AI-extracted text", async () => {
+    await expect(
+      as(AUTH.connie, (c) =>
+        c.query("update public.findings set extracted_text = 'edited' where id = $1", [FINDING.settlement]),
+      ),
+    ).rejects.toThrow(/permission denied/);
+  });
+
+  it("investors cannot mark findings as professionally confirmed", async () => {
+    await as(AUTH.ivy, async (c) => {
+      const r = await c.query("update public.findings set status = 'confirmed' where id = $1", [FINDING.settlement]);
+      expect(r.rowCount).toBe(0);
+    });
+  });
+
+  it("end users cannot insert findings (AI pipeline only)", async () => {
+    await expect(
+      as(AUTH.connie, (c) =>
+        c.query(
+          "insert into public.findings (document_id, category, extracted_text, page_ref) values ($1, 'x', 'y', 1)",
+          [DOCUMENT.matterContract],
+        ),
+      ),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("platform administrators", () => {
+  it("have no implicit access to client data", async () => {
+    await as(AUTH.pat, async (c) => {
+      for (const table of ["properties", "documents", "findings", "matters", "evidence", "organisations"]) {
+        const r = await c.query(`select 1 from public.${table}`);
+        expect(r.rowCount, table).toBe(0);
+      }
+    });
+  });
+});
+
+describe("organisations and memberships", () => {
+  it("create_organisation makes the caller admin and opens a free plan", async () => {
+    await as(AUTH.pat, async (c) => {
+      const { rows } = await c.query("select public.create_organisation('Pat Pty Ltd', 'investor') as id");
+      const org = rows[0].id;
+      const m = await c.query("select role from public.memberships where organisation_id = $1", [org]);
+      const s = await c.query("select plan from public.subscriptions where organisation_id = $1", [org]);
+      expect(m.rows[0].role).toBe("admin");
+      expect(s.rows[0].plan).toBe("explorer");
+    });
+  });
+
+  it("organisations cannot be created directly or self-verified", async () => {
+    await expect(
+      as(AUTH.ivy, (c) => c.query("insert into public.organisations (name, type) values ('x', 'investor')")),
+    ).rejects.toThrow(/permission denied/);
+    await expect(
+      as(AUTH.connie, (c) =>
+        c.query("update public.organisations set verification_status = 'verified' where id = $1", [ORG.firm]),
+      ),
+    ).rejects.toThrow(/permission denied/);
+  });
+
+  it("non-admin members cannot add members", async () => {
+    await expect(
+      as(AUTH.sam, (c) =>
+        c.query("insert into public.memberships (user_id, organisation_id, role) values ($1, $2, 'admin')", [
+          USER.oscar,
+          ORG.firm,
+        ]),
+      ),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+
+  it("admins cannot remove or demote themselves (no orphaned organisations)", async () => {
+    await as(AUTH.ivy, async (c) => {
+      const del = await c.query("delete from public.memberships where user_id = $1", [USER.ivy]);
+      const upd = await c.query("update public.memberships set role = 'member' where user_id = $1", [USER.ivy]);
+      expect(del.rowCount).toBe(0);
+      expect(upd.rowCount).toBe(0);
+    });
+  });
+
+  it("members cannot change their own subscription", async () => {
+    await expect(
+      as(AUTH.ivy, (c) => c.query("update public.subscriptions set plan = 'developer'")),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("audit trail", () => {
+  it("records writes, visible to the organisation's admins only", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      const { rows } = await c.query(
+        "insert into public.properties (owner_org_id, address) values ($1, '77 Audit Lane') returning id",
+        [ORG.harbourview],
+      );
+      const ev = await c.query(
+        "select actor_id, action from public.audit_events where resource_type = 'properties' and resource_id = $1",
+        [rows[0].id],
+      );
+      expect(ev.rows).toEqual([{ actor_id: USER.ivy, action: "insert" }]);
+
+      await actAs(c, AUTH.oscar);
+      const leaked = await c.query("select 1 from public.audit_events where organisation_id = $1", [ORG.harbourview]);
+      expect(leaked.rowCount).toBe(0);
+    });
+  });
+
+  it("end users cannot write or erase audit events", async () => {
+    await expect(
+      as(AUTH.ivy, (c) =>
+        c.query("insert into public.audit_events (resource_type, action) values ('x', 'forged')"),
+      ),
+    ).rejects.toThrow(/permission denied/);
+    await expect(as(AUTH.ivy, (c) => c.query("delete from public.audit_events"))).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("storage", () => {
+  it("private document objects are readable only via document access", async () => {
+    await inTx(async (c) => {
+      await c.query("insert into storage.objects (bucket_id, name) values ('documents', $1)", [
+        `${ORG.harbourview}/${DOCUMENT.matterContract}.pdf`,
+      ]);
+      await actAs(c, AUTH.connie);
+      expect((await c.query("select 1 from storage.objects")).rowCount).toBe(1);
+      await actAs(c, AUTH.oscar);
+      expect((await c.query("select 1 from storage.objects")).rowCount).toBe(0);
+    });
+  });
+
+  it("users cannot upload into another organisation's folder", async () => {
+    await expect(
+      as(AUTH.oscar, (c) =>
+        c.query("insert into storage.objects (bucket_id, name) values ('documents', $1)", [`${ORG.harbourview}/evil.pdf`]),
+      ),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+});
