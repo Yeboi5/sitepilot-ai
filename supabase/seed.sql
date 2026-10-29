@@ -6,23 +6,29 @@
 -- Fixed UUIDs are referenced by the RLS test-suite (tests/db/fixtures.ts).
 
 -- ─── Auth users (profiles are created by the on_auth_user_created trigger) ────
-insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+-- Token columns are '' rather than NULL, as Supabase Auth expects for password sign-in.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, recovery_token, email_change_token_new, email_change)
 values
   ('a0000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'ivy.investor@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Ivy Investor"}', now(), now()),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Ivy Investor"}', now(), now(), '', '', '', ''),
   ('a0000000-0000-4000-8000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'connie.conveyancer@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Connie Conveyancer"}', now(), now()),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Connie Conveyancer"}', now(), now(), '', '', '', ''),
   ('a0000000-0000-4000-8000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'sam.staff@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Sam Staff"}', now(), now()),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Sam Staff"}', now(), now(), '', '', '', ''),
   ('a0000000-0000-4000-8000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'oscar.other@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Oscar Other"}', now(), now()),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Oscar Other"}', now(), now(), '', '', '', ''),
   ('a0000000-0000-4000-8000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'pat.platform@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Pat Platform"}', now(), now());
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Pat Platform"}', now(), now(), '', '', '', '');
+
+-- One email identity per user (required by Supabase Auth).
+insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select u.id::text, u.id, jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true), 'email', now(), now(), now()
+from auth.users u where u.email like '%@demo.sitepilot.test';
 
 -- Pin profile ids so fixtures are stable.
 update public.users set id = 'b0000000-0000-4000-8000-000000000001' where auth_id = 'a0000000-0000-4000-8000-000000000001';

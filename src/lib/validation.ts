@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sydneyDate } from "./dates";
 
 const trimmed = (max: number) => z.string().trim().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
 
@@ -63,7 +64,7 @@ export const EVIDENCE_SOURCE_LABELS: Record<(typeof EVIDENCE_SOURCE_TYPES)[numbe
   other: "Other",
 };
 
-export const evidenceSchema = (today: Date = new Date()) =>
+export const evidenceSchema = (now: Date = new Date()) =>
   z.object({
     title: trimmed(200),
     sourceType: z.enum(EVIDENCE_SOURCE_TYPES),
@@ -77,7 +78,7 @@ export const evidenceSchema = (today: Date = new Date()) =>
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter the date you retrieved it")
       .refine((d) => !Number.isNaN(Date.parse(d)), "Enter a valid date")
-      .refine((d) => d <= today.toISOString().slice(0, 10), "Retrieval date can't be in the future"),
+      .refine((d) => d <= sydneyDate(now), "Retrieval date can't be in the future"),
     notes: z
       .string()
       .trim()

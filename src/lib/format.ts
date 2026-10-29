@@ -1,7 +1,8 @@
+import { APP_TIME_ZONE } from "@/lib/dates";
 import type { BadgeTone } from "@/components/ui";
 import type { Enums } from "@/lib/supabase/database.types";
 
-const dateFmt = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "Australia/Sydney" });
+const dateFmt = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: APP_TIME_ZONE });
 
 export function formatDate(value: string | null | undefined): string {
   if (!value) return "—";

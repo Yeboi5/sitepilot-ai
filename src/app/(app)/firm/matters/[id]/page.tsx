@@ -62,8 +62,10 @@ export default async function FirmMatterPage({ params }: { params: Promise<{ id:
 
       {!property ? (
         <Alert tone="info">
-          Property details, evidence and documents become visible once the matter is active and the client has granted you
-          access. Nothing on this matter has been shared with you yet.
+          {matter.status === "active"
+            ? "The client hasn't granted you access to this matter's files. Property details, evidence and documents are shown only to people the client has authorised."
+            : "Property details, evidence and documents become visible once the matter is active and the client has granted you access."}{" "}
+          Nothing on this matter has been shared with you yet.
         </Alert>
       ) : (
         <>

@@ -71,6 +71,13 @@ threat model, the list of controls in place, and the gates that must pass before
 
 ## Known gaps / follow-ups
 
+- **Access tokens outlive sign-out (found in the 2026-10-29 live run).** Sign-out revokes the
+  session in Supabase Auth (`/auth/v1/user` returns 403 afterwards), but PostgREST only checks
+  the JWT signature, so a copied access token keeps working against the data API until it
+  expires (`jwt_expiry`, currently 3600 s). Proposed fix: have `app.current_user_id()` return
+  null unless the JWT's `session_id` is still present in `auth.sessions`, so every policy denies
+  a revoked session. Optionally also shorten `jwt_expiry`.
+
 - CSP uses `'unsafe-inline'` for scripts (Next.js bootstrap). Move to nonce-based CSP.
 - If a browser-side Supabase client is introduced, add the Supabase URL to `connect-src`.
 - MFA (TOTP) is enabled in `supabase/config.toml` but not yet *enforced*; enforce `aal2` for

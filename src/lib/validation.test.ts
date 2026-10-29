@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { evidenceSchema, isNswPostcode, propertySchema, signUpSchema } from "./validation";
 import { safeNextPath, isProtectedPath } from "./routes";
+import { sydneyDate } from "./dates";
 
 describe("isNswPostcode", () => {
   it.each(["2000", "2150", "2750", "2619", "2999", "1100"])("accepts %s", (p) => expect(isNswPostcode(p)).toBe(true));
@@ -34,6 +35,12 @@ describe("evidenceSchema", () => {
   });
   it("rejects future retrieval dates", () => {
     expect(evidenceSchema(today).safeParse({ ...base, fetchedAt: "2026-11-01" }).success).toBe(false);
+  });
+  it("uses the Sydney calendar date, not UTC", () => {
+    // 13:23 UTC on 29 Oct is 00:23 on 30 Oct in Sydney (AEDT): "today" is the 30th.
+    const sydneyMorning = new Date("2026-10-29T13:23:00Z");
+    expect(evidenceSchema(sydneyMorning).safeParse({ ...base, fetchedAt: "2026-10-30" }).success).toBe(true);
+    expect(evidenceSchema(sydneyMorning).safeParse({ ...base, fetchedAt: "2026-10-31" }).success).toBe(false);
   });
   it("rejects unknown source types", () => {
     expect(evidenceSchema(today).safeParse({ ...base, sourceType: "zoning_ai_guess" }).success).toBe(false);
@@ -69,5 +76,14 @@ describe("isProtectedPath", () => {
     expect(isProtectedPath("/")).toBe(false);
     expect(isProtectedPath("/pricing")).toBe(false);
     expect(isProtectedPath("/investorship")).toBe(false);
+  });
+});
+
+describe("sydneyDate", () => {
+  it("handles daylight saving and standard time", () => {
+    expect(sydneyDate(new Date("2026-10-29T12:59:00Z"))).toBe("2026-10-29"); // 23:59 AEDT
+    expect(sydneyDate(new Date("2026-10-29T13:00:00Z"))).toBe("2026-10-30"); // 00:00 AEDT
+    expect(sydneyDate(new Date("2026-07-01T13:59:00Z"))).toBe("2026-07-01"); // 23:59 AEST
+    expect(sydneyDate(new Date("2026-07-01T14:00:00Z"))).toBe("2026-07-02"); // 00:00 AEST
   });
 });

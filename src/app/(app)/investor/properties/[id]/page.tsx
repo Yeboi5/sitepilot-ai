@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { DemoDataBanner } from "@/components/demo";
+import { sydneyDate } from "@/lib/dates";
 import { EVIDENCE_COLUMNS, EvidenceRegister } from "@/components/evidence-register";
 import { Alert, Badge, Card, PageHeader } from "@/components/ui";
 import { MATTER_STATUS } from "@/lib/format";
@@ -11,10 +12,6 @@ import { EvidenceActions } from "./evidence-actions";
 import { EvidenceForm } from "./evidence-form";
 
 export const metadata: Metadata = { title: "Property" };
-
-function sydneyToday() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(new Date());
-}
 
 export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -75,7 +72,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
 
           <Card>
             <h2 className="mb-4 font-semibold">Add evidence</h2>
-            <EvidenceForm propertyId={property.id} today={sydneyToday()} />
+            <EvidenceForm propertyId={property.id} today={sydneyDate()} />
           </Card>
         </div>
 

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Badge, Card, PageHeader } from "@/components/ui";
+import { APP_TIME_ZONE } from "@/lib/dates";
 import { ORG_VERIFICATION, PLAN_LABEL, formatDate } from "@/lib/format";
 import { requireOrg } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Organisation settings" };
 
-const dateTime = new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short", timeZone: "Australia/Sydney" });
+const dateTime = new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIME_ZONE });
 
 export default async function SettingsPage() {
   const ctx = await requireOrg();

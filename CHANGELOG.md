@@ -2,6 +2,23 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.2] - 2026-10-29
+
+First full run against real Supabase Auth (GoTrue v2.197.0) + PostgREST 12.2.3 with the seeded demo data.
+
+### Added
+- Playwright end-to-end tests (`npm run test:e2e`, 10 tests) for both role views, tenant isolation and sign-out.
+- `src/lib/dates.ts`: `sydneyDate()` and `APP_TIME_ZONE`.
+
+### Fixed
+- Evidence retrieved "today" was rejected as a future date from midnight to 10–11am Sydney time,
+  because the form used the Sydney date and the server validated against UTC. Both now use the Sydney calendar date.
+- Seed now creates `auth.identities` rows and empty token columns, as Supabase Auth requires for password sign-in.
+- Firm matter view explains that the client hasn't granted access when the matter is already active.
+
+### Security
+- Documented: access tokens remain valid against the data API for up to 1 hour after sign-out (see SECURITY.md).
+
 ## [0.1.1] - 2026-10-29
 
 ### Added

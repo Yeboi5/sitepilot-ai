@@ -12,7 +12,8 @@ test.describe("anonymous", () => {
     await page.getByLabel("Email").fill(ACCOUNTS.ivy);
     await page.getByLabel("Password").fill("not-the-password-1");
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("alert")).toContainText("Incorrect email or password");
+    // Filter by text: Next.js also renders an (empty) role="alert" route announcer.
+    await expect(page.getByRole("alert").filter({ hasText: "Incorrect email or password" })).toBeVisible();
   });
 });
 
@@ -100,6 +101,8 @@ test.describe("tenant isolation", () => {
 test("sign out ends the session", async ({ page }) => {
   await signIn(page, ACCOUNTS.ivy);
   await page.getByRole("button", { name: "Sign out" }).click();
+  // Wait for the sign-out POST to complete (it redirects home) before navigating again.
+  await expect(page).toHaveURL(/\/$/);
   await page.goto("/investor");
   await expect(page).toHaveURL(/\/sign-in/);
 });
