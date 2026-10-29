@@ -2,6 +2,17 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.3] - 2026-10-29
+
+### Security
+- **Revoked sessions lose database access immediately.** Migration
+  `20261029020000_session_revocation.sql` makes `app.current_user_id()` require that the JWT's
+  `session_id` is still live in `auth.sessions`. Previously a copied access token kept working
+  against the data API for up to an hour after sign-out.
+- 7 RLS tests for revocation (signed-out session can't read, write or create an organisation;
+  other sessions unaffected; missing, expired or borrowed session ids denied), confirmed to fail
+  without the fix. One live-stack end-to-end test (`tests/e2e/session-revocation.spec.ts`).
+
 ## [0.1.2] - 2026-10-29
 
 First full run against real Supabase Auth (GoTrue v2.197.0) + PostgREST 12.2.3 with the seeded demo data.
@@ -17,7 +28,7 @@ First full run against real Supabase Auth (GoTrue v2.197.0) + PostgREST 12.2.3 w
 - Firm matter view explains that the client hasn't granted access when the matter is already active.
 
 ### Security
-- Documented: access tokens remain valid against the data API for up to 1 hour after sign-out (see SECURITY.md).
+- Found: access tokens remained valid against the data API for up to 1 hour after sign-out (fixed in 0.1.3).
 
 ## [0.1.1] - 2026-10-29
 

@@ -50,7 +50,8 @@ Later sprints:  job queue + document worker (service role) ──▶ AI provider
 
 | Function | Answers |
 | --- | --- |
-| `current_user_id()` | `public.users.id` for `auth.uid()` |
+| `session_is_active()` | The JWT's `session_id` is still live in `auth.sessions` (not signed out or past `not_after`) |
+| `current_user_id()` | `public.users.id` for `auth.uid()`, or null when the session is no longer active |
 | `is_member(org)` / `is_org_admin(org)` | Membership / admin role in an organisation |
 | `has_matter_access(matter, min_perm)` | Caller holds a grant ≥ `min_perm` on an **active** matter |
 | `can_read_property(prop)` / `can_write_property(prop)` | Owner org member (read also via matter grant) |

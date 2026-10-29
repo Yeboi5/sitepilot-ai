@@ -33,6 +33,7 @@ threat model, the list of controls in place, and the gates that must pass before
 | --- | --- | --- | --- |
 | Spoofing | Stolen password | Supabase Auth, 12+ char passwords, email confirmation, auth rate limits; **MFA required for professionals** | MFA enforcement: Sprint 3 gate |
 | Spoofing | Forged JWT / session | `getClaims()` verifies JWT server-side; never trust `getSession()` on the server | ✅ |
+| Spoofing | Access token reused after sign-out | `app.current_user_id()` requires the JWT's `session_id` to be live in `auth.sessions`; every policy denies a revoked or expired session | ✅ tested (DB + live stack) |
 | Tampering | Client edits `created_by`, `verified_by`, `reviewer_id` | Server-stamped by triggers | ✅ tested |
 | Tampering | Reviewer rewrites AI-extracted text | Column-level grants + immutable-field trigger | ✅ tested |
 | Tampering | Reactivating a revoked matter | Transition guard trigger | ✅ tested |
@@ -54,6 +55,9 @@ threat model, the list of controls in place, and the gates that must pass before
   minimal (sometimes column-level) grants.
 - Policy helpers are `SECURITY DEFINER` with `search_path = ''`, in a private `app` schema not
   exposed through the API.
+- Session revocation: a request is authenticated only while its `session_id` exists in
+  `auth.sessions` and is within `not_after`, so sign-out, admin revocation and password changes
+  take effect at the database immediately, not when the token expires.
 - Organisation creation only via `create_organisation()` RPC (caller becomes admin).
 - Admins cannot remove or demote themselves (prevents orphaned organisations).
 - Evidence URLs must be `https://`; documents limited to PDF ≤ 25 MiB with SHA-256 checksum.
@@ -70,13 +74,6 @@ threat model, the list of controls in place, and the gates that must pass before
 - Active-organisation cookie is a preference only, honoured only if the user is a member.
 
 ## Known gaps / follow-ups
-
-- **Access tokens outlive sign-out (found in the 2026-10-29 live run).** Sign-out revokes the
-  session in Supabase Auth (`/auth/v1/user` returns 403 afterwards), but PostgREST only checks
-  the JWT signature, so a copied access token keeps working against the data API until it
-  expires (`jwt_expiry`, currently 3600 s). Proposed fix: have `app.current_user_id()` return
-  null unless the JWT's `session_id` is still present in `auth.sessions`, so every policy denies
-  a revoked session. Optionally also shorten `jwt_expiry`.
 
 - CSP uses `'unsafe-inline'` for scripts (Next.js bootstrap). Move to nonce-based CSP.
 - If a browser-side Supabase client is introduced, add the Supabase URL to `connect-src`.

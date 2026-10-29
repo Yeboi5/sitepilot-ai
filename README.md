@@ -87,7 +87,7 @@ CLI available, `npx supabase gen types typescript --local` produces equivalent o
 `tests/e2e/` drives the real app with Playwright against the local Supabase stack and the seeded
 demo accounts: sign-in, the investor view of the Halekulani demo property, creating a property and
 verifying evidence, the conveyancer matter view and review queue, an ungranted firm member,
-cross-tenant 404s, and sign-out.
+cross-tenant 404s, sign-out, and that a token captured before sign-out stops working against the API.
 
 ```bash
 npx supabase start && npx supabase db reset   # fresh seed

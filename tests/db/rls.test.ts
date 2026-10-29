@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { actAs, as, closePool, ids, inTx } from "./db";
+import { actAs, as, asOwner, closePool, ids, inTx } from "./db";
 import { AUTH, DOCUMENT, EVIDENCE, FINDING, MATTER, ORG, PROPERTY, USER } from "./fixtures";
 
 afterAll(closePool);
@@ -146,6 +146,79 @@ describe("investor workspace permissions", () => {
       await actAs(c, AUTH.connie);
       const seen = await c.query("select 1 from public.scenarios");
       expect(seen.rowCount).toBe(0);
+    });
+  });
+});
+
+describe("session revocation", () => {
+  it("a signed-out session loses all access, even with a still-valid token", async () => {
+    await inTx(async (c) => {
+      const session = await actAs(c, AUTH.ivy);
+      expect((await c.query("select 1 from public.properties")).rowCount).toBe(2);
+
+      // Supabase Auth deletes the session row on sign-out; the JWT itself is unchanged.
+      await asOwner(c, "delete from auth.sessions where id = $1", [session]);
+      await actAs(c, AUTH.ivy, { sessionId: session });
+
+      for (const table of ["properties", "evidence", "organisations", "memberships", "users", "audit_events"]) {
+        expect((await c.query(`select 1 from public.${table}`)).rowCount, table).toBe(0);
+      }
+    });
+  });
+
+  it("a signed-out session cannot write", async () => {
+    await inTx(async (c) => {
+      const session = await actAs(c, AUTH.ivy);
+      await asOwner(c, "delete from auth.sessions where id = $1", [session]);
+      await actAs(c, AUTH.ivy, { sessionId: session });
+      await expect(
+        c.query("insert into public.properties (owner_org_id, address) values ($1, '1 Ghost St')", [ORG.harbourview]),
+      ).rejects.toThrow(RLS_VIOLATION);
+    });
+  });
+
+  it("a signed-out session cannot create an organisation", async () => {
+    await inTx(async (c) => {
+      const session = await actAs(c, AUTH.pat);
+      await asOwner(c, "delete from auth.sessions where id = $1", [session]);
+      await actAs(c, AUTH.pat, { sessionId: session });
+      await expect(c.query("select public.create_organisation('Ghost Pty Ltd', 'investor')")).rejects.toThrow(
+        /not authenticated/,
+      );
+    });
+  });
+
+  it("other sessions of the same user keep working", async () => {
+    await inTx(async (c) => {
+      const laptop = await actAs(c, AUTH.ivy);
+      const phone = await actAs(c, AUTH.ivy);
+      await asOwner(c, "delete from auth.sessions where id = $1", [laptop]);
+      await actAs(c, AUTH.ivy, { sessionId: phone });
+      expect((await c.query("select 1 from public.properties")).rowCount).toBe(2);
+    });
+  });
+
+  it("a token without a session id is denied", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy, { sessionId: null });
+      expect((await c.query("select 1 from public.properties")).rowCount).toBe(0);
+    });
+  });
+
+  it("a session past its not_after limit is denied", async () => {
+    await inTx(async (c) => {
+      const session = await actAs(c, AUTH.ivy);
+      await asOwner(c, "update auth.sessions set not_after = now() - interval '1 minute' where id = $1", [session]);
+      await actAs(c, AUTH.ivy, { sessionId: session });
+      expect((await c.query("select 1 from public.properties")).rowCount).toBe(0);
+    });
+  });
+
+  it("another user's session id cannot be borrowed", async () => {
+    await inTx(async (c) => {
+      const oscarSession = await actAs(c, AUTH.oscar);
+      await actAs(c, AUTH.ivy, { sessionId: oscarSession });
+      expect((await c.query("select 1 from public.properties")).rowCount).toBe(0);
     });
   });
 });

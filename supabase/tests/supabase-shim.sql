@@ -49,6 +49,15 @@ create table if not exists auth.identities (
   updated_at      timestamptz
 );
 
+-- Supabase Auth keeps one row per live session; sign-out deletes it.
+create table if not exists auth.sessions (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  not_after  timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- Same semantics as Supabase: identity comes from the request's JWT claims.
 create or replace function auth.uid() returns uuid language sql stable as $$
   select nullif(

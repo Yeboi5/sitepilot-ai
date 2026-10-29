@@ -9,17 +9,37 @@ export async function closePool() {
   await pool.end();
 }
 
-/** Switch the current transaction to act as a Supabase end user (or anon when null). */
-export async function actAs(client: PoolClient, authId: string | null) {
+/**
+ * Switch the current transaction to act as a Supabase end user (or anon when null).
+ * Like a real sign-in, this creates a live auth.sessions row and puts its id in the JWT;
+ * returns the session id so tests can revoke it.
+ */
+export async function actAs(
+  client: PoolClient,
+  authId: string | null,
+  opts: { sessionId?: string | null } = {},
+): Promise<string | null> {
   await client.query("reset role");
   if (authId === null) {
     await client.query("select set_config('request.jwt.claims', '', true)");
     await client.query("set local role anon");
-  } else {
-    const claims = JSON.stringify({ sub: authId, role: "authenticated" });
-    await client.query("select set_config('request.jwt.claims', $1, true)", [claims]);
-    await client.query("set local role authenticated");
+    return null;
   }
+  let sessionId = opts.sessionId;
+  if (sessionId === undefined) {
+    const { rows } = await client.query<{ id: string }>("insert into auth.sessions (user_id) values ($1) returning id", [authId]);
+    sessionId = rows[0]!.id;
+  }
+  const claims = JSON.stringify({ sub: authId, role: "authenticated", ...(sessionId ? { session_id: sessionId } : {}) });
+  await client.query("select set_config('request.jwt.claims', $1, true)", [claims]);
+  await client.query("set local role authenticated");
+  return sessionId;
+}
+
+/** Run SQL as the database owner (e.g. to simulate Supabase Auth deleting a session). */
+export async function asOwner(client: PoolClient, sql: string, params: unknown[] = []) {
+  await client.query("reset role");
+  return client.query(sql, params);
 }
 
 /** Run `fn` inside a transaction that is always rolled back, so tests never leak state. */
