@@ -31,6 +31,9 @@ Later sprints:  job queue + document worker (service role) ──▶ AI provider
 | `src/lib/session.ts` | Current user, memberships, active organisation (`requireOrg`) |
 | `src/lib/validation.ts` | zod schemas for all user input |
 | `src/lib/billing/plans.ts` | Plan catalogue (display only until Stripe sandbox) |
+| `src/lib/finance/` | Feasibility engine, sensitivity, assumption schema and form definitions (see FORMULAS.md) |
+| `src/lib/report/` | Report model, escaped HTML renderer, loader |
+| `src/components/scenario/` | Scenario editor, results, tornado chart, sensitivity heatmap |
 | `src/app/(app)/investor/` | Investor dashboard, property workspaces, evidence register |
 | `src/app/(app)/firm/` | Firm matter inbox, matter view (read-only, grant-filtered), review queue |
 | `src/app/(app)/settings/` | Organisation, members, plan, audit log |
@@ -75,7 +78,7 @@ files requires `status = 'active'`.
 | --- | --- | --- |
 | 0 | Repo, ADR, schema, threat model, synthetic data | ✅ |
 | 1 | Auth, organisations, RLS, property workspaces, manual planning evidence | ✅ |
-| 2 | Scenario engine (pure TS, versioned formulas), comparison, sensitivity, report export | Next |
-| 3 | Private upload, malware scan, text extraction, cited AI findings, human review, MFA enforcement | |
+| 2 | Scenario engine (pure TS, versioned formulas), comparison, sensitivity, report export | ✅ |
+| 3 | Private upload, malware scan, text extraction, cited AI findings, human review, MFA enforcement | Next |
 | 4 | Professional invitations, engagement checklist, matters, tasks, milestones, messages, notifications | |
 | 5 | Stripe sandbox, security tests, user testing, compliance review, controlled beta | |

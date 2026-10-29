@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-white print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-3">
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="font-semibold text-brand-900">
@@ -77,7 +77,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
         {children}
       </main>
-      <footer className="mx-auto w-full max-w-6xl px-6 pb-6">
+      <footer className="mx-auto w-full max-w-6xl px-6 pb-6 print:hidden">
         <Disclaimer compact />
       </footer>
     </div>

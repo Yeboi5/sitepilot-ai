@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { DemoDataBanner } from "@/components/demo";
 import { sydneyDate } from "@/lib/dates";
 import { EVIDENCE_COLUMNS, EvidenceRegister } from "@/components/evidence-register";
 import { Alert, Badge, Card, PageHeader } from "@/components/ui";
-import { MATTER_STATUS } from "@/lib/format";
+import { headline } from "@/lib/finance/feasibility";
+import { MATTER_STATUS, formatAud } from "@/lib/format";
+import { listScenarios } from "@/lib/scenarios";
 import { requireOrg } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { EvidenceActions } from "./evidence-actions";
@@ -29,9 +32,10 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
     .maybeSingle();
   if (!property) notFound();
 
-  const [{ data: evidence }, { data: matters }] = await Promise.all([
+  const [{ data: evidence }, { data: matters }, scenarios] = await Promise.all([
     supabase.from("evidence").select(EVIDENCE_COLUMNS).eq("property_id", id).order("fetched_at", { ascending: false }),
     supabase.from("matters").select("id, status, firm:organisations!matters_professional_org_id_fkey(name)").eq("property_id", id),
+    listScenarios(supabase, id),
   ]);
 
   return (
@@ -78,10 +82,39 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
 
         <div className="space-y-6">
           <Card>
-            <h2 className="font-semibold">Feasibility scenarios</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Scenario modelling, comparison and sensitivity analysis arrive in the next release.
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-semibold">Feasibility scenarios</h2>
+              <Link href={`/investor/properties/${property.id}/scenarios/new`} className="text-sm font-medium text-brand-700 underline">
+                New scenario
+              </Link>
+            </div>
+            {scenarios.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-600">Model a development option from your own assumptions.</p>
+            ) : (
+              <ul className="mt-3 space-y-2 text-sm">
+                {scenarios.map((s) => (
+                  <li key={s.id} className="flex items-center justify-between gap-2">
+                    <Link href={`/investor/properties/${property.id}/scenarios/${s.id}`} className="font-medium hover:underline">
+                      {s.name}
+                    </Link>
+                    <span className={`tabular-nums ${s.result && headline(s.result) < 0 ? "text-red-700" : "text-slate-600"}`}>
+                      {s.result ? formatAud(headline(s.result)) : "—"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-4 flex flex-wrap gap-3 text-sm">
+              {scenarios.length >= 2 ? (
+                <Link href={`/investor/properties/${property.id}/scenarios/compare`} className="text-brand-700 underline">
+                  Compare scenarios
+                </Link>
+              ) : null}
+              <Link href={`/investor/properties/${property.id}/report`} className="text-brand-700 underline">
+                Feasibility &amp; due-diligence report
+              </Link>
+            </div>
+            <p className="mt-3 text-xs text-slate-500">Margin or uplift minus costs, pre-tax.</p>
           </Card>
           <Card>
             <h2 className="font-semibold">Matters</h2>

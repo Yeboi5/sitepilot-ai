@@ -57,9 +57,25 @@ Official planning/title evidence. **No automated zoning claims.** Each record is
 | notes | text ≤ 4000 | |
 | is_demo | boolean | **server**: inherited from a demo property; demo evidence can never be `verified` |
 
-### `scenarios` / `scenario_results` (Sprint 2)
-`assumptions_json` and `result_json` are versioned by `formula_version`. Private to the investor
-organisation, even when a matter is shared.
+### `scenarios`
+| Column | Type | Notes |
+| --- | --- | --- |
+| property_id | uuid | Owning property; private to the property's organisation, even on shared matters |
+| name | text (1–120) | |
+| assumptions_json | jsonb | `Assumptions` (`src/lib/finance/assumptions.ts`): strategy, land, acquisition, soft, hard, contingencyPct, timeline, finance, holding, sale, rent. All investor assumptions |
+| formula_version | text | Formula version at last save, e.g. `feasibility-1.0.0` |
+| created_by | uuid | **server** |
+
+### `scenario_results`
+Append-only change history: one row per save, with no update or delete for users.
+| Column | Type | Notes |
+| --- | --- | --- |
+| scenario_id | uuid | |
+| result_json | jsonb | `{ assumptions, result }`, where `result` is a `FeasibilityResult` (costs, TDC, finance, sale or rent, tax basis, warnings) |
+| formula_version | text | |
+| calculated_at | timestamptz | |
+
+Displayed figures are always recalculated from `scenarios.assumptions_json`; see FORMULAS.md.
 
 ## Documents and AI findings
 
@@ -111,7 +127,7 @@ organisation to members of the engaged firm only.
 ## Platform
 
 ### `audit_events`
-Append-only, trigger-written. `organisation_id`, `actor_id`, `resource_type` (table name),
+Append-only, written by triggers and by `record_report_export()` (action `report.exported`, metadata `{format: "view" | "html"}`). `organisation_id`, `actor_id`, `resource_type` (table name),
 `resource_id`, `action` (`insert`/`update`/`delete`), `metadata` (`changed` column list for
 updates; values are not copied), `timestamp`. No FKs. Readable by org admins only.
 

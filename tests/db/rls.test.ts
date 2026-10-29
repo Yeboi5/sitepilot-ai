@@ -552,6 +552,70 @@ describe("audit trail", () => {
   });
 });
 
+describe("scenarios and report exports", () => {
+  it("scenario results are append-only (history can't be edited or erased)", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      const sc = await c.query(
+        "insert into public.scenarios (property_id, name, formula_version) values ($1, 'Duplex', 'feasibility-1.0.0') returning id",
+        [PROPERTY.sharedActive],
+      );
+      await c.query("insert into public.scenario_results (scenario_id, result_json, formula_version) values ($1, '{}', 'feasibility-1.0.0')", [
+        sc.rows[0].id,
+      ]);
+      await expect(c.query("update public.scenario_results set result_json = '{\"forged\":true}'")).rejects.toThrow(/permission denied/);
+    });
+    await expect(as(AUTH.ivy, (c) => c.query("delete from public.scenario_results"))).rejects.toThrow(/permission denied/);
+  });
+
+  it("another tenant cannot attach results to someone else's scenario", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      const sc = await c.query(
+        "insert into public.scenarios (property_id, name, formula_version) values ($1, 'Private', 'feasibility-1.0.0') returning id",
+        [PROPERTY.sharedActive],
+      );
+      await actAs(c, AUTH.oscar);
+      await expect(
+        c.query("insert into public.scenario_results (scenario_id, result_json, formula_version) values ($1, '{}', 'x')", [sc.rows[0].id]),
+      ).rejects.toThrow(RLS_VIOLATION);
+    });
+  });
+
+  it("records a report export in the owner's audit log", async () => {
+    await as(AUTH.ivy, async (c) => {
+      await c.query("select public.record_report_export($1, 'html')", [PROPERTY.sharedActive]);
+      const { rows } = await c.query(
+        "select actor_id, action, metadata from public.audit_events where resource_id = $1 and action = 'report.exported'",
+        [PROPERTY.sharedActive],
+      );
+      expect(rows).toEqual([{ actor_id: USER.ivy, action: "report.exported", metadata: { format: "html" } }]);
+    });
+  });
+
+  it("refuses report exports for properties the caller doesn't own", async () => {
+    await expect(
+      as(AUTH.oscar, (c) => c.query("select public.record_report_export($1, 'html')", [PROPERTY.sharedActive])),
+    ).rejects.toThrow(/not permitted/);
+    // A granted conveyancer can read the property but the feasibility report is the investor's.
+    await expect(
+      as(AUTH.connie, (c) => c.query("select public.record_report_export($1, 'html')", [PROPERTY.sharedActive])),
+    ).rejects.toThrow(/not permitted/);
+  });
+
+  it("rejects unknown export formats", async () => {
+    await expect(
+      as(AUTH.ivy, (c) => c.query("select public.record_report_export($1, 'exe')", [PROPERTY.sharedActive])),
+    ).rejects.toThrow(/unsupported export format/);
+  });
+
+  it("anonymous users cannot record exports", async () => {
+    await expect(
+      as(null, (c) => c.query("select public.record_report_export($1, 'html')", [PROPERTY.sharedActive])),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
+
 describe("storage", () => {
   it("private document objects are readable only via document access", async () => {
     await inTx(async (c) => {

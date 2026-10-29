@@ -45,3 +45,28 @@ export const PLAN_LABEL: Record<Enums<"plan_tier">, string> = {
   developer: "Developer",
   conveyancer: "Conveyancer",
 };
+
+const audFmt = new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 });
+const audCompactFmt = new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", notation: "compact", maximumFractionDigits: 1 });
+
+/** Whole-dollar AUD with a true minus sign for negatives. */
+export function formatAud(value: number): string {
+  return audFmt.format(Math.round(value)).replace("-", "−");
+}
+
+export function formatAudCompact(value: number): string {
+  return audCompactFmt.format(value).replace("-", "−");
+}
+
+/** Signed change, e.g. "+$12,000" / "−$4,500". */
+export function formatAudDelta(value: number): string {
+  const rounded = Math.round(value);
+  if (rounded === 0) return "$0";
+  return `${rounded > 0 ? "+" : ""}${formatAud(rounded)}`;
+}
+
+/** Ratio (0.1234) as a percentage ("12.3%"), or "n/a" when undefined. */
+export function formatRatio(value: number | null | undefined, digits = 1): string {
+  if (value === null || value === undefined) return "n/a";
+  return `${(value * 100).toFixed(digits)}%`.replace("-", "−");
+}

@@ -2,6 +2,29 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.2.0] - 2026-10-29
+
+Sprint 2: scenario engine, comparison, sensitivity and report export.
+
+### Added
+- Feasibility engine (`src/lib/finance/`, formula `feasibility-1.0.0`): deterministic pure
+  TypeScript for develop-and-sell (TDC, margin, ROI) and retain-and-rent (incremental cost, yield,
+  cash flow after interest, uplift minus costs). Includes a monthly debt draw schedule with
+  capitalised interest, an equity requirement, and warnings for negative outcomes. Spec in
+  `docs/FORMULAS.md`.
+- Sensitivity analysis: build cost ±15% × end value ±15% matrix, plus interest ±2 pp.
+- Scenario editor, scenario page (headline figures, cost breakdown, tornado chart, sensitivity
+  heatmap, interest table, change history), scenario comparison, and confirmed deletion.
+- Feasibility and due-diligence report in four separated sections (sourced facts, assumptions,
+  AI flags, reviewer-confirmed conclusions) plus limitations. View in-app, print to PDF, or
+  download as a standalone script-free HTML file. All values are HTML-escaped.
+- `record_report_export()` writes report views and downloads to the audit log.
+- Tests: 49 finance/report unit tests, 6 new RLS tests (67 total), 5 new browser tests (16 total).
+
+### Changed
+- Property page lists scenarios with their headline result and links to compare and report.
+- Audit log shows readable action names. Generated types map `void` functions to `undefined`.
+
 ## [0.1.3] - 2026-10-29
 
 ### Security

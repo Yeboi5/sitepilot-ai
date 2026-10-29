@@ -27,6 +27,7 @@ const SCALARS: Record<string, string> = {
   bool: "boolean",
   jsonb: "Json",
   json: "Json",
+  void: "undefined",
 };
 
 async function main() {

@@ -102,7 +102,7 @@ export default async function SettingsPage() {
                   <tr key={e.id}>
                     <td className="whitespace-nowrap px-5 py-2 text-slate-600">{dateTime.format(new Date(e.timestamp))}</td>
                     <td className="px-5 py-2">{(e.actor_id && names.get(e.actor_id)) ?? (e.actor_id ? "External user" : "System")}</td>
-                    <td className="px-5 py-2 capitalize">{e.action}</td>
+                    <td className="px-5 py-2 capitalize">{e.action.replace(/[._]/g, " ")}</td>
                     <td className="px-5 py-2 font-mono text-xs text-slate-600">
                       {e.resource_type}
                       {e.resource_id ? `:${e.resource_id.slice(0, 8)}` : ""}

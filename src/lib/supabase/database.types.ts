@@ -726,6 +726,7 @@ export type Database = {
     Views: { [_ in never]: never };
     Functions: {
       create_organisation: { Args: { org_name: string; org_type: Database["public"]["Enums"]["organisation_type"] }; Returns: string };
+      record_report_export: { Args: { prop: string; export_format: string }; Returns: undefined };
     };
     Enums: {
       document_classification: "unclassified" | "contract_for_sale" | "title_search" | "planning_certificate" | "survey" | "strata_report" | "building_report" | "other";

@@ -9,9 +9,9 @@ with professional sign-off.
 > funds, settle, lodge or transfer title. **Use synthetic data only** until the compliance gates in
 > [docs/SECURITY.md](docs/SECURITY.md) are passed.
 
-**Status:** Sprint 0 + Sprint 1 complete, awaiting review before Sprint 2 (foundation, auth, organisations, RLS, property
-workspaces, manual planning evidence, initial investor and firm dashboards). See
-[CHANGELOG.md](CHANGELOG.md).
+**Status:** Sprints 0–2 complete, awaiting review before Sprint 3: foundation, auth,
+organisations, RLS, property workspaces, manual planning evidence, investor and firm dashboards,
+feasibility scenarios, comparison, sensitivity and report export. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Stack
 
@@ -101,6 +101,7 @@ Set `E2E_BASE_URL` to test an already-running server. `PLAYWRIGHT_CHROMIUM_PATH`
 
 - [docs/SPRINT_0_1_PLAN.md](docs/SPRINT_0_1_PLAN.md): architecture plan, directory tree, schema, RLS design, test strategy
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): system design, request flow, sprint plan
+- [docs/FORMULAS.md](docs/FORMULAS.md): feasibility formulas, versioning and sensitivity spec
 - [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md): every table and column
 - [docs/SECURITY.md](docs/SECURITY.md): threat model, controls, gaps, compliance gates
 - [docs/adr/](docs/adr/): architecture decision records

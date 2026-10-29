@@ -57,7 +57,7 @@ export function Field({
   children,
 }: {
   id: string;
-  label: string;
+  label: ReactNode;
   hint?: string;
   errors?: string[];
   children: ReactNode;
