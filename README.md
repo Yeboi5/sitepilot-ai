@@ -62,6 +62,7 @@ Reset the local database: `npx supabase db reset`.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Unit tests (`src/**/*.test.ts`) |
 | `npm run test:db` | RLS/database integration tests against PostgreSQL |
+| `npm run test:e2e` | Browser end-to-end tests (needs the local Supabase stack) |
 | `npm run db:types` | Regenerate `src/lib/supabase/database.types.ts` from the schema |
 | `npm run check` | Everything above, as CI runs it |
 
@@ -80,6 +81,21 @@ npm run test:db
 
 The types generator uses the same database, so run `npm run test:db` first. With the Supabase
 CLI available, `npx supabase gen types typescript --local` produces equivalent output.
+
+### End-to-end (browser) tests
+
+`tests/e2e/` drives the real app with Playwright against the local Supabase stack and the seeded
+demo accounts: sign-in, the investor view of the Halekulani demo property, creating a property and
+verifying evidence, the conveyancer matter view and review queue, an ungranted firm member,
+cross-tenant 404s, and sign-out.
+
+```bash
+npx supabase start && npx supabase db reset   # fresh seed
+npx playwright install chromium               # first run only
+npm run test:e2e                               # builds, starts on :3000, runs tests
+```
+
+Set `E2E_BASE_URL` to test an already-running server. `PLAYWRIGHT_CHROMIUM_PATH` overrides the browser binary.
 
 ## Documentation
 
