@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { actAs, as, closePool, ids, inTx } from "./db";
-import { AUTH, DOCUMENT, FINDING, MATTER, ORG, PROPERTY, USER } from "./fixtures";
+import { AUTH, DOCUMENT, EVIDENCE, FINDING, MATTER, ORG, PROPERTY, USER } from "./fixtures";
 
 afterAll(closePool);
 
@@ -101,9 +101,17 @@ describe("investor workspace permissions", () => {
 
   it("verification is stamped by the server, not the client", async () => {
     await as(AUTH.ivy, async (c) => {
+      const prop = await c.query(
+        "insert into public.properties (owner_org_id, address) values ($1, '5 Real Data St') returning id",
+        [ORG.harbourview],
+      );
+      const ev = await c.query(
+        "insert into public.evidence (property_id, title, source_type, source_url, fetched_at) values ($1, 'Cert', 'planning_certificate', 'https://example.com/c.pdf', current_date) returning id",
+        [prop.rows[0].id],
+      );
       const { rows } = await c.query(
-        "update public.evidence set verification_status = 'verified', verified_by = $1 where id = 'e0000000-0000-4000-8000-000000000002' returning verified_by, verified_at",
-        [USER.oscar],
+        "update public.evidence set verification_status = 'verified', verified_by = $1 where id = $2 returning verified_by, verified_at",
+        [USER.oscar, ev.rows[0].id],
       );
       expect(rows[0].verified_by).toBe(USER.ivy);
       expect(rows[0].verified_at).not.toBeNull();
@@ -142,6 +150,68 @@ describe("investor workspace permissions", () => {
   });
 });
 
+describe("demo data safeguards", () => {
+  it("the Halekulani demo property is flagged as demo with only unverified evidence", async () => {
+    await as(AUTH.ivy, async (c) => {
+      const p = await c.query("select address, suburb, is_demo, lot_dp from public.properties where id = $1", [PROPERTY.sharedActive]);
+      expect(p.rows[0]).toEqual({ address: "76 Sunrise Avenue", suburb: "Halekulani", is_demo: true, lot_dp: null });
+      const ev = await c.query(
+        "select distinct verification_status, is_demo from public.evidence where property_id = $1",
+        [PROPERTY.sharedActive],
+      );
+      expect(ev.rows).toEqual([{ verification_status: "unverified", is_demo: true }]);
+    });
+  });
+
+  it("seed contains no verified evidence anywhere", async () => {
+    await inTx(async (c) => {
+      const r = await c.query("select 1 from public.evidence where verification_status = 'verified'");
+      expect(r.rowCount).toBe(0);
+    });
+  });
+
+  it("demo evidence can never be marked verified", async () => {
+    await expect(
+      as(AUTH.ivy, (c) =>
+        c.query("update public.evidence set verification_status = 'verified' where id = $1", [EVIDENCE.demoPlanningCertificate]),
+      ),
+    ).rejects.toThrow(/evidence_demo_never_verified/);
+  });
+
+  it("users cannot clear the demo flag", async () => {
+    await as(AUTH.ivy, async (c) => {
+      const { rows } = await c.query("update public.properties set is_demo = false where id = $1 returning is_demo", [
+        PROPERTY.sharedActive,
+      ]);
+      expect(rows[0].is_demo).toBe(true);
+      const ev = await c.query("update public.evidence set is_demo = false where id = $1 returning is_demo", [
+        EVIDENCE.demoPlanningCertificate,
+      ]);
+      expect(ev.rows[0].is_demo).toBe(true);
+    });
+  });
+
+  it("evidence added to a demo property is itself demo (and so unverifiable)", async () => {
+    await as(AUTH.ivy, async (c) => {
+      const { rows } = await c.query(
+        "insert into public.evidence (property_id, title, source_type, source_url, fetched_at, is_demo) values ($1, 'x', 'other', 'https://example.com/x', current_date, false) returning is_demo",
+        [PROPERTY.sharedActive],
+      );
+      expect(rows[0].is_demo).toBe(true);
+    });
+  });
+
+  it("users cannot create demo-flagged records themselves", async () => {
+    await as(AUTH.ivy, async (c) => {
+      const { rows } = await c.query(
+        "insert into public.properties (owner_org_id, address, is_demo) values ($1, '9 Flag St', true) returning is_demo",
+        [ORG.harbourview],
+      );
+      expect(rows[0].is_demo).toBe(false);
+    });
+  });
+});
+
 describe("matter-level grants", () => {
   it("granted professional can read the shared property, matter documents and findings", async () => {
     await as(AUTH.connie, async (c) => {
@@ -149,6 +219,23 @@ describe("matter-level grants", () => {
       expect(await ids(c, "select id from public.documents")).toEqual([DOCUMENT.matterContract]);
       const findings = await c.query("select 1 from public.findings");
       expect(findings.rowCount).toBe(2);
+    });
+  });
+
+  it("granted professional can read the shared property's evidence register, but not edit it", async () => {
+    await as(AUTH.connie, async (c) => {
+      const ev = await c.query("select 1 from public.evidence where property_id = $1", [PROPERTY.sharedActive]);
+      expect(ev.rowCount).toBe(3);
+      const upd = await c.query("update public.evidence set notes = 'x' where property_id = $1", [PROPERTY.sharedActive]);
+      expect(upd.rowCount).toBe(0);
+      const other = await c.query("select 1 from public.evidence where property_id = $1", [PROPERTY.invitedOnly]);
+      expect(other.rowCount).toBe(0);
+    });
+  });
+
+  it("firm members without a grant cannot read the evidence register", async () => {
+    await as(AUTH.sam, async (c) => {
+      expect((await c.query("select 1 from public.evidence")).rowCount).toBe(0);
     });
   });
 

@@ -48,6 +48,7 @@ export const EVIDENCE_SOURCE_TYPES = [
   "council_record",
   "title_search",
   "survey",
+  "valuation",
   "other",
 ] as const;
 
@@ -58,6 +59,7 @@ export const EVIDENCE_SOURCE_LABELS: Record<(typeof EVIDENCE_SOURCE_TYPES)[numbe
   council_record: "Council record",
   title_search: "Title search",
   survey: "Survey",
+  valuation: "Valuation report (registered valuer)",
   other: "Other",
 };
 

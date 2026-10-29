@@ -69,9 +69,9 @@ export default async function FirmDashboard() {
               {rows.map((m) => (
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
                   <div>
-                    <p className="font-medium">
+                    <Link href={`/firm/matters/${m.id}`} className="font-medium text-brand-700 hover:underline">
                       {m.property ? `${m.property.address}, ${m.property.suburb}` : "Property details shared after acceptance and grant"}
-                    </p>
+                    </Link>
                     <p className="text-xs text-slate-500">
                       Client: {m.client?.name ?? "—"} · received {formatDate(m.created_at)}
                     </p>

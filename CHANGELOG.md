@@ -2,6 +2,23 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.1] - 2026-10-29
+
+### Added
+- Demo property **76 Sunrise Avenue, Halekulani NSW 2262** with placeholder (unverified) planning
+  certificate, Planning Portal and valuation evidence. No official results are fabricated.
+- `is_demo` flag on properties and evidence: demo evidence can never be verified (check
+  constraint); users can't set or clear the flag; evidence on a demo property is always demo.
+- `valuation` evidence source type.
+- Conveyancer matter view (`/firm/matters/[id]`): property, read-only evidence register, shared
+  documents with finding statuses, and tasks, all filtered by RLS grants.
+- Shared `EvidenceRegister` component and "Demo · unverified" badges and banners.
+- `docs/SPRINT_0_1_PLAN.md` covering architecture, directory tree, schema, RLS design and test strategy.
+- 8 more RLS tests (54 total).
+
+### Changed
+- All seeded evidence is now unverified demo data with `.invalid` source URLs; demo lot/DP removed.
+
 ## [0.1.0] - 2026-10-29
 
 Sprint 0 + Sprint 1: foundation.

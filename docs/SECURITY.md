@@ -44,6 +44,7 @@ threat model, the list of controls in place, and the gates that must pass before
 | Info disclosure | Prompt injection exfiltrates data | Document text treated as untrusted data; no tools/URLs in extraction calls; schema-validated output | Sprint 3 |
 | DoS | Large/malicious uploads | 25 MiB, PDF-only at bucket + table; malware scan before processing | Limits ✅; scan Sprint 3 |
 | Elevation | Self-granting matter access or admin role | Grants only by investor org to engaged firm's members; admin-only membership writes | ✅ tested |
+| Misrepresentation | Demo/synthetic data presented as official | `is_demo` flag, never-verified constraint, UI badges/banners, `.invalid` URLs | ✅ tested |
 | Elevation | Self-verifying a firm | `verification_status` not client-writable | ✅ tested |
 
 ## Controls in place (Sprint 0/1)

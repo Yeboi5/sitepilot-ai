@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { setEvidenceStatus } from "../../actions";
-import { Alert, Badge, Card, EmptyState, PageHeader } from "@/components/ui";
-import { EVIDENCE_STATUS, MATTER_STATUS, formatDate } from "@/lib/format";
+import { DemoDataBanner } from "@/components/demo";
+import { EVIDENCE_COLUMNS, EvidenceRegister } from "@/components/evidence-register";
+import { Alert, Badge, Card, PageHeader } from "@/components/ui";
+import { MATTER_STATUS } from "@/lib/format";
 import { requireOrg } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { EVIDENCE_SOURCE_LABELS } from "@/lib/validation";
+import { EvidenceActions } from "./evidence-actions";
 import { EvidenceForm } from "./evidence-form";
 
 export const metadata: Metadata = { title: "Property" };
@@ -25,25 +26,16 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
   // so the existence of other tenants' records is not disclosed.
   const { data: property } = await supabase
     .from("properties")
-    .select("id, owner_org_id, address, suburb, postcode, lot_dp, jurisdiction, created_at")
+    .select("id, owner_org_id, address, suburb, postcode, lot_dp, jurisdiction, is_demo, created_at")
     .eq("id", id)
     .eq("owner_org_id", ctx.active.organisation.id)
     .maybeSingle();
   if (!property) notFound();
 
   const [{ data: evidence }, { data: matters }] = await Promise.all([
-    supabase
-      .from("evidence")
-      .select("id, title, source_type, source_url, fetched_at, verification_status, verified_at, notes, verifier:users!evidence_verified_by_fkey(display_name)")
-      .eq("property_id", id)
-      .order("fetched_at", { ascending: false }),
-    supabase
-      .from("matters")
-      .select("id, status, firm:organisations!matters_professional_org_id_fkey(name)")
-      .eq("property_id", id),
+    supabase.from("evidence").select(EVIDENCE_COLUMNS).eq("property_id", id).order("fetched_at", { ascending: false }),
+    supabase.from("matters").select("id, status, firm:organisations!matters_professional_org_id_fkey(name)").eq("property_id", id),
   ]);
-
-  const evidenceRows = evidence ?? [];
 
   return (
     <>
@@ -52,10 +44,16 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         description={
           <>
             {property.suburb} {property.postcode} · {property.jurisdiction}
-            {property.lot_dp ? ` · ${property.lot_dp}` : ""}
+            {property.lot_dp ? ` · ${property.lot_dp}` : " · Lot/DP not recorded"}
           </>
         }
       />
+
+      {property.is_demo ? (
+        <div className="mb-6">
+          <DemoDataBanner />
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -69,75 +67,11 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
             </div>
           </Card>
 
-          <Card className="p-0">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <h2 className="font-semibold">Evidence register</h2>
-              <p className="text-sm text-slate-600">Official documents and records relied on for this property.</p>
-            </div>
-            {evidenceRows.length === 0 ? (
-              <div className="p-5">
-                <EmptyState title="No evidence recorded">Attach a planning certificate or Planning Portal record to begin.</EmptyState>
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {evidenceRows.map((e) => {
-                  const status = EVIDENCE_STATUS[e.verification_status];
-                  return (
-                    <li key={e.id} className="space-y-2 px-5 py-4">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                          <p className="font-medium">{e.title}</p>
-                          <p className="text-xs text-slate-500">
-                            {EVIDENCE_SOURCE_LABELS[e.source_type]} · retrieved {formatDate(e.fetched_at)}
-                          </p>
-                        </div>
-                        <Badge tone={status.tone}>{status.label}</Badge>
-                      </div>
-                      {e.source_url ? (
-                        <a
-                          href={e.source_url}
-                          target="_blank"
-                          rel="noopener noreferrer nofollow"
-                          className="block break-all text-sm text-brand-700 underline"
-                        >
-                          {e.source_url}
-                        </a>
-                      ) : null}
-                      {e.notes ? <p className="text-sm text-slate-700">{e.notes}</p> : null}
-                      {e.verification_status === "verified" ? (
-                        <p className="text-xs text-slate-500">
-                          Verified by {e.verifier?.display_name ?? "a team member"} on {formatDate(e.verified_at)}
-                        </p>
-                      ) : null}
-                      <form action={setEvidenceStatus} className="flex flex-wrap gap-2">
-                        <input type="hidden" name="evidenceId" value={e.id} />
-                        <input type="hidden" name="propertyId" value={property.id} />
-                        {e.verification_status !== "verified" ? (
-                          <button name="status" value="verified" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-50">
-                            Mark verified against source
-                          </button>
-                        ) : (
-                          <button name="status" value="unverified" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-50">
-                            Mark unverified
-                          </button>
-                        )}
-                        {e.verification_status !== "disputed" ? (
-                          <button name="status" value="disputed" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-50">
-                            Flag as disputed
-                          </button>
-                        ) : null}
-                        {e.verification_status !== "superseded" ? (
-                          <button name="status" value="superseded" className="rounded-md border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-50">
-                            Mark superseded
-                          </button>
-                        ) : null}
-                      </form>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </Card>
+          <EvidenceRegister
+            rows={evidence ?? []}
+            description="Official documents and records relied on for this property."
+            actions={(row) => <EvidenceActions row={row} propertyId={property.id} />}
+          />
 
           <Card>
             <h2 className="mb-4 font-semibold">Add evidence</h2>

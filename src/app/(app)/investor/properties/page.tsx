@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DemoBadge } from "@/components/demo";
 import { ButtonLink, Card, EmptyState, PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { requireOrg } from "@/lib/session";
@@ -12,7 +13,7 @@ export default async function PropertiesPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("properties")
-    .select("id, address, suburb, postcode, lot_dp, jurisdiction, created_at, evidence(count)")
+    .select("id, address, suburb, postcode, lot_dp, jurisdiction, is_demo, created_at, evidence(count)")
     .eq("owner_org_id", ctx.active.organisation.id)
     .order("created_at", { ascending: false });
   const rows = data ?? [];
@@ -45,6 +46,11 @@ export default async function PropertiesPage() {
                     <Link href={`/investor/properties/${p.id}`} className="font-medium text-brand-700 hover:underline">
                       {p.address}, {p.suburb} {p.postcode}
                     </Link>
+                    {p.is_demo ? (
+                      <span className="ml-2">
+                        <DemoBadge />
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 text-slate-600">{p.lot_dp ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{p.jurisdiction}</td>

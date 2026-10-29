@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DemoBadge } from "@/components/demo";
 import { Badge, ButtonLink, Card, EmptyState, PageHeader, Stat } from "@/components/ui";
 import { MATTER_STATUS, formatDate } from "@/lib/format";
 import { requireOrg } from "@/lib/session";
@@ -15,7 +16,7 @@ export default async function InvestorDashboard() {
   const [properties, unverified, matters] = await Promise.all([
     supabase
       .from("properties")
-      .select("id, address, suburb, postcode, updated_at")
+      .select("id, address, suburb, postcode, is_demo, updated_at")
       .eq("owner_org_id", orgId)
       .order("updated_at", { ascending: false })
       .limit(5),
@@ -67,9 +68,12 @@ export default async function InvestorDashboard() {
             <ul className="divide-y divide-slate-100">
               {propertyRows.map((p) => (
                 <li key={p.id} className="flex items-center justify-between py-2.5 text-sm">
-                  <Link href={`/investor/properties/${p.id}`} className="font-medium hover:underline">
-                    {p.address}, {p.suburb} {p.postcode}
-                  </Link>
+                  <span className="flex items-center gap-2">
+                    <Link href={`/investor/properties/${p.id}`} className="font-medium hover:underline">
+                      {p.address}, {p.suburb} {p.postcode}
+                    </Link>
+                    {p.is_demo ? <DemoBadge /> : null}
+                  </span>
                   <span className="text-slate-500">{formatDate(p.updated_at)}</span>
                 </li>
               ))}

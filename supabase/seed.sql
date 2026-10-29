@@ -51,25 +51,50 @@ insert into public.subscriptions (organisation_id, plan, status) values
   ('c0000000-0000-4000-8000-000000000003', 'explorer', 'trialing');
 
 -- ─── Properties & evidence ──────────────────────────────────────────────────
-insert into public.properties (id, owner_org_id, address, suburb, postcode, lot_dp, created_by) values
-  ('d0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001',
-   '12 Example Street', 'Parramatta', '2150', 'Lot 1 DP 0000001 (synthetic)', 'b0000000-0000-4000-8000-000000000001'),
+-- Every property and evidence row here is is_demo = true: a database constraint stops demo
+-- evidence from ever being marked verified. No lot/DP, zoning, planning control or valuation figure
+-- is recorded, because none has been obtained from an official source. Source URLs use the
+-- reserved `.invalid` domain so they can never resolve to a real record.
+insert into public.properties (id, owner_org_id, address, suburb, postcode, lot_dp, is_demo, created_by) values
+  -- Primary demo property (shared with the demo conveyancer on an active matter).
   ('d0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000001',
-   '48 Sample Avenue', 'Penrith', '2750', 'Lot 7 DP 0000002 (synthetic)', 'b0000000-0000-4000-8000-000000000001'),
+   '76 Sunrise Avenue', 'Halekulani', '2262', null, true, 'b0000000-0000-4000-8000-000000000001'),
+  ('d0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001',
+   '12 Example Street', 'Parramatta', '2150', null, true, 'b0000000-0000-4000-8000-000000000001'),
   ('d0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000003',
-   '3 Placeholder Road', 'Blacktown', '2148', 'Lot 3 DP 0000003 (synthetic)', 'b0000000-0000-4000-8000-000000000004');
+   '3 Placeholder Road', 'Blacktown', '2148', null, true, 'b0000000-0000-4000-8000-000000000004');
 
-insert into public.evidence (id, property_id, title, source_type, source_url, fetched_at, verification_status, verified_by, verified_at, notes, created_by) values
+insert into public.evidence (id, property_id, title, source_type, source_url, fetched_at, verification_status, notes, is_demo, created_by) values
+  ('e0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000002',
+   'DEMO placeholder: planning certificate (not obtained)', 'planning_certificate',
+   'https://demo.sitepilot.invalid/evidence/76-sunrise-ave/planning-certificate',
+   '2026-10-20', 'unverified',
+   'UNVERIFIED DEMO DATA. No planning certificate has been requested or issued. Obtain the real certificate from the issuing council before relying on any planning control.',
+   true, 'b0000000-0000-4000-8000-000000000001'),
+  ('e0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000002',
+   'DEMO placeholder: Planning Portal property report (not retrieved)', 'planning_portal',
+   'https://demo.sitepilot.invalid/evidence/76-sunrise-ave/planning-portal-report',
+   '2026-10-20', 'unverified',
+   'UNVERIFIED DEMO DATA. Zoning, height, FSR and minimum lot size are intentionally not recorded.',
+   true, 'b0000000-0000-4000-8000-000000000001'),
+  ('e0000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000002',
+   'DEMO placeholder: valuation (no figure recorded)', 'valuation',
+   'https://demo.sitepilot.invalid/evidence/76-sunrise-ave/valuation',
+   '2026-10-20', 'unverified',
+   'UNVERIFIED DEMO DATA. No valuation has been performed. A value must come from a registered valuer or be entered as an investor assumption.',
+   true, 'b0000000-0000-4000-8000-000000000001'),
   ('e0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001',
-   'Planning certificate (synthetic sample)', 'planning_certificate', 'https://example.com/synthetic/planning-certificate-12-example-st.pdf',
-   '2026-10-01', 'verified', 'b0000000-0000-4000-8000-000000000001', now(),
-   'Synthetic fixture. Real certificates must be obtained from the issuing council.', 'b0000000-0000-4000-8000-000000000001'),
+   'DEMO placeholder: planning certificate', 'planning_certificate',
+   'https://demo.sitepilot.invalid/evidence/12-example-st/planning-certificate',
+   '2026-10-01', 'unverified', 'UNVERIFIED DEMO DATA.', true, 'b0000000-0000-4000-8000-000000000001'),
   ('e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001',
-   'Planning Portal property report (synthetic sample)', 'planning_portal', 'https://example.com/synthetic/portal-report-12-example-st',
-   '2026-10-12', 'unverified', null, null, null, 'b0000000-0000-4000-8000-000000000001'),
+   'DEMO placeholder: Planning Portal report', 'planning_portal',
+   'https://demo.sitepilot.invalid/evidence/12-example-st/planning-portal-report',
+   '2026-10-12', 'unverified', 'UNVERIFIED DEMO DATA.', true, 'b0000000-0000-4000-8000-000000000001'),
   ('e0000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000003',
-   'Council record (synthetic sample)', 'council_record', 'https://example.com/synthetic/council-3-placeholder-rd',
-   '2026-09-20', 'unverified', null, null, null, 'b0000000-0000-4000-8000-000000000004');
+   'DEMO placeholder: council record', 'council_record',
+   'https://demo.sitepilot.invalid/evidence/3-placeholder-rd/council-record',
+   '2026-09-20', 'unverified', 'UNVERIFIED DEMO DATA.', true, 'b0000000-0000-4000-8000-000000000004');
 
 -- ─── Matters ────────────────────────────────────────────────────────────────
 -- f…01: invitation awaiting the firm. f…02: active matter with Connie granted edit access.
@@ -85,7 +110,7 @@ insert into public.matter_access (matter_id, user_id, permission, granted_by) va
 -- ─── Documents & findings (synthetic contract, no real content) ─────────────
 insert into public.documents (id, owner_org_id, property_id, matter_id, file_name, storage_key, mime, size_bytes, checksum, classification, scan_status, uploaded_by) values
   ('10000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000002',
-   'f0000000-0000-4000-8000-000000000002', 'synthetic-contract-48-sample-ave.pdf',
+   'f0000000-0000-4000-8000-000000000002', 'SYNTHETIC-demo-contract-76-sunrise-ave.pdf',
    'c0000000-0000-4000-8000-000000000001/10000000-0000-4000-8000-000000000001.pdf', 'application/pdf', 182044,
    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'contract_for_sale', 'clean', 'b0000000-0000-4000-8000-000000000001'),
   ('10000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001',
@@ -95,9 +120,9 @@ insert into public.documents (id, owner_org_id, property_id, matter_id, file_nam
 
 insert into public.findings (id, document_id, category, extracted_text, page_ref, span_start, span_end, confidence, status, ai_model) values
   ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'settlement_period',
-   'Completion is to take place 42 days after the contract date.', 3, 120, 181, 0.910, 'unreviewed', 'fixture'),
+   '[SYNTHETIC TEST TEXT] Completion is to take place 42 days after the contract date.', 3, 120, 181, 0.910, 'unreviewed', 'fixture'),
   ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', 'special_condition',
-   'The purchaser acknowledges an easement for drainage 1.5 wide affects the property.', 11, 40, 123, 0.640, 'unreviewed', 'fixture');
+   '[SYNTHETIC TEST TEXT] The purchaser acknowledges an easement for drainage 1.5 wide affects the property.', 11, 40, 123, 0.640, 'unreviewed', 'fixture');
 
 insert into public.tasks (matter_id, title, assignee_id, due_at, status) values
   ('f0000000-0000-4000-8000-000000000002', 'Review drainage easement on title (synthetic)', 'b0000000-0000-4000-8000-000000000002', now() + interval '5 days', 'open'),

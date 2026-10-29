@@ -22,13 +22,17 @@ export const ORG = {
 
 export const PROPERTY = {
   invitedOnly: "d0000000-0000-4000-8000-000000000001", // matter is only 'invited'
-  sharedActive: "d0000000-0000-4000-8000-000000000002", // active matter, Connie has edit
+  sharedActive: "d0000000-0000-4000-8000-000000000002", // 76 Sunrise Avenue, Halekulani (demo); active matter, Connie has edit
   westside: "d0000000-0000-4000-8000-000000000003",
 } as const;
 
 export const MATTER = {
   invited: "f0000000-0000-4000-8000-000000000001",
   active: "f0000000-0000-4000-8000-000000000002",
+} as const;
+
+export const EVIDENCE = {
+  demoPlanningCertificate: "e0000000-0000-4000-8000-000000000004", // Halekulani, unverified demo
 } as const;
 
 export const DOCUMENT = {

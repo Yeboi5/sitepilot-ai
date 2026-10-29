@@ -9,7 +9,7 @@ with professional sign-off.
 > funds, settle, lodge or transfer title. **Use synthetic data only** until the compliance gates in
 > [docs/SECURITY.md](docs/SECURITY.md) are passed.
 
-**Status:** Sprint 0 + Sprint 1 complete (foundation, auth, organisations, RLS, property
+**Status:** Sprint 0 + Sprint 1 complete, awaiting review before Sprint 2 (foundation, auth, organisations, RLS, property
 workspaces, manual planning evidence, initial investor and firm dashboards). See
 [CHANGELOG.md](CHANGELOG.md).
 
@@ -29,12 +29,23 @@ cp .env.example .env.local  # paste the API URL and anon/publishable key printed
 npm run dev                 # http://localhost:3000
 ```
 
-Demo accounts (synthetic, from `supabase/seed.sql`), all with password `SitePilotDemo!2026`:
+### Demo data
+
+The seed contains **synthetic fixtures only**. The primary demo property is
+**76 Sunrise Avenue, Halekulani NSW 2262**, owned by the demo investor and shared with the demo
+conveyancer on an active matter.
+
+All planning and valuation information is **UNVERIFIED demo data**: placeholder evidence records
+with no zoning, planning-control, lot/DP or valuation figures, and source URLs on the reserved
+`.invalid` domain. Demo records are flagged `is_demo`, shown with a "Demo · unverified" badge, and the
+database prevents them from ever being marked verified. Never load real client contracts or documents.
+
+Demo accounts, all with password `SitePilotDemo!2026`:
 
 | Email | Role |
 | --- | --- |
 | `ivy.investor@demo.sitepilot.test` | Investor admin, Harbourview Demo Developments |
-| `connie.conveyancer@demo.sitepilot.test` | Firm admin, Demo Conveyancing; granted on one active matter |
+| `connie.conveyancer@demo.sitepilot.test` | Firm admin, Demo Conveyancing; granted on the Halekulani matter |
 | `sam.staff@demo.sitepilot.test` | Firm member without matter grants |
 | `oscar.other@demo.sitepilot.test` | Admin of a separate investor organisation |
 
@@ -72,6 +83,7 @@ CLI available, `npx supabase gen types typescript --local` produces equivalent o
 
 ## Documentation
 
+- [docs/SPRINT_0_1_PLAN.md](docs/SPRINT_0_1_PLAN.md): architecture plan, directory tree, schema, RLS design, test strategy
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): system design, request flow, sprint plan
 - [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md): every table and column
 - [docs/SECURITY.md](docs/SECURITY.md): threat model, controls, gaps, compliance gates

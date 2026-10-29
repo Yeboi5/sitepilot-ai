@@ -39,6 +39,7 @@ remove/demote themselves.
 | postcode | text | 4 digits (NSW validated in app) |
 | lot_dp | text | e.g. `Lot 1 DP 123456`, optional |
 | jurisdiction | text | `NSW` only during pilot |
+| is_demo | boolean | Synthetic fixture. Set only by seed/service role; immutable for users |
 | created_by | uuid | **server** |
 
 ### `evidence`
@@ -47,13 +48,14 @@ Official planning/title evidence. **No automated zoning claims.** Each record is
 | --- | --- | --- |
 | property_id | uuid | |
 | title | text | |
-| source_type | `evidence_source_type` | `planning_certificate`, `planning_portal`, `lep_map`, `council_record`, `title_search`, `survey`, `other` |
+| source_type | `evidence_source_type` | `planning_certificate`, `planning_portal`, `lep_map`, `council_record`, `title_search`, `survey`, `valuation`, `other` |
 | source_url | text | Must start `https://`; either this or `document_id` required |
 | fetched_at | date | Date the user retrieved it (not in the future) |
 | verification_status | `evidence_status` | `unverified` (default), `verified`, `disputed`, `superseded` |
 | verified_by / verified_at | uuid / timestamptz | **server**; set only when status is `verified` |
 | document_id | uuid | Optional uploaded copy |
 | notes | text ≤ 4000 | |
+| is_demo | boolean | **server**: inherited from a demo property; demo evidence can never be `verified` |
 
 ### `scenarios` / `scenario_results` (Sprint 2)
 `assumptions_json` and `result_json` are versioned by `formula_version`. Private to the investor

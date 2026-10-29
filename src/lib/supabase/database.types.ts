@@ -131,6 +131,7 @@ export type Database = {
           document_id: string | null;
           created_by: string | null;
           created_at: string;
+          is_demo: boolean;
         };
         Insert: {
           id?: string;
@@ -146,6 +147,7 @@ export type Database = {
           document_id?: string | null;
           created_by?: string | null;
           created_at?: string;
+          is_demo?: boolean;
         };
         Update: {
           id?: string;
@@ -161,6 +163,7 @@ export type Database = {
           document_id?: string | null;
           created_by?: string | null;
           created_at?: string;
+          is_demo?: boolean;
         };
         Relationships: [
           {
@@ -463,6 +466,7 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          is_demo: boolean;
         };
         Insert: {
           id?: string;
@@ -475,6 +479,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          is_demo?: boolean;
         };
         Update: {
           id?: string;
@@ -487,6 +492,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          is_demo?: boolean;
         };
         Relationships: [
           {
@@ -724,7 +730,7 @@ export type Database = {
     Enums: {
       document_classification: "unclassified" | "contract_for_sale" | "title_search" | "planning_certificate" | "survey" | "strata_report" | "building_report" | "other";
       document_scan_status: "pending" | "clean" | "infected" | "rejected";
-      evidence_source_type: "planning_certificate" | "planning_portal" | "lep_map" | "council_record" | "title_search" | "survey" | "other";
+      evidence_source_type: "planning_certificate" | "planning_portal" | "lep_map" | "council_record" | "title_search" | "survey" | "other" | "valuation";
       evidence_status: "unverified" | "verified" | "disputed" | "superseded";
       finding_status: "unreviewed" | "needs_clarification" | "confirmed" | "rejected";
       matter_permission: "view" | "edit" | "manage";

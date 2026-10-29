@@ -32,7 +32,7 @@ Later sprints:  job queue + document worker (service role) ──▶ AI provider
 | `src/lib/validation.ts` | zod schemas for all user input |
 | `src/lib/billing/plans.ts` | Plan catalogue (display only until Stripe sandbox) |
 | `src/app/(app)/investor/` | Investor dashboard, property workspaces, evidence register |
-| `src/app/(app)/firm/` | Firm matter inbox, review queue |
+| `src/app/(app)/firm/` | Firm matter inbox, matter view (read-only, grant-filtered), review queue |
 | `src/app/(app)/settings/` | Organisation, members, plan, audit log |
 | `src/components/` | Accessible UI primitives and form helpers |
 
