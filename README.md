@@ -52,7 +52,10 @@ Demo accounts, all with password `SitePilotDemo!2026`:
 | `nina.newbuyer@demo.sitepilot.test` | Home buyer with no workspace yet (first sign-in creates one) |
 | `vera.verifier@demo.sitepilot.test` | Homeowner-claim verifier (review queue at `/verify`) |
 
-Claim evidence uploads use Supabase Storage. Without a Storage service (e.g. CI), set
+SitePilot Vision uses a built-in mock image provider (no AI service, no cost). Concepts are
+limited to 10 per user per day; reseeding resets the counters.
+
+Claim evidence and Vision uploads use Supabase Storage. Without a Storage service (e.g. CI), set
 `STORAGE_DRIVER=local` to keep files in `.local-storage/`; it is refused in deployed environments.
 
 Local auth emails (sign-up confirmation) are captured by Mailpit at http://127.0.0.1:54324.
@@ -110,6 +113,7 @@ Tests tagged `@mobile` run in an iPhone-size project (390×844). Set `E2E_BASE_U
 - [docs/UPDATE_1_1_PLAN.md](docs/UPDATE_1_1_PLAN.md): Update Pack 1.1 gap analysis and phases
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): system design, request flow, sprint plan
 - [docs/FORMULAS.md](docs/FORMULAS.md): feasibility formulas, versioning and sensitivity spec
+- [docs/VISION_PROVIDERS.md](docs/VISION_PROVIDERS.md): checklist for choosing a real SitePilot Vision image provider
 - [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md): every table and column
 - [docs/SECURITY.md](docs/SECURITY.md): threat model, controls, gaps, compliance gates
 - [docs/adr/](docs/adr/): architecture decision records

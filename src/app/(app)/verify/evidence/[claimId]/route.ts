@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { evidenceStore } from "@/lib/storage/evidence-store";
+import { evidenceStore } from "@/lib/storage/object-store";
 import { createClient } from "@/lib/supabase/server";
 
 /**

@@ -76,6 +76,10 @@ describe("isProtectedPath", () => {
     expect(isProtectedPath("/my-property/abc")).toBe(true);
     expect(isProtectedPath("/verify")).toBe(true);
     expect(isProtectedPath("/search")).toBe(false);
+    expect(isProtectedPath("/vision")).toBe(false);
+    expect(isProtectedPath("/vision/new")).toBe(true);
+    expect(isProtectedPath("/vision/0b8f3c1e-0000-4000-8000-000000000001")).toBe(true);
+    expect(isProtectedPath("/vision/shared/abc")).toBe(false);
     expect(isProtectedPath("/")).toBe(false);
     expect(isProtectedPath("/pricing")).toBe(false);
     expect(isProtectedPath("/investorship")).toBe(false);

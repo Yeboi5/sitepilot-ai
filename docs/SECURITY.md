@@ -55,6 +55,11 @@ threat model, the list of controls in place, and the gates that must pass before
 | Tampering | Fake documents | File signature check (PDF/JPEG/PNG), 10 MB limit, owner declaration, human review | ✅ |
 | Info disclosure | Buyers identifying off-market owners | Enquiry target is an opaque id; buyers can't read owner rows; owners see "A SitePilot member"; contact details rejected in messages | ✅ tested |
 | DoS / abuse | Enquiry spam / harassment | Verified + opted-in owners only; 5 per buyer per day; no self-enquiries; opting out closes open enquiries | ✅ tested |
+| Info disclosure | Location leaked from photo metadata | Uploads re-encoded server-side; EXIF (GPS, camera serials) dropped; originals never stored | ✅ tested |
+| Info disclosure | Private photos exposed by sharing | Share links expose one watermarked output via `shared_vision`; token stored as SHA-256 only; links unindexed, no-referrer, revocable; sources never shared | ✅ tested |
+| Misrepresentation | AI concepts mistaken for plans or approvals | AI CONCEPT mark burned into every output by SitePilot (not the provider); `watermarked` can't be false; disclaimers on every view | ✅ tested |
+| DoS / cost | Runaway image-generation spend | Credit reserved before each provider call (10/day); versions can't be stored without one; 50 projects per user; 15 MB / 50 MP input limits | ✅ tested |
+| Tampering | Malicious image files | Signature check, decode in sharp with a pixel limit, re-encode to JPEG; served only from our re-encoded copy with `nosniff` | ✅ |
 | Elevation | Self-verifying a firm | `verification_status` not client-writable | ✅ tested |
 
 ## Controls in place (Sprint 0/1)
@@ -94,6 +99,9 @@ threat model, the list of controls in place, and the gates that must pass before
 - Sentry with PII scrubbing.
 - `STORAGE_DRIVER=local` bypasses Storage RLS (DB checks still run); it throws when `VERCEL_ENV`
   is set. Claim evidence is not yet malware-scanned (shared with the Sprint 3 scanner).
+- Vision: a real provider needs a data-processing review (overseas disclosure, retention, training
+  use) before any photo leaves SitePilot. Credits aren't refunded when a provider call fails.
+- Deleting a user account cascades rows but not storage objects; add a cleanup job.
 
 ## New-table checklist (every migration)
 

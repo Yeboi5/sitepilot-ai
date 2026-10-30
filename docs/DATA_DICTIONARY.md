@@ -188,6 +188,24 @@ property record. Decisions only through `decide_claim()`, audited.
 `status` (`open`, `replied`, `declined`, `withdrawn`, `closed`; `closed` is final),
 `owner_reply`. Visible to the buyer and the owner only.
 
+## SitePilot Vision (Blueprint v2.0, V2-4)
+
+### `visual_projects`
+`user_id` (**server**-stamped), optional `owned_property_id` (must be the caller's own home),
+`title`, `mode` (`birds_eye`, `exterior`, `interior`), `source_key` (re-encoded JPEG in
+`vision-sources`), `source_width`, `source_height`, `rights_confirmed_at` (server-set when the
+user confirms they may use the photo). Owner-only; max 50 per user.
+
+### `visual_versions`
+`project_id`, `user_id` (**server**-stamped), `preset`, `style`, `prompt` (≤ 300), `provider`,
+`model`, `cost_cents`, `output_key` (`vision-outputs`), `watermarked` (always true),
+`share_token_hash` (SHA-256 of the secret link token) and `shared_at` (server-set). Owner-only;
+inserts need a reserved credit.
+
+### `vision_usage`
+Per user per Sydney day: `generations` reserved. Read-only to the owner; written only by
+`reserve_vision_credit()`.
+
 ## Platform
 
 ### `audit_events`

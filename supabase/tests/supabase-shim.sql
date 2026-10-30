@@ -89,7 +89,8 @@ create table if not exists storage.objects (
   metadata  jsonb
 );
 alter table storage.objects enable row level security;
-grant select, insert, update, delete on storage.objects to authenticated, service_role;
+-- As on Supabase: every API role holds table privileges; storage RLS decides what each can do.
+grant select, insert, update, delete on storage.objects to anon, authenticated, service_role;
 
 create or replace function storage.foldername(name text) returns text[] language sql immutable as $$
   select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]

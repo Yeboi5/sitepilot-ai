@@ -34,11 +34,14 @@ export default async function HomePage({ params, searchParams }: { params: Promi
     .maybeSingle();
   if (!home) notFound();
 
-  const [{ data: claims }, { data: notes }, { data: tasks }, { data: enquiries }] = await Promise.all([
+  const [{ data: claims }, { data: notes }, { data: tasks }, { data: enquiries }, { data: concepts }] = await Promise.all([
     supabase.from("homeowner_claims").select("id, status, created_at, decided_at, decision_note").eq("owned_property_id", id).order("created_at", { ascending: false }),
     supabase.from("property_notes").select("id, body, created_at").eq("owned_property_id", id).order("created_at", { ascending: false }),
     supabase.from("maintenance_items").select("id, title, due_on, done_at").eq("owned_property_id", id).order("done_at", { nullsFirst: true }).order("due_on"),
     supabase.from("buyer_enquiries").select("id, message, status, owner_reply, created_at").eq("owned_property_id", id).order("created_at", { ascending: false }),
+    FLAGS.vision
+      ? supabase.from("visual_projects").select("id, title").eq("owned_property_id", id).order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
   ]);
 
   const latest = claims?.[0];
@@ -219,14 +222,24 @@ export default async function HomePage({ params, searchParams }: { params: Promi
         <h2 className="flex items-center gap-2 font-semibold">
           <ImageIcon aria-hidden="true" className="h-5 w-5 text-brand-600" /> Saved concepts
         </h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Ideas you create in SitePilot Vision will appear here.{" "}
-          {FLAGS.vision ? (
-            <Link href="/vision" className="inline-flex items-center gap-1 font-semibold text-brand-700 underline">
-              <Wand2 aria-hidden="true" className="h-4 w-4" /> Try Vision
-            </Link>
-          ) : null}
-        </p>
+        {(concepts ?? []).length ? (
+          <ul className="mt-2 space-y-1 text-sm">
+            {(concepts ?? []).map((c) => (
+              <li key={c.id}>
+                <Link href={`/vision/${c.id}`} className="font-semibold text-brand-700 underline">
+                  {c.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">Concepts you create in SitePilot Vision for this home will appear here.</p>
+        )}
+        {FLAGS.vision ? (
+          <Link href={`/vision/new?home=${home.id}`} className="mt-3 inline-flex min-h-11 items-center gap-1 font-semibold text-brand-700 underline">
+            <Wand2 aria-hidden="true" className="h-4 w-4" /> New concept for this home
+          </Link>
+        ) : null}
       </Card>
 
       <Card>

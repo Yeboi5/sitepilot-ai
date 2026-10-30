@@ -1198,6 +1198,152 @@ export type Database = {
         Relationships: [
         ];
       };
+      vision_usage: {
+        Row: {
+          user_id: string;
+          day: string;
+          generations: number;
+        };
+        Insert: {
+          user_id: string;
+          day: string;
+          generations?: number;
+        };
+        Update: {
+          user_id?: string;
+          day?: string;
+          generations?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "vision_usage_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      visual_projects: {
+        Row: {
+          id: string;
+          user_id: string;
+          owned_property_id: string | null;
+          title: string;
+          mode: Database["public"]["Enums"]["vision_mode"];
+          source_key: string;
+          source_width: number;
+          source_height: number;
+          rights_confirmed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          owned_property_id?: string | null;
+          title: string;
+          mode: Database["public"]["Enums"]["vision_mode"];
+          source_key: string;
+          source_width: number;
+          source_height: number;
+          rights_confirmed_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          owned_property_id?: string | null;
+          title?: string;
+          mode?: Database["public"]["Enums"]["vision_mode"];
+          source_key?: string;
+          source_width?: number;
+          source_height?: number;
+          rights_confirmed_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "visual_projects_owned_property_id_fkey";
+            columns: ["owned_property_id"];
+            isOneToOne: false;
+            referencedRelation: "owned_properties";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "visual_projects_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      visual_versions: {
+        Row: {
+          id: string;
+          project_id: string;
+          user_id: string;
+          preset: string;
+          style: string;
+          prompt: string | null;
+          provider: string;
+          model: string;
+          cost_cents: number;
+          output_key: string;
+          watermarked: boolean;
+          share_token_hash: string | null;
+          shared_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          user_id: string;
+          preset: string;
+          style: string;
+          prompt?: string | null;
+          provider: string;
+          model: string;
+          cost_cents?: number;
+          output_key: string;
+          watermarked?: boolean;
+          share_token_hash?: string | null;
+          shared_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string;
+          preset?: string;
+          style?: string;
+          prompt?: string | null;
+          provider?: string;
+          model?: string;
+          cost_cents?: number;
+          output_key?: string;
+          watermarked?: boolean;
+          share_token_hash?: string | null;
+          shared_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "visual_versions_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "visual_projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "visual_versions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -1209,6 +1355,9 @@ export type Database = {
       ensure_personal_workspace: { Args: never; Returns: string };
       record_claim_evidence_view: { Args: { claim: string }; Returns: string };
       record_report_export: { Args: { prop: string; export_format: string }; Returns: undefined };
+      reserve_vision_credit: { Args: never; Returns: number };
+      shared_vision: { Args: { token_hash: string }; Returns: { version_id: string; output_key: string; mode: Database["public"]["Enums"]["vision_mode"]; preset: string; style: string; created_at: string }[] };
+      vision_credits_left: { Args: never; Returns: number };
     };
     Enums: {
       claim_status: "pending" | "verified" | "rejected" | "withdrawn";
@@ -1231,6 +1380,7 @@ export type Database = {
       swipe_source: "swipe" | "button" | "keyboard" | "import" | "list";
       task_status: "open" | "in_progress" | "done" | "cancelled";
       verification_status: "unverified" | "pending" | "verified" | "rejected";
+      vision_mode: "birds_eye" | "exterior" | "interior";
     };
     CompositeTypes: { [_ in never]: never };
   };

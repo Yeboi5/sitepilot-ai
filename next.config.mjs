@@ -28,7 +28,8 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["@prisma/client", "bcryptjs"],
-  experimental: { serverActions: { bodySizeLimit: "2mb" } },
+  // Uploads go through Server Actions: claim evidence (10 MB) and Vision photos (15 MB).
+  experimental: { serverActions: { bodySizeLimit: "16mb" } },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

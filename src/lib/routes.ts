@@ -2,6 +2,8 @@
 const PROTECTED_PREFIXES = ["/dashboard", "/investor", "/firm", "/settings", "/onboarding", "/analyse", "/my-property", "/verify"];
 
 export function isProtectedPath(pathname: string): boolean {
+  // Vision: the intro page and shared links are public; projects need an account.
+  if (pathname.startsWith("/vision/")) return !pathname.startsWith("/vision/shared/");
   return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 

@@ -76,8 +76,11 @@ async function main() {
     where con.contype = 'f' and n.nspname = 'public' and rn.nspname = 'public'
     order by rel.relname, con.conname`);
 
-  const fns = await db.query<{ name: string; args: string; returns: string }>(`
-    select p.proname as name, pg_get_function_arguments(p.oid) as args, t.typname as returns
+  const fns = await db.query<{ name: string; args: string; returns: string; table_cols: { name: string; type: string }[] }>(`
+    select p.proname as name, pg_get_function_arguments(p.oid) as args, t.typname as returns,
+      -- "returns table (...)" columns, which the Supabase client returns as an array of rows
+      coalesce((select json_agg(json_build_object('name', p.proargnames[i], 'type', (select typname from pg_type where oid = p.proallargtypes[i])) order by i)
+                from generate_subscripts(p.proargmodes, 1) i where p.proargmodes[i] = 't'), '[]') as table_cols
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace join pg_type t on t.oid = p.prorettype
     where n.nspname = 'public'
       and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
@@ -147,7 +150,8 @@ async function main() {
         const mapped = enumNames.has(udt) ? `Database["public"]["Enums"]["${udt}"]` : "string";
         return `${name}: ${mapped}`;
       });
-    out.push(`      ${fn.name}: { Args: ${args.length ? `{ ${args.join("; ")} }` : "never"}; Returns: ${tsType(fn.returns)} };`);
+    const returns = fn.table_cols.length ? `{ ${fn.table_cols.map((c) => `${c.name}: ${tsType(c.type)}`).join("; ")} }[]` : tsType(fn.returns);
+    out.push(`      ${fn.name}: { Args: ${args.length ? `{ ${args.join("; ")} }` : "never"}; Returns: ${returns} };`);
   }
   out.push("    };");
   out.push("    Enums: {");

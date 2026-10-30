@@ -2,6 +2,41 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.7.0] - 2026-10-30
+
+Master Blueprint v2.0, V2-4: SitePilot Vision (photo-based, mock provider).
+
+### Added
+- Migration `20261030040000_vision.sql`: `visual_projects`, `visual_versions` (always
+  watermarked; optional secret share link stored as a SHA-256 hash) and `vision_usage`. RPCs
+  `reserve_vision_credit` (10 concepts per user per day, Sydney time), `vision_credits_left` and
+  `shared_vision` (returns only what the share page shows). A version can't be stored without a
+  reserved credit. 50 projects per user. Private `vision-sources` and `vision-outputs` buckets;
+  shared outputs are readable by name only while shared; sources never.
+- `/vision`: guest intro; signed-in project list with today's remaining concepts.
+- `/vision/new`: upload with a photo-rights confirmation. Photos are re-encoded server-side, which
+  removes EXIF metadata (including GPS location), and capped at 2048 px.
+- `/vision/[id]`: three modes (bird's-eye, exterior, interior) with the blueprint's presets, four
+  styles, an optional description, an accessible before/after slider, versions, download, share
+  link (shown once), stop sharing, and delete. Every output carries the AI CONCEPT mark, applied by
+  SitePilot after the provider returns.
+- `/vision/shared/[token]`: public, unindexed, no-referrer page showing only the watermarked concept.
+- `VisionProvider` interface with a deterministic offline mock (labelled "Mock preview" on the
+  image). The `visionRealProvider` flag deliberately fails until a provider is chosen.
+- My Property lists a home's Vision projects and links to "New concept for this home".
+- `docs/VISION_PROVIDERS.md`: evaluation checklist for choosing a real image provider.
+- Tests: 7 RLS tests (117 total), 7 unit tests (173 total), 3 browser tests (47 total).
+
+### Changed
+- `evidence-store` is now a general `object-store` for all private buckets.
+- The DB type generator understands `returns table (...)` functions.
+- Test shim grants `anon` table privileges on `storage.objects`, as Supabase does, so storage RLS
+  (not missing grants) is what the tests exercise.
+
+### Fixed
+- Server Action uploads were capped at 2 MB, so claim documents over 2 MB (allowed up to 10 MB)
+  would have failed. The limit is now 16 MB to cover claims and 15 MB Vision photos.
+
 ## [0.6.0] - 2026-10-30
 
 Master Blueprint v2.0, V2-3: Search Any Address, My Property, homeowner claims and buyer enquiries.

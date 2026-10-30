@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSessionContext } from "@/lib/session";
-import { evidenceStore } from "@/lib/storage/evidence-store";
+import { evidenceStore } from "@/lib/storage/object-store";
 import { createClient } from "@/lib/supabase/server";
 
 const decisionSchema = z.object({

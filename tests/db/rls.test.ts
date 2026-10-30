@@ -1097,3 +1097,142 @@ describe("storage", () => {
     ).rejects.toThrow(RLS_VIOLATION);
   });
 });
+
+describe("SitePilot Vision (V2-4)", () => {
+  const HASH = "a".repeat(64);
+
+  async function project(c: import("pg").PoolClient, opts: { home?: string | null; user?: string } = {}) {
+    const { rows } = await c.query(
+      "insert into public.visual_projects (owned_property_id, title, mode, source_key, source_width, source_height) values ($1, 'Backyard', 'birds_eye', $2, 800, 600) returning id, user_id",
+      [opts.home ?? null, `${opts.user ?? "x"}/p/source.jpg`],
+    );
+    return rows[0] as { id: string; user_id: string };
+  }
+
+  async function version(c: import("pg").PoolClient, projectId: string, key = "x/p/out.jpg") {
+    const { rows } = await c.query(
+      "insert into public.visual_versions (project_id, preset, style, prompt, provider, model, output_key) values ($1, 'pool', 'modern', 'a small plunge pool', 'mock', 'mock-1', $2) returning id, user_id, watermarked",
+      [projectId, key],
+    );
+    return rows[0] as { id: string; user_id: string; watermarked: boolean };
+  }
+
+  it("anonymous users can't read Vision tables or reserve credits", async () => {
+    for (const t of ["visual_projects", "visual_versions", "vision_usage"]) {
+      await expect(as(null, (c) => c.query(`select 1 from public.${t}`)), t).rejects.toThrow(/permission denied/);
+    }
+    await expect(as(null, (c) => c.query("select public.reserve_vision_credit()"))).rejects.toThrow(/permission denied/);
+  });
+
+  it("projects are owner-only and stamped to the caller", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const p = await project(c);
+      expect(p.user_id).toBe(USER.nina);
+      await actAs(c, AUTH.ivy);
+      expect((await c.query("select 1 from public.visual_projects where id = $1", [p.id])).rowCount).toBe(0);
+      expect((await c.query("delete from public.visual_projects where id = $1", [p.id])).rowCount).toBe(0);
+      expect((await c.query("update public.visual_projects set title = 'mine' where id = $1", [p.id])).rowCount).toBe(0);
+    });
+  });
+
+  it("a project can link only to the caller's own home", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      expect((await project(c, { home: OWNED.ivyHome })).id).toBeTruthy();
+      await actAs(c, AUTH.nina);
+      await expectFails(
+        c,
+        "insert into public.visual_projects (owned_property_id, title, mode, source_key, source_width, source_height) values ($1, 'x', 'exterior', 'k', 1, 1)",
+        [OWNED.ivyHome],
+        RLS_VIOLATION,
+      );
+    });
+  });
+
+  it("generations need a reserved credit, and the daily limit is 10", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const p = await project(c);
+      await expectFails(
+        c,
+        "insert into public.visual_versions (project_id, preset, style, provider, model, output_key) values ($1, 'pool', 'modern', 'mock', 'mock-1', 'k')",
+        [p.id],
+        /no Vision credit reserved/,
+      );
+      expect((await c.query("select public.vision_credits_left() as n")).rows[0].n).toBe(10);
+      expect((await c.query("select public.reserve_vision_credit() as n")).rows[0].n).toBe(9);
+      const v = await version(c, p.id);
+      expect(v).toMatchObject({ user_id: USER.nina, watermarked: true });
+      for (let i = 0; i < 9; i++) await c.query("select public.reserve_vision_credit()");
+      await expectFails(c, "select public.reserve_vision_credit()", [], /daily Vision limit reached/);
+      expect((await c.query("select public.vision_credits_left() as n")).rows[0].n).toBe(0);
+      // Usage can't be reset by the client.
+      await expectFails(c, "update public.vision_usage set generations = 0", [], /permission denied/);
+    });
+  });
+
+  it("versions can't be added to someone else's project, and outputs are always watermarked", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const p = await project(c);
+      await actAs(c, AUTH.ivy);
+      await c.query("select public.reserve_vision_credit()");
+      await expectFails(
+        c,
+        "insert into public.visual_versions (project_id, preset, style, provider, model, output_key) values ($1, 'pool', 'modern', 'mock', 'mock-1', 'k')",
+        [p.id],
+        RLS_VIOLATION,
+      );
+      await expectFails(c, "update public.visual_versions set watermarked = false", [], /permission denied/);
+    });
+  });
+
+  it("sharing exposes one version by token hash, without the source, owner or prompt", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const p = await project(c);
+      await c.query("select public.reserve_vision_credit()");
+      const v = await version(c, p.id, `${USER.nina}/${p.id}/out.jpg`);
+      expect((await c.query("select * from public.shared_vision($1)", [HASH])).rowCount).toBe(0);
+      await c.query("update public.visual_versions set share_token_hash = $1 where id = $2", [HASH, v.id]);
+      expect((await c.query("select shared_at from public.visual_versions where id = $1", [v.id])).rows[0].shared_at).not.toBeNull();
+
+      await actAs(c, null);
+      const { rows, fields } = await c.query("select * from public.shared_vision($1)", [HASH]);
+      expect(rows).toHaveLength(1);
+      expect(fields.map((f) => f.name).sort()).toEqual(["created_at", "mode", "output_key", "preset", "style", "version_id"]);
+      expect((await c.query("select * from public.shared_vision($1)", ["b".repeat(64)])).rowCount).toBe(0);
+
+      await actAs(c, AUTH.nina);
+      await c.query("update public.visual_versions set share_token_hash = null where id = $1", [v.id]);
+      await actAs(c, null);
+      expect((await c.query("select * from public.shared_vision($1)", [HASH])).rowCount).toBe(0);
+    });
+  });
+
+  it("storage: own folder only; shared outputs readable by name, sources never", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const p = await project(c);
+      const src = `${USER.nina}/${p.id}/source.jpg`;
+      const out = `${USER.nina}/${p.id}/out.jpg`;
+      await c.query("insert into storage.objects (bucket_id, name) values ('vision-sources', $1), ('vision-outputs', $2)", [src, out]);
+      await expectFails(c, "insert into storage.objects (bucket_id, name) values ('vision-sources', $1)", [`${USER.ivy}/x.jpg`], RLS_VIOLATION);
+      await c.query("select public.reserve_vision_credit()");
+      const v = await version(c, p.id, out);
+
+      await actAs(c, AUTH.ivy);
+      expect((await c.query("select 1 from storage.objects where bucket_id like 'vision-%'")).rowCount).toBe(0);
+      await actAs(c, null);
+      expect((await c.query("select 1 from storage.objects where bucket_id like 'vision-%'")).rowCount).toBe(0);
+
+      await actAs(c, AUTH.nina);
+      await c.query("update public.visual_versions set share_token_hash = $1 where id = $2", [HASH, v.id]);
+      await actAs(c, null);
+      expect(await ids(c, "select name as id from storage.objects where bucket_id like 'vision-%'")).toEqual([out]);
+      await actAs(c, AUTH.ivy);
+      expect((await c.query("delete from storage.objects where name = $1", [out])).rowCount).toBe(0);
+    });
+  });
+});

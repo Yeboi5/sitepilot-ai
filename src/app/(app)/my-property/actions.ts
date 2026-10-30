@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireOrg } from "@/lib/session";
-import { evidenceStore } from "@/lib/storage/evidence-store";
+import { evidenceStore } from "@/lib/storage/object-store";
 import { checkEvidence, safeFileName } from "@/lib/storage/file-check";
 import { createClient } from "@/lib/supabase/server";
 import { formDataToObject, propertySchema, type FormState } from "@/lib/validation";
