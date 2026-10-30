@@ -16,8 +16,9 @@ import { EvidenceForm } from "./evidence-form";
 
 export const metadata: Metadata = { title: "Property" };
 
-export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PropertyPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string }> }) {
   const { id } = await params;
+  const { from } = await searchParams;
   if (!z.string().uuid().safeParse(id).success) notFound();
   const ctx = await requireOrg("investor");
   const supabase = await createClient();
@@ -53,6 +54,16 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
       {property.is_demo ? (
         <div className="mb-6">
           <DemoDataBanner />
+        </div>
+      ) : null}
+
+      {from === "listing" ? (
+        <div className="mb-6">
+          <Alert>
+            Workspace created from the listing, with a starter scenario using the asking price as the land cost. To score development in Compare: add official
+            planning evidence (e.g. a planning certificate) and mark it verified once you&apos;ve checked it against the source, then finish the scenario with
+            your build costs and an assumed sale value.
+          </Alert>
         </div>
       ) : null}
 

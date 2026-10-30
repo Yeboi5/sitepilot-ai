@@ -83,3 +83,44 @@ describe("formatAudCompact", async () => {
     expect(formatAudCompact(950)).toBe("$950");
   });
 });
+
+describe("assessDevelopment", async () => {
+  const { assessDevelopment } = await import("./development");
+  const { EMPTY_ASSUMPTIONS } = await import("@/lib/finance/assumptions");
+  const complete = {
+    ...EMPTY_ASSUMPTIONS,
+    land: { basis: "purchase_price" as const, amount: 1_000_000 },
+    hard: { demolition: 0, siteWorks: 0, construction: 500_000, infrastructure: 0 },
+    sale: { grossRealisation: 1_800_000, sellingCostsPct: 0 },
+  };
+  const verified = { source_type: "planning_certificate", verification_status: "verified", is_demo: false };
+  const scen = (a: unknown, updated = "2026-10-30T00:00:00Z") => ({ id: "s1", name: "Duplex", assumptions_json: a, updated_at: updated });
+
+  it("scores only with verified official evidence and a complete scenario", () => {
+    const d = assessDevelopment("w1", [verified], [scen(complete)]);
+    expect(d.missing).toEqual([]);
+    expect(d.roi).toBeCloseTo(0.2, 6); // (1.8m − 1.5m) ÷ 1.5m
+  });
+  it("explains what's missing", () => {
+    expect(assessDevelopment("w1", [], []).missing).toEqual([
+      "verify an official planning record (e.g. a planning certificate) in the workspace",
+      "add a develop-and-sell scenario",
+    ]);
+    const starter = assessDevelopment("w1", [verified], [scen({ ...EMPTY_ASSUMPTIONS, land: { basis: "purchase_price", amount: 900_000 } })]);
+    expect(starter.roi).toBeNull();
+    expect(starter.missing).toEqual(["finish the scenario: add build costs and an assumed sale value"]);
+  });
+  it("ignores unverified, DEMO and non-planning evidence", () => {
+    const ev = [
+      { ...verified, verification_status: "unverified" },
+      { ...verified, is_demo: true },
+      { source_type: "title_search", verification_status: "verified", is_demo: false },
+    ];
+    expect(assessDevelopment("w1", ev, [scen(complete)]).roi).toBeNull();
+  });
+  it("uses the latest develop-and-sell scenario and skips retain-and-rent or invalid ones", () => {
+    const rent = { ...complete, strategy: "retain_and_rent" };
+    const d = assessDevelopment("w1", [verified], [scen(complete, "2026-10-01T00:00:00Z"), scen(rent, "2026-10-30T00:00:00Z"), scen({ nope: 1 }, "2026-10-31T00:00:00Z")]);
+    expect(d.scenario?.complete).toBe(true);
+  });
+});

@@ -1,14 +1,15 @@
-import { EyeOff } from "lucide-react";
+import { EyeOff, MapPin, X } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SwipeDeck } from "@/components/discovery/swipe-deck";
 import { FLAGS } from "@/lib/flags";
+import { areaFilter, parseAreas } from "@/lib/discovery/area";
 import { LISTING_COLUMNS, MARKET_LABEL, type Kind, type Market } from "@/lib/discovery/types";
 import { STATES, STATE_INFO, isState } from "@/lib/jurisdictions";
 import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
-type Params = { market?: string; state?: string; beds?: string };
+type Params = { market?: string; state?: string; beds?: string; area?: string };
 
 const COPY: Record<Kind, { title: string; intro: string; accent: string }> = {
   home: { title: "Find My Home", intro: "Homes that fit your life. Swipe right to save, left to pass.", accent: "text-brand-700" },
@@ -25,13 +26,19 @@ export async function DeckPage({ kind, searchParams }: { kind: Kind; searchParam
   const market: Market = searchParams.market === "off_market" ? "off_market" : "for_sale";
   const state = isState(searchParams.state) ? searchParams.state : null;
   const beds = kind === "home" ? Math.max(0, Math.min(6, Number(searchParams.beds) || 0)) : 0;
+  const areas = parseAreas(searchParams.area);
+  const area = areas.labels.join(", ");
 
   const ctx = await getSessionContext();
   const supabase = await createClient();
   let query = supabase.from("listings").select(LISTING_COLUMNS).eq("kind", kind).eq("market", market).order("listed_on", { ascending: false, nullsFirst: false }).order("id");
   if (state) query = query.eq("state", state);
   if (beds) query = query.gte("bedrooms", beds);
-  const { data: listings } = await query.limit(100);
+  const or = areaFilter(areas);
+  if (or) query = query.or(or);
+  // Suggestions for the area box: every town and postcode we have listings for.
+  const [{ data: listings }, { data: places }] = await Promise.all([query.limit(200), supabase.from("listings").select("suburb, state, postcode").limit(1000)]);
+  const suggestions = [...new Set((places ?? []).map((p) => `${p.suburb} ${p.state} ${p.postcode}`))].sort();
 
   // Signed-in users: hide listings already saved or passed (latest decision wins).
   let decidedIds: string[] = [];
@@ -49,11 +56,12 @@ export async function DeckPage({ kind, searchParams }: { kind: Kind; searchParam
 
   const copy = COPY[kind];
   const base = `/discover/${kind}`;
-  const tabHref = (m: Market) => {
+  const tabHref = (m: Market, keepArea = true) => {
     const p = new URLSearchParams();
     if (m === "off_market") p.set("market", m);
     if (state) p.set("state", state);
     if (beds) p.set("beds", String(beds));
+    if (area && keepArea) p.set("area", area);
     const s = p.toString();
     return s ? `${base}?${s}` : base;
   };
@@ -81,6 +89,50 @@ export async function DeckPage({ kind, searchParams }: { kind: Kind; searchParam
       </nav>
 
       {/* Collapsed by default so the first card is visible quickly on phones. */}
+      <form method="get" action={base} role="search" aria-label="Search an area" className="mx-auto flex max-w-md gap-2">
+        {market === "off_market" ? <input type="hidden" name="market" value="off_market" /> : null}
+        {state ? <input type="hidden" name="state" value={state} /> : null}
+        {beds ? <input type="hidden" name="beds" value={String(beds)} /> : null}
+        <label htmlFor="area" className="sr-only">
+          Town, suburb or postcode
+        </label>
+        <div className="relative flex-1">
+          <MapPin aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <input
+            id="area"
+            name="area"
+            list="area-suggestions"
+            defaultValue={area}
+            placeholder="Town, suburb or postcode"
+            autoComplete="off"
+            className="block min-h-11 w-full rounded-xl border border-sand-300 bg-white pl-9 pr-3 text-base sm:text-sm"
+          />
+          <datalist id="area-suggestions">
+            {suggestions.map((x) => (
+              <option key={x} value={x} />
+            ))}
+          </datalist>
+        </div>
+        <button type="submit" className="min-h-11 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700">
+          Search
+        </button>
+      </form>
+      {area ? (
+        <p className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-2 text-sm">
+          <span className="text-slate-600">Showing</span>
+          {areas.labels.map((l) => (
+            <span key={l} className="rounded-full bg-brand-50 px-3 py-1 font-semibold text-brand-700">
+              {l}
+            </span>
+          ))}
+          <Link href={tabHref(market, false)} className="inline-flex min-h-11 items-center gap-1 text-slate-600 underline">
+            <X aria-hidden="true" className="h-4 w-4" /> All areas
+          </Link>
+        </p>
+      ) : (
+        <p className="mx-auto max-w-md text-center text-xs text-slate-500">Separate several towns with commas, e.g. Newcastle, Wollongong.</p>
+      )}
+
       <details className="mx-auto max-w-md rounded-2xl border border-sand-200 bg-white px-4 py-2" open={Boolean(state || beds) || undefined}>
         <summary className="flex min-h-11 cursor-pointer items-center justify-between text-sm font-semibold text-slate-800">
           <span>Filters</span>
@@ -90,6 +142,7 @@ export async function DeckPage({ kind, searchParams }: { kind: Kind; searchParam
         </summary>
       <form method="get" action={base} className="flex flex-wrap items-end gap-2 pb-2">
         {market === "off_market" ? <input type="hidden" name="market" value="off_market" /> : null}
+        {area ? <input type="hidden" name="area" value={area} /> : null}
         <div className="min-w-[10rem] flex-1">
           <label htmlFor="state" className="block text-xs font-medium text-slate-700">
             State or territory
@@ -141,11 +194,11 @@ export async function DeckPage({ kind, searchParams }: { kind: Kind; searchParam
 
       {(listings ?? []).length === 0 ? (
         <p className="mx-auto max-w-md rounded-2xl border border-dashed border-sand-300 bg-white p-8 text-center text-slate-600">
-          No listings match. Try another state or fewer bedrooms.
+          {area ? `No ${MARKET_LABEL[market].toLowerCase()} listings in ${area} yet. Try a nearby town, or all areas.` : "No listings match. Try another state or fewer bedrooms."}
         </p>
       ) : (
         // Re-mount the deck when the filters change so it starts fresh.
-        <SwipeDeck key={`${kind}-${market}-${state}-${beds}`} listings={listings ?? []} signedIn={Boolean(ctx)} decidedIds={decidedIds} />
+        <SwipeDeck key={`${kind}-${market}-${state}-${beds}-${area}`} listings={listings ?? []} signedIn={Boolean(ctx)} decidedIds={decidedIds} />
       )}
     </div>
   );

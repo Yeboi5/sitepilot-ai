@@ -2,6 +2,26 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.10.0] - 2026-10-30
+
+Discover area search, and Compare stage C6 (development feasibility from your workspace).
+
+### Added
+- **Area search in Discover**: search one or more towns, suburbs or postcodes (comma-separated,
+  with suggestions); the deck shows only those areas, and the area carries across the For Sale /
+  Off-Market tabs and filters. Exact matches only: "nearby" needs licensed address and boundary
+  data. Search Any Address results link to "Swipe <town>".
+- More DEMO listings: 384 in total (8 per town: 3 homes and 3 investments for sale, plus
+  off-market), each with a DEMO estimate. The original 48 listings are unchanged.
+- **Analyse this deal** (listing page and Compare → Advanced → Development): opens or creates the
+  investor workspace linked to the listing's property record, with a starter develop-and-sell
+  scenario using the asking price as the land cost. Off-market homes can't be analysed as deals.
+- Compare scores **development feasibility** only when the linked workspace has a verified official
+  planning record (certificate, portal record, LEP map or council record) and a complete
+  develop-and-sell scenario; otherwise it says exactly what's missing. DEMO properties are labelled
+  "your own entries, not official data". (`src/lib/compare/development.ts`)
+- Tests: 11 unit tests (213 total), 2 browser tests (54 total).
+
 ## [0.9.0] - 2026-10-30
 
 Compare My Properties: Quick Compare for everyday users; the full screen becomes Advanced.

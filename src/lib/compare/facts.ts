@@ -1,5 +1,6 @@
 import type { Listing } from "@/lib/discovery/types";
 import type { Tables } from "@/lib/supabase/database.types";
+import type { DevelopmentStatus } from "./development";
 import { dutyBracketsSchema, dutyFromBrackets } from "./duty";
 import type { PropertyFacts } from "./engine";
 
@@ -11,13 +12,20 @@ export type DutyPreset = Pick<Tables<"duty_presets">, "state" | "version" | "bra
 export type CompareListing = Listing & { property_record_id: string | null };
 
 /** Everything the comparison screen shows about one property, plus the engine's inputs. */
-export type CompareProperty = { listing: CompareListing; estimate: Estimate | null; duty: DutyPreset | null; facts: PropertyFacts };
+export type CompareProperty = {
+  listing: CompareListing;
+  estimate: Estimate | null;
+  duty: DutyPreset | null;
+  /** The viewer's linked workspace for this property, if any (stage C6). */
+  development: DevelopmentStatus | null;
+  facts: PropertyFacts;
+};
 
 /**
  * Builds engine inputs from a listing, its latest estimate and the state's duty preset. Listing
  * figures win over estimates; anything missing stays null (shown as Unknown).
  */
-export function factsFor(listing: CompareListing, estimate: Estimate | null, duty: DutyPreset | null): CompareProperty {
+export function factsFor(listing: CompareListing, estimate: Estimate | null, duty: DutyPreset | null, development: DevelopmentStatus | null = null): CompareProperty {
   const forSale = listing.market === "for_sale";
   const price = forSale && listing.asking_price ? listing.asking_price : (estimate?.value_mid ?? null);
   const priceSource = forSale && listing.asking_price ? "listing" : estimate ? "estimate" : null;
@@ -32,6 +40,7 @@ export function factsFor(listing: CompareListing, estimate: Estimate | null, dut
     listing,
     estimate,
     duty: brackets?.success ? duty : null,
+    development,
     facts: {
       id: listing.id,
       label: listing.headline,
@@ -42,7 +51,7 @@ export function factsFor(listing: CompareListing, estimate: Estimate | null, dut
       rentSource,
       stampDuty,
       openChecks: listing.risk_flags.length,
-      verifiedDevelopmentRoi: null, // needs a linked workspace with verified evidence (stage C6)
+      verifiedDevelopmentRoi: development?.roi ?? null, // see development.ts
       historicalGrowthPct: null, // needs licensed price history
       completeness: checks.filter(Boolean).length / checks.length,
     },

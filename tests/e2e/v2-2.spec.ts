@@ -14,20 +14,20 @@ async function headline(page: Page) {
 test.describe("guest discovery", () => {
   test("home deck: demo cards, Save and Pass buttons, undo, guest shortlist", async ({ page }) => {
     await page.goto("/discover/home");
-    await expect(remaining(page)).toHaveText("16 to go");
+    await expect(remaining(page)).toHaveText("160 to go");
     await expect(topCard(page).getByText("DEMO", { exact: true })).toBeVisible();
     await expect(topCard(page).getByText("illustrative price")).toBeVisible();
 
     const first = await headline(page);
     await page.getByRole("button", { name: "Save" }).click();
-    await expect(remaining(page)).toHaveText("15 to go");
+    await expect(remaining(page)).toHaveText("159 to go");
     await expect(page.getByText(`Saved: ${first}`)).toBeAttached(); // screen-reader announcement
 
     const second = await headline(page);
     await page.getByRole("button", { name: "Pass" }).click();
     await page.getByRole("button", { name: "Undo" }).click();
     expect(await headline(page)).toBe(second);
-    await expect(remaining(page)).toHaveText("15 to go");
+    await expect(remaining(page)).toHaveText("159 to go");
 
     await page.goto("/saved");
     await expect(page.getByRole("link", { name: first })).toBeVisible();
@@ -35,23 +35,23 @@ test.describe("guest discovery", () => {
 
     // Decisions persist on this device: the saved card isn't shown again.
     await page.goto("/discover/home");
-    await expect(remaining(page)).toHaveText("15 to go");
+    await expect(remaining(page)).toHaveText("159 to go");
   });
 
   test("keyboard: → saves and ← passes", async ({ page }) => {
     await page.goto("/discover/home");
-    await expect(remaining(page)).toHaveText("16 to go");
+    await expect(remaining(page)).toHaveText("160 to go");
     await deck(page).focus();
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowLeft");
-    await expect(remaining(page)).toHaveText("14 to go");
+    await expect(remaining(page)).toHaveText("158 to go");
     await page.keyboard.press("z");
-    await expect(remaining(page)).toHaveText("15 to go");
+    await expect(remaining(page)).toHaveText("159 to go");
   });
 
   test("drag right to save", async ({ page }) => {
     await page.goto("/discover/home");
-    await expect(remaining(page)).toHaveText("16 to go");
+    await expect(remaining(page)).toHaveText("160 to go");
     const first = await headline(page);
     const box = (await topCard(page).boundingBox())!;
     const y = box.y + 60;
@@ -59,7 +59,7 @@ test.describe("guest discovery", () => {
     await page.mouse.down();
     for (let dx = 20; dx <= 220; dx += 20) await page.mouse.move(box.x + box.width / 2 + dx, y);
     await page.mouse.up();
-    await expect(remaining(page)).toHaveText("15 to go");
+    await expect(remaining(page)).toHaveText("159 to go");
     await page.goto("/saved");
     await expect(page.getByRole("link", { name: first })).toBeVisible();
   });
@@ -69,7 +69,7 @@ test.describe("guest discovery", () => {
     await page.getByRole("link", { name: "Off-Market Potential" }).click();
     await expect(page).toHaveURL(/market=off_market/);
     await expect(page.getByRole("note")).toContainText("NOT FOR SALE");
-    await expect(remaining(page)).toHaveText("8 to go");
+    await expect(remaining(page)).toHaveText("32 to go");
     const card = topCard(page);
     await expect(card.getByText("NOT FOR SALE", { exact: true })).toBeVisible();
     await expect(card.getByText("Not for sale", { exact: true })).toBeVisible();
@@ -81,7 +81,7 @@ test.describe("guest discovery", () => {
   test("investment deck looks different and shows labelled yield with assumptions", async ({ page }) => {
     await page.goto("/discover/investment");
     await expect(page.getByRole("heading", { name: "Find My Investment" })).toBeVisible();
-    await expect(remaining(page)).toHaveText("16 to go");
+    await expect(remaining(page)).toHaveText("160 to go");
     const card = topCard(page);
     await expect(card.getByText("Indicative gross yield")).toBeVisible();
     await card.getByText("Assumptions and source").click();
@@ -95,7 +95,7 @@ test.describe("guest discovery", () => {
     await page.getByLabel("State or territory").selectOption("WA");
     await page.getByRole("button", { name: "Apply" }).click();
     await expect(page).toHaveURL(/state=WA/);
-    await expect(remaining(page)).toHaveText("2 to go");
+    await expect(remaining(page)).toHaveText("20 to go");
     await expect(topCard(page).getByText(/ WA 6\d{3}/)).toBeVisible();
   });
 
@@ -112,7 +112,7 @@ test.describe("signed-in discovery", () => {
   test("saves sync to the account and guest saves can be imported", async ({ page }) => {
     // As a guest, save one listing on this device.
     await page.goto("/discover/investment");
-    await expect(remaining(page)).toHaveText("16 to go");
+    await expect(remaining(page)).toHaveText("160 to go");
     const guestPick = await headline(page);
     await page.getByRole("button", { name: "Save" }).click();
 
@@ -129,7 +129,7 @@ test.describe("signed-in discovery", () => {
     // Wait for the server action to land before dropping the session.
     const synced = page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/discover/home"));
     await page.getByRole("button", { name: "Save" }).click();
-    await expect(remaining(page)).toHaveText("1 to go");
+    await expect(remaining(page)).toHaveText("19 to go");
     await synced;
     await page.context().clearCookies();
     await signIn(page, ACCOUNTS.oscar);
@@ -150,11 +150,11 @@ test.describe("signed-in discovery", () => {
 
 test("discover deck fits an iPhone screen and the card is visible @mobile", async ({ page }) => {
   await page.goto("/discover/home");
-  await expect(remaining(page)).toHaveText("16 to go");
+  await expect(remaining(page)).toHaveText("160 to go");
   const box = (await topCard(page).boundingBox())!;
   expect(box.y).toBeLessThan(844);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(remaining(page)).toHaveText("15 to go");
+  await expect(remaining(page)).toHaveText("159 to go");
 });

@@ -184,3 +184,12 @@ with at least two known values, the best property scores 1 and the worst 0, line
 within 0.05 are reported as a tie. Unknown values earn no points and are named in the explanation; a
 priority with fewer than two known values is skipped. Measures: monthly repayments, price or
 estimated value, gross yield, year-1 cash flow, cash required, bedrooms, land area.
+
+## Development feasibility in Compare (stage C6)
+
+Source: `src/lib/compare/development.ts`. The development category of the Investment Match Score
+uses the return on cost (`feasibility-1.0.0`) of the most recently updated develop-and-sell scenario
+in the viewer's workspace linked to the property, and only when (a) that workspace has at least one
+verified, non-DEMO official planning record (planning certificate, planning portal record, LEP map
+or council record) and (b) the scenario is complete (land value, build cost and assumed sale value
+all above zero). Otherwise the category is "insufficient evidence" with the missing steps listed.

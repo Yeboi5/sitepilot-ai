@@ -1,6 +1,7 @@
 import "server-only";
 import { LISTING_COLUMNS } from "@/lib/discovery/types";
 import type { createClient } from "@/lib/supabase/server";
+import { assessDevelopment, type DevelopmentStatus } from "./development";
 import { factsFor, type CompareListing, type CompareProperty, type DutyPreset, type Estimate } from "./facts";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -41,9 +42,51 @@ export async function loadCompareProperties(supabase: Supabase, ids: string[]): 
   for (const p of [...(presets ?? [])].sort((a, b) => Number(b.status === "reviewed") - Number(a.status === "reviewed"))) {
     if (!presetFor.has(p.state)) presetFor.set(p.state, p);
   }
+  const developmentFor = await loadDevelopment(supabase, records);
   const byId = new Map(rows.map((l) => [l.id, l]));
   return ids
     .map((id) => byId.get(id))
     .filter((l): l is CompareListing => !!l)
-    .map((l) => factsFor(l, l.property_record_id ? (estimateFor.get(l.property_record_id) ?? null) : null, presetFor.get(l.state) ?? null));
+    .map((l) =>
+      factsFor(
+        l,
+        l.property_record_id ? (estimateFor.get(l.property_record_id) ?? null) : null,
+        presetFor.get(l.state) ?? null,
+        l.property_record_id ? (developmentFor.get(l.property_record_id) ?? null) : null,
+      ),
+    );
+}
+
+/**
+ * The viewer's workspaces linked to these property records (RLS decides which they can read;
+ * guests can read none), with their evidence and scenarios. The most recently updated workspace
+ * per record wins.
+ */
+async function loadDevelopment(supabase: Supabase, records: string[]): Promise<Map<string, DevelopmentStatus>> {
+  const out = new Map<string, DevelopmentStatus>();
+  if (!records.length) return out;
+  const { data: workspaces } = await supabase
+    .from("properties")
+    .select("id, property_record_id, updated_at")
+    .in("property_record_id", records)
+    .order("updated_at", { ascending: false });
+  const chosen = new Map<string, string>();
+  for (const w of workspaces ?? []) if (w.property_record_id && !chosen.has(w.property_record_id)) chosen.set(w.property_record_id, w.id);
+  const ids = [...chosen.values()];
+  if (!ids.length) return out;
+  const [{ data: evidence }, { data: scenarios }] = await Promise.all([
+    supabase.from("evidence").select("property_id, source_type, verification_status, is_demo").in("property_id", ids),
+    supabase.from("scenarios").select("id, property_id, name, assumptions_json, updated_at").in("property_id", ids),
+  ]);
+  for (const [record, ws] of chosen) {
+    out.set(
+      record,
+      assessDevelopment(
+        ws,
+        (evidence ?? []).filter((e) => e.property_id === ws),
+        (scenarios ?? []).filter((s) => s.property_id === ws),
+      ),
+    );
+  }
+  return out;
 }

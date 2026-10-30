@@ -87,6 +87,13 @@ export function explain(rows: Row[], a: CompareAssumptions): string[] {
 
   const unscored = rows.filter((r) => r.score.score == null).map((r) => r.label);
   if (unscored.length && scored.length) out.push(`Not scored (not enough evidence): ${unscored.join(", ")}.`);
-  out.push("Development feasibility and price history are excluded until there's verified planning evidence and licensed market data.");
+  const devMissing = rows.filter((r) => r.score.components.find((c) => c.category === "development")?.score == null).map((r) => r.label);
+  out.push(
+    devMissing.length === rows.length
+      ? "Development feasibility and price history are excluded until there's verified planning evidence and licensed market data."
+      : devMissing.length
+        ? `Development feasibility is scored only where there's verified planning evidence and a complete scenario (not yet for ${devMissing.join(", ")}). Price history needs licensed market data.`
+        : "Development feasibility uses each property's scenario and verified planning evidence. Price history needs licensed market data.",
+  );
   return out;
 }

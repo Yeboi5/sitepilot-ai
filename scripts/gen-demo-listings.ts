@@ -88,23 +88,23 @@ const PLAN = [
   ["investment", "off_market"],
 ] as const;
 
-states.forEach((state, si) => {
-  PLAN.forEach(([kind, market], i) => {
+function build(state: State, si: number, i: number, kind: "home" | "investment", market: "for_sale" | "off_market", v: number) {
     n += 1;
     const [suburb, postcode] = SUBURBS[state][i]!;
-    const type = kind === "home" ? TYPES[(si + i) % 4]! : TYPES[(si + i) % 5]!;
-    const beds = type === "land" ? 0 : type === "apartment" ? 2 : 2 + ((si + i) % 3);
-    const baths = type === "land" ? 0 : 1 + ((si + i) % 2);
-    const cars = type === "land" ? 0 : type === "apartment" ? 1 : 1 + ((si * 3 + i) % 2);
-    const land = type === "apartment" ? null : 280 + ((si * 97 + i * 53) % 520);
-    const price = Math.round((BASE[state] * (0.8 + 0.12 * beds + ((si + i) % 3) * 0.05)) / 5000) * 5000;
+    const k = i + v; // v = 0 keeps the original 48 rows unchanged
+    const type = kind === "home" ? TYPES[(si + k) % 4]! : TYPES[(si + k) % 5]!;
+    const beds = type === "land" ? 0 : type === "apartment" ? 2 : 2 + ((si + k) % 3);
+    const baths = type === "land" ? 0 : 1 + ((si + k) % 2);
+    const cars = type === "land" ? 0 : type === "apartment" ? 1 : 1 + ((si * 3 + k) % 2);
+    const land = type === "apartment" ? null : 280 + ((si * 97 + k * 53) % 520);
+    const price = Math.round((BASE[state] * (0.8 + 0.12 * beds + ((si + k) % 3) * 0.05)) / 5000) * 5000;
     const forSale = market === "for_sale";
     const street = forSale ? `[DEMO] ${10 + n} Example Lane` : null;
-    const yieldPct = 0.034 + ((si * 7 + i * 3) % 25) / 1000; // 3.4%–5.8%, illustrative
+    const yieldPct = 0.034 + ((si * 7 + k * 3) % 25) / 1000; // 3.4%–5.8%, illustrative
     // Rent assumptions only for for-sale, built investment listings (none for land, and none for
     // off-market homes, so nothing implies knowledge of a real owner's property).
     const rent = kind === "investment" && forSale && type !== "land" ? Math.round((price * yieldPct) / 52 / 10) * 10 : null;
-    const idea = ideaFor(type, si + i);
+    const idea = ideaFor(type, si + k);
     const recordId = id("31000000", n);
     const listingId = id("30000000", n);
     const label = type === "land" ? "land" : `${beds}-bedroom ${type}`;
@@ -167,16 +167,35 @@ states.forEach((state, si) => {
       price_display: forSale ? q(`$${price.toLocaleString("en-AU")}`) : "null",
       indicative_weekly_rent: rent ? String(rent) : "null",
       development_idea: kind === "investment" ? q(idea) : "null",
-      risk_flags: kind === "investment" ? arr(RISKS[(si + i) % RISKS.length]!) : "'{}'::text[]",
-      lifestyle_tags: kind === "home" ? arr(HOME_TAGS[(si + i) % HOME_TAGS.length]!) : "'{}'::text[]",
+      risk_flags: kind === "investment" ? arr(RISKS[(si + k) % RISKS.length]!) : "'{}'::text[]",
+      lifestyle_tags: kind === "home" ? arr(HOME_TAGS[(si + k) % HOME_TAGS.length]!) : "'{}'::text[]",
       illustration_seed: String(n * 37),
       provenance: q(
         JSON.stringify({ source: "SitePilot synthetic demo data", licence: "fictional, no third-party data", as_of: "2026-10-30", verification: "unverified" }),
       ),
       listed_on: forSale ? q(`2026-10-${String(1 + ((n * 3) % 28)).padStart(2, "0")}`) : "null",
     });
-  });
-});
+}
+
+// Per state: 2 home for sale, 1 home off-market, 2 investment for sale, 1 investment off-market.
+states.forEach((state, si) => PLAN.forEach(([kind, market], i) => build(state, si, i, kind, market, 0)));
+
+// Then seven more per town (3 homes and 3 investments for sale, 1 off-market), so searching one
+// town gives a small deck to swipe rather than a single card.
+const EXTRA = [
+  ["home", "for_sale"],
+  ["home", "for_sale"],
+  ["home", "for_sale"],
+  ["investment", "for_sale"],
+  ["investment", "for_sale"],
+  ["investment", "for_sale"],
+] as const;
+states.forEach((state, si) =>
+  SUBURBS[state].forEach((_, i) => {
+    EXTRA.forEach(([kind, market], e) => build(state, si, i, kind, market, 1 + e));
+    build(state, si, i, i % 2 === 0 ? "investment" : "home", "off_market", 7);
+  }),
+);
 
 function insert(table: string, rows: Row[]) {
   const cols = Object.keys(rows[0]!);

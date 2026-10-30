@@ -79,3 +79,22 @@ describe("gross yield", () => {
     [800_000, 0],
   ])("is null without both inputs (%s, %s)", (p, r) => expect(grossYield(p, r)).toBeNull());
 });
+
+describe("area search", async () => {
+  const { parseAreas, areaFilter, MAX_AREAS } = await import("./area");
+  it("parses towns, suburbs and postcodes, de-duplicated", () => {
+    expect(parseAreas("Newcastle, 2300 , newcastle, Wollongong NSW 2500")).toEqual({ suburbs: ["Newcastle", "Wollongong"], postcodes: ["2300"], labels: ["Newcastle", "Wollongong", "2300"] });
+  });
+  it("strips unsafe characters and caps the number of areas", () => {
+    // Injection attempts end up as harmless, quoted suburb names.
+    const q = parseAreas('Glenelg"),postcode.eq.0000');
+    expect(q.suburbs).toEqual(["Glenelg", "postcode eq 0000"]);
+    expect(areaFilter(q)).toBe('suburb.ilike."Glenelg",suburb.ilike."postcode eq 0000"');
+    expect(parseAreas("A,B,C,D,E,F,G").labels).toHaveLength(MAX_AREAS);
+    expect(parseAreas("   ,  ")).toEqual({ suburbs: [], postcodes: [], labels: [] });
+  });
+  it("builds a quoted PostgREST filter", () => {
+    expect(areaFilter(parseAreas("Mount Barker, 2300"))).toBe('suburb.ilike."Mount Barker",postcode.eq.2300');
+    expect(areaFilter(parseAreas(""))).toBeNull();
+  });
+});

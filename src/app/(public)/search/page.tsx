@@ -78,6 +78,12 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                     >
                       Analyse
                     </Link>
+                    <Link
+                      href={`/discover/home?area=${encodeURIComponent(r.suburb)}`}
+                      className="inline-flex min-h-11 items-center rounded-xl border border-sand-300 px-3 text-sm font-semibold hover:bg-sand-100"
+                    >
+                      Swipe {r.suburb}
+                    </Link>
                   </div>
                   <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
                     <span>Listings in {r.suburb}:</span>

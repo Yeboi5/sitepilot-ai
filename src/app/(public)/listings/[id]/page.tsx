@@ -7,6 +7,7 @@ import { ListingCard } from "@/components/discovery/listing-card";
 import { SaveToggle } from "@/components/discovery/save-toggle";
 import { EnquiryForm } from "@/components/my-property/forms";
 import { withdrawEnquiry } from "./enquiry-actions";
+import { analyseListing } from "@/app/(app)/analyse/actions";
 import { Badge } from "@/components/ui";
 import { FLAGS } from "@/lib/flags";
 import { formatDate } from "@/lib/format";
@@ -58,6 +59,20 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       <ListingCard listing={listing} />
       <div className="flex flex-wrap items-start gap-3">
         <SaveToggle listingId={listing.id} signedIn={Boolean(ctx)} initiallySaved={saved} />
+        {listing.market === "for_sale" ? (
+          ctx ? (
+            <form action={analyseListing}>
+              <input type="hidden" name="listingId" value={listing.id} />
+              <button type="submit" className="inline-flex min-h-11 items-center rounded-xl border border-sand-300 bg-white px-4 text-sm font-semibold hover:bg-sand-100">
+                Analyse this deal
+              </button>
+            </form>
+          ) : (
+            <Link href={`/sign-in?next=/listings/${listing.id}`} className="inline-flex min-h-11 items-center rounded-xl border border-sand-300 bg-white px-4 text-sm font-semibold hover:bg-sand-100">
+              Sign in to analyse this deal
+            </Link>
+          )
+        ) : null}
       </div>
       {enquiries ? (
         <section className="rounded-2xl border border-sand-200 bg-white p-5 text-sm" aria-labelledby="enquiry-heading">

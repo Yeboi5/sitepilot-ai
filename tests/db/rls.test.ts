@@ -553,8 +553,8 @@ describe("nationwide workspaces (Blueprint v2.0)", () => {
 describe("discovery: listings and property records (Blueprint v2.0 V2-2)", () => {
   it("guests can read demo listings and demo property records", async () => {
     await as(null, async (c) => {
-      expect((await c.query("select 1 from public.listings")).rowCount).toBe(48);
-      expect((await c.query("select 1 from public.property_records")).rowCount).toBe(48);
+      expect((await c.query("select 1 from public.listings")).rowCount).toBe(384);
+      expect((await c.query("select 1 from public.property_records")).rowCount).toBe(384);
     });
   });
 

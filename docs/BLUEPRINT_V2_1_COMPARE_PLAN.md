@@ -1,6 +1,6 @@
 # Master Blueprint v2.1: Compare My Properties (plan)
 
-Status: **approved 2026-10-30** with the decisions in section 8. C1–C4 ✅ (0.8.0), Quick Compare + Advanced views ✅ (0.9.0), C5 question templates ✅ (AI narration pending a provider), C6 next. Duty rates not loaded yet: official sources were unreachable from the build environment. Source: `SitePilot_AI_Master_Blueprint_v2_1.docx`,
+Status: **approved 2026-10-30** with the decisions in section 8. C1–C4 ✅ (0.8.0), Quick Compare + Advanced views ✅ (0.9.0), C6 ✅ (0.10.0), C5 question templates ✅ (AI narration pending a provider), Next: V2-5 Matterport. Duty rates not loaded yet: official sources were unreachable from the build environment. Source: `SitePilot_AI_Master_Blueprint_v2_1.docx`,
 "Version 2.1 — Saved Property Comparison Engine". This extends [BLUEPRINT_V2_PLAN.md](BLUEPRINT_V2_PLAN.md);
 nothing already built is removed or changes meaning.
 

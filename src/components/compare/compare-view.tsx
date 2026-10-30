@@ -4,6 +4,7 @@ import { RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { analyseListing } from "@/app/(app)/analyse/actions";
 import { deleteComparison, saveComparison, shareComparison, unshareComparison } from "@/app/(app)/compare/actions";
 import { DemoTag, NotForSaleTag } from "@/components/discovery/listing-card";
 import { ShareLink } from "@/components/vision/share-link";
@@ -361,12 +362,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
               ) : null}
 
               {group("Development and risk")}
-              {row("Development", (r) => (
-                <span className="text-xs text-slate-600">
-                  {r.p.listing.development_idea ? `Idea: ${r.p.listing.development_idea}. ` : ""}
-                  Not assessed: needs verified zoning, overlays and a licensed professional.
-                </span>
-              ))}
+              {row("Development", (r) => <DevelopmentCell p={r.p} signedIn={signedIn} />)}
               {row("Open checks", (r) => (r.p.listing.risk_flags.length ? <ul className="list-disc space-y-1 pl-4 text-xs">{r.p.listing.risk_flags.map((f) => <li key={f}>{f}</li>)}</ul> : <span className="text-slate-500">None listed</span>))}
               {row("Environmental risk", () => <span className="text-xs text-slate-500">Unknown: no licensed hazard data yet</span>)}
               {row("Price history", () => <span className="text-xs text-slate-500">Unknown: no licensed price history yet</span>)}
@@ -605,6 +601,54 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
           </p>
         ) : null}
       </section>
+    </div>
+  );
+}
+
+/** Development feasibility for one property: linked workspace status, or a way to start one (C6). */
+function DevelopmentCell({ p, signedIn }: { p: CompareProperty; signedIn: boolean }) {
+  const d = p.development;
+  const idea = p.listing.development_idea ? <span className="block text-xs text-slate-600">Idea: {p.listing.development_idea}.</span> : null;
+  if (d) {
+    return (
+      <div className="space-y-1 text-xs">
+        {idea}
+        {d.roi != null ? (
+          <span className="block font-semibold text-leaf-700">
+            Scenario &ldquo;{d.scenario?.name}&rdquo;: {formatRatio(d.roi)} return on cost
+          </span>
+        ) : (
+          <span className="block text-slate-600">Not scored yet: {d.missing.join("; ")}.</span>
+        )}
+        <span className="block text-slate-500">
+          {d.verifiedOfficial} verified planning record{d.verifiedOfficial === 1 ? "" : "s"}
+          {p.listing.is_demo ? " · DEMO property: your own entries, not official data" : ""}
+        </span>
+        <Link href={`/investor/properties/${d.workspaceId}`} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">
+          Open workspace
+        </Link>
+      </div>
+    );
+  }
+  if (p.listing.market !== "for_sale") {
+    return (
+      <span className="text-xs text-slate-600">
+        {idea}Not assessed: this home isn&apos;t for sale.
+      </span>
+    );
+  }
+  return (
+    <div className="space-y-1 text-xs">
+      {idea}
+      <span className="block text-slate-600">Not assessed: needs verified planning evidence and your scenario.</span>
+      {signedIn ? (
+        <form action={analyseListing}>
+          <input type="hidden" name="listingId" value={p.listing.id} />
+          <button type="submit" className="inline-flex min-h-11 items-center rounded-xl border border-sand-300 bg-white px-3 font-semibold hover:bg-sand-100">
+            Analyse this deal
+          </button>
+        </form>
+      ) : null}
     </div>
   );
 }
