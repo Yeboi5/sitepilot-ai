@@ -103,3 +103,75 @@ intermediates, and the same input always produces the same output.
 ## Changelog
 
 - `feasibility-1.0.0` (2026-10-29): initial version.
+
+---
+
+# Property comparison: `investment-1.0.0` (Blueprint v2.1)
+
+Source of truth: `src/lib/compare/engine.ts`, tested in `src/lib/compare/compare.test.ts`. Pre-tax,
+hypothetical and educational, not financial advice. Defaults are **examples**, identical for every
+property (`DEFAULT_ASSUMPTIONS`). A figure that can't be calculated is **unknown with a reason**,
+never 0.
+
+## Inputs
+
+Per property (facts): price (asking price, estimated value, or the user's hypothetical price, and
+its source), weekly rent (and source), stamp duty (reviewed preset or the user's figure), open checks,
+verified-evidence feasibility return on cost, licensed historical growth.
+
+Global assumptions (per-property overrides for price, rent, duty, strata, rates, insurance, land tax):
+deposit %, interest rate, loan term, principal-and-interest or interest-only, other purchase costs,
+vacancy %, management % (of rent collected), insurance, council rates, strata, maintenance, land tax
+(all per year), holding period (1–30 years), growth % p.a. for conservative / base / optimistic, rent
+growth %, expense growth %.
+
+## Year-1 figures
+
+```
+annual rent        = weekly rent × 52
+collected rent     = annual rent × (1 − vacancy%)
+operating costs    = collected rent × management% + insurance + council rates + strata + maintenance + land tax
+net operating inc. = collected rent − operating costs
+gross yield        = annual rent ÷ price
+net yield          = net operating income ÷ price          (before finance and purchase costs)
+loan               = price × (1 − deposit%)
+cash required      = price × deposit% + stamp duty + other purchase costs
+repayments         = 12 monthly payments: P&I = standard amortising payment over the term;
+                     interest-only = balance × rate ÷ 12
+cash flow (year 1) = net operating income − repayments     (pre-tax)
+rate sensitivity   = year-1 cash flow with the rate −1, +1 and +2 percentage points
+```
+
+## Projections (each scenario, each year y = 1…holding period)
+
+```
+value_y        = price × (1 + growth%)^y
+loan balance_y = amortisation schedule (monthly)
+equity_y       = value_y − loan balance_y
+cash flow_y    = rent × (1 + rent growth%)^(y−1) collected and less costs × (1 + expense growth%)^(y−1), less repayments
+unrealised gain = value at the end − price
+net return     = equity at the end + cumulative cash flow − cash required   (pre-tax, before selling costs)
+```
+
+Cash flow, equity and unrealised gain are reported separately. Tax, depreciation and CGT are not
+modelled; any later tax inputs will be optional assumptions requiring an accountant's advice.
+
+# Investment Match Score: `score-1.0.0`
+
+Source: `src/lib/compare/score.ts`. Optional and transparent. Default weights: rental return 25,
+affordability and cash flow 20, development feasibility 20, historical market indicators 15, risk 15,
+data completeness 5; all adjustable. Each measure maps to 0–100 by a **fixed band** (linear, clamped),
+so scores don't depend on which properties are being compared:
+
+| Category | Measure | Band |
+| --- | --- | --- |
+| Rental return | gross yield | 2% → 0, 7% → 100 |
+| Affordability and cash flow | year-1 cash flow ÷ cash required | −10% → 0, +5% → 100 |
+| Development feasibility | return on cost of a scenario backed by **verified** planning evidence | 0% → 0, 25% → 100 |
+| Historical market indicators | **licensed** historical growth % p.a. | 0% → 0, 8% → 100 |
+| Risk | average of: cash flow at +2% rates ÷ cash required (−15% → 0, 0% → 100) and 100 − 20 per open check | |
+| Data completeness | share of key data available | 0% → 0, 100% → 100 |
+
+A category without evidence is **excluded** and labelled "Insufficient evidence"; it is never scored
+as 0. `coverage` = scored weight ÷ total weight. Score = weighted average of scored categories, shown
+only when coverage ≥ 60%; otherwise "Not enough evidence to score". Ties keep the user's order.

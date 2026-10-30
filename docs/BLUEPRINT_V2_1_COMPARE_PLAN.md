@@ -1,6 +1,6 @@
 # Master Blueprint v2.1: Compare My Properties (plan)
 
-Status: **proposed, awaiting approval** (2026-10-30). Source: `SitePilot_AI_Master_Blueprint_v2_1.docx`,
+Status: **approved 2026-10-30** with the decisions in section 8. C1 in progress. Source: `SitePilot_AI_Master_Blueprint_v2_1.docx`,
 "Version 2.1 — Saved Property Comparison Engine". This extends [BLUEPRINT_V2_PLAN.md](BLUEPRINT_V2_PLAN.md);
 nothing already built is removed or changes meaning.
 
@@ -129,3 +129,22 @@ V2-6 Couples (duty presets already done), V2-7 professional workflows, V2-8 beta
 | Share links leak private data | Snapshot only of listing-level demo data and the user's assumptions; hashed, revocable tokens; no workspace data |
 | Wrong duty rates | Sourced and dated presets, "needs review" until confirmed, always overridable |
 | Cross-user access | Owner-only RLS on all comparison tables; tests for permitted and denied access |
+
+## 8. Decisions (approved 2026-10-30)
+
+1. **Order:** Compare (C1–C4) before Matterport.
+2. **Schema:** M10 `compare` and M9 `duty_presets` approved. M10 also gains `value_estimates` (decision 6).
+3. **Missing data:** "insufficient evidence", excluded from the score, coverage shown, no score below 60%.
+4. **Scoring bands:** fixed, published bands.
+5. **Growth:** labelled example rates by default (same for every property). A licensed forecast may
+   be used when we have one, shown with its source and as-of date; never one we invent.
+6. **Estimated values** (like Domain, realestate.com.au and property.com, which license automated
+   valuations from providers such as PropTrack, Cotality or their own models): add an
+   `EstimateProvider` interface and a `value_estimates` table (property record, low / mid / high,
+   confidence, source, as-of, `is_demo`). Demo listings get **DEMO estimate ranges**, clearly labelled.
+   Real estimates need a licensed valuation provider. Off-market homes show an *estimated value*
+   (never a price) and price-based metrics use it, labelled "based on estimated value".
+7. **Guests** can compare demo properties; saving needs an account. Real listings are the goal, which
+   needs a licensed listing feed (Domain API, REA partnership or similar): see BLUEPRINT_V2_PLAN.md §6.
+8. **Duty presets:** published state rates with source and date, "needs review" until confirmed;
+   concessions not modelled at first.
