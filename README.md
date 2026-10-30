@@ -103,6 +103,7 @@ Tests tagged `@mobile` run in an iPhone-size project (390×844). Set `E2E_BASE_U
 ## Documentation
 
 - [docs/SPRINT_0_1_PLAN.md](docs/SPRINT_0_1_PLAN.md): architecture plan, directory tree, schema, RLS design, test strategy
+- [docs/BLUEPRINT_V2_PLAN.md](docs/BLUEPRINT_V2_PLAN.md): Master Blueprint v2.0 gap analysis, limitations and roadmap (proposed)
 - [docs/UPDATE_1_1_PLAN.md](docs/UPDATE_1_1_PLAN.md): Update Pack 1.1 gap analysis and phases
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): system design, request flow, sprint plan
 - [docs/FORMULAS.md](docs/FORMULAS.md): feasibility formulas, versioning and sensitivity spec
