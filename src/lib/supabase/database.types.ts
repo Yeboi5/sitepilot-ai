@@ -110,6 +110,137 @@ export type Database = {
           },
         ];
       };
+      comparison_assumptions: {
+        Row: {
+          comparison_set_id: string;
+          assumptions_json: Json;
+          weights_json: Json;
+          engine_version: string;
+          score_version: string;
+          updated_at: string;
+        };
+        Insert: {
+          comparison_set_id: string;
+          assumptions_json: Json;
+          weights_json: Json;
+          engine_version: string;
+          score_version: string;
+          updated_at?: string;
+        };
+        Update: {
+          comparison_set_id?: string;
+          assumptions_json?: Json;
+          weights_json?: Json;
+          engine_version?: string;
+          score_version?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "comparison_assumptions_comparison_set_id_fkey";
+            columns: ["comparison_set_id"];
+            isOneToOne: true;
+            referencedRelation: "comparison_sets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      comparison_items: {
+        Row: {
+          id: string;
+          comparison_set_id: string;
+          listing_id: string | null;
+          property_id: string | null;
+          sort_order: number;
+          overrides_json: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          comparison_set_id: string;
+          listing_id?: string | null;
+          property_id?: string | null;
+          sort_order: number;
+          overrides_json?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          comparison_set_id?: string;
+          listing_id?: string | null;
+          property_id?: string | null;
+          sort_order?: number;
+          overrides_json?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "comparison_items_comparison_set_id_fkey";
+            columns: ["comparison_set_id"];
+            isOneToOne: false;
+            referencedRelation: "comparison_sets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "comparison_items_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "comparison_items_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      comparison_sets: {
+        Row: {
+          id: string;
+          owner_user_id: string;
+          name: string;
+          mode: Database["public"]["Enums"]["comparison_mode"];
+          share_token_hash: string | null;
+          share_snapshot: Json | null;
+          shared_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_user_id: string;
+          name: string;
+          mode?: Database["public"]["Enums"]["comparison_mode"];
+          share_token_hash?: string | null;
+          share_snapshot?: Json | null;
+          shared_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_user_id?: string;
+          name?: string;
+          mode?: Database["public"]["Enums"]["comparison_mode"];
+          share_token_hash?: string | null;
+          share_snapshot?: Json | null;
+          shared_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "comparison_sets_owner_user_id_fkey";
+            columns: ["owner_user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       documents: {
         Row: {
           id: string;
@@ -185,6 +316,49 @@ export type Database = {
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
+        ];
+      };
+      duty_presets: {
+        Row: {
+          id: string;
+          state: string;
+          version: string;
+          brackets: Json;
+          source_url: string;
+          as_of: string;
+          status: Database["public"]["Enums"]["duty_preset_status"];
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          state: string;
+          version: string;
+          brackets: Json;
+          source_url: string;
+          as_of: string;
+          status?: Database["public"]["Enums"]["duty_preset_status"];
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          state?: string;
+          version?: string;
+          brackets?: Json;
+          source_url?: string;
+          as_of?: string;
+          status?: Database["public"]["Enums"]["duty_preset_status"];
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
         ];
       };
       evidence: {
@@ -846,6 +1020,62 @@ export type Database = {
           },
         ];
       };
+      property_estimates: {
+        Row: {
+          id: string;
+          property_record_id: string;
+          value_low: number;
+          value_mid: number;
+          value_high: number;
+          rent_weekly_low: number | null;
+          rent_weekly_mid: number | null;
+          rent_weekly_high: number | null;
+          confidence: Database["public"]["Enums"]["estimate_confidence"];
+          source: string;
+          as_of: string;
+          is_demo: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_record_id: string;
+          value_low: number;
+          value_mid: number;
+          value_high: number;
+          rent_weekly_low?: number | null;
+          rent_weekly_mid?: number | null;
+          rent_weekly_high?: number | null;
+          confidence: Database["public"]["Enums"]["estimate_confidence"];
+          source: string;
+          as_of: string;
+          is_demo?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          property_record_id?: string;
+          value_low?: number;
+          value_mid?: number;
+          value_high?: number;
+          rent_weekly_low?: number | null;
+          rent_weekly_mid?: number | null;
+          rent_weekly_high?: number | null;
+          confidence?: Database["public"]["Enums"]["estimate_confidence"];
+          source?: string;
+          as_of?: string;
+          is_demo?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_estimates_property_record_id_fkey";
+            columns: ["property_record_id"];
+            isOneToOne: false;
+            referencedRelation: "property_records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       property_notes: {
         Row: {
           id: string;
@@ -1356,14 +1586,18 @@ export type Database = {
       record_claim_evidence_view: { Args: { claim: string }; Returns: string };
       record_report_export: { Args: { prop: string; export_format: string }; Returns: undefined };
       reserve_vision_credit: { Args: never; Returns: number };
+      shared_comparison: { Args: { token_hash: string }; Returns: { name: string; mode: Database["public"]["Enums"]["comparison_mode"]; snapshot: Json; shared_at: string }[] };
       shared_vision: { Args: { token_hash: string }; Returns: { version_id: string; output_key: string; mode: Database["public"]["Enums"]["vision_mode"]; preset: string; style: string; created_at: string }[] };
       vision_credits_left: { Args: never; Returns: number };
     };
     Enums: {
       claim_status: "pending" | "verified" | "rejected" | "withdrawn";
+      comparison_mode: "homebuyer" | "investor";
       document_classification: "unclassified" | "contract_for_sale" | "title_search" | "planning_certificate" | "survey" | "strata_report" | "building_report" | "other";
       document_scan_status: "pending" | "clean" | "infected" | "rejected";
+      duty_preset_status: "needs_review" | "reviewed";
       enquiry_status: "open" | "replied" | "declined" | "withdrawn" | "closed";
+      estimate_confidence: "low" | "medium" | "high";
       evidence_source_type: "planning_certificate" | "planning_portal" | "lep_map" | "council_record" | "title_search" | "survey" | "other" | "valuation";
       evidence_status: "unverified" | "verified" | "disputed" | "superseded";
       finding_status: "unreviewed" | "needs_clarification" | "confirmed" | "rejected";

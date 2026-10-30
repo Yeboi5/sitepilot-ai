@@ -206,6 +206,24 @@ inserts need a reserved credit.
 Per user per Sydney day: `generations` reserved. Read-only to the owner; written only by
 `reserve_vision_credit()`.
 
+## Compare My Properties (Blueprint v2.1)
+
+### `property_estimates`
+Per property record: `value_low/mid/high`, optional `rent_weekly_low/mid/high`, `confidence`,
+`source`, `as_of`, `is_demo`. DEMO rows only until a licensed valuation provider is contracted.
+Readable by everyone (DEMO rows); written by the service role only.
+
+### `duty_presets`
+Per state and version: `brackets` (ascending `{from, base, ratePer100}`), `source_url` (official),
+`as_of`, `status` (`needs_review` until `reviewed_by` / `reviewed_at`), `notes`. Reference data;
+service role writes. No rows yet.
+
+### `comparison_sets`, `comparison_items`, `comparison_assumptions`
+A saved comparison: `owner_user_id` (**server**-stamped), `name`, `mode` (`homebuyer`/`investor`),
+optional share (`share_token_hash`, `share_snapshot`, `shared_at`). Items: exactly one of
+`listing_id` / `property_id`, `sort_order` (0–4, max 5 items), `overrides_json` (price, rent, duty,
+…). Assumptions: `assumptions_json`, `weights_json`, `engine_version`, `score_version`. All owner-only.
+
 ## Platform
 
 ### `audit_events`

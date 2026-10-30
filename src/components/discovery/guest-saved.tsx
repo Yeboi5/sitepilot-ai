@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { getListings, importGuestSaves } from "@/app/(public)/discover/actions";
 import { clearGuestDecisions, readGuestDecisions, savedIds, writeGuestDecision } from "@/lib/discovery/guest-store";
 import type { Kind, Listing } from "@/lib/discovery/types";
-import { SavedItem } from "./saved-item";
+import { SavedList } from "./saved-list";
 
 /** Guest: shows saves kept in this browser. */
 export function GuestSaved({ kind }: { kind: Kind }) {
@@ -16,18 +16,13 @@ export function GuestSaved({ kind }: { kind: Kind }) {
   const shown = listings.filter((l) => l.kind === kind);
   if (shown.length === 0) return <EmptySaved kind={kind} />;
   return (
-    <ul className="space-y-3">
-      {shown.map((l) => (
-        <SavedItem
-          key={l.id}
-          listing={l}
-          onRemove={() => {
-            writeGuestDecision(l.id, null);
-            setListings((all) => (all ?? []).filter((x) => x.id !== l.id));
-          }}
-        />
-      ))}
-    </ul>
+    <SavedList
+      listings={shown}
+      onRemove={(id) => {
+        writeGuestDecision(id, null);
+        setListings((all) => (all ?? []).filter((x) => x.id !== id));
+      }}
+    />
   );
 }
 

@@ -2,6 +2,37 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.8.0] - 2026-10-30
+
+Master Blueprint v2.1: Compare My Properties (stages C1–C4, and C5's question templates).
+
+### Added
+- Comparison engine `investment-1.0.0` and Investment Match Score `score-1.0.0` (see FORMULAS.md):
+  yields, running costs, P&I or interest-only loans, cash required, year-1 cash flow, interest-rate
+  sensitivity, and conservative / base / optimistic growth over a holding period, with equity,
+  unrealised gain, cumulative cash flow and net return kept separate. Missing data is Unknown with
+  a reason, never zero. The score uses fixed published bands and adjustable weights, excludes
+  categories without evidence, shows coverage and won't score below 60%.
+- Migration `20261030050000_compare.sql`: `property_estimates` (value and rent ranges; DEMO until a
+  licensed valuation provider), `duty_presets` (reference data with source, as-of and review status;
+  no rates loaded yet), and owner-only `comparison_sets`, `comparison_items` (2–5 listings or
+  workspaces) and `comparison_assumptions`. `shared_comparison` RPC for redacted share links.
+- 48 DEMO estimate ranges, one per demo property (off-market homes get an estimated value, never a price).
+- Saved Properties: grid/list, state and market filters, checkboxes and a sticky Compare (2–5) bar,
+  and a "Your comparisons" list.
+- `/compare?ids=`: works for guests. Investor and Homebuyer views, summary cards, side-by-side table
+  (sticky labels, sideways scroll on mobile), per-property price, rent and duty overrides,
+  assumptions with example defaults, weight sliders with methodology, cash-flow and equity charts
+  (with table views), "Why these results?" and question templates answered from the numbers.
+- `/compare/[id]`: save, reopen, rename, share (frozen redacted snapshot, secret link, revocable,
+  unindexed) and delete. `/compare/shared/[token]`: the public report.
+- Feature flag `NEXT_PUBLIC_FLAG_COMPARE`.
+- Tests: 6 RLS tests (123 total), 29 unit tests (202 total), 4 browser tests (51 total).
+
+### Fixed
+- `formatAudCompact` differed between Node and browsers ("$25.0K" vs "$25K"), breaking hydration
+  of server-rendered charts. It's now formatted by hand.
+
 ## [0.7.0] - 2026-10-30
 
 Master Blueprint v2.0, V2-4: SitePilot Vision (photo-based, mock provider).

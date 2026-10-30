@@ -43,6 +43,8 @@ Later sprints:  job queue + document worker (service role) ──▶ AI provider
 | `scripts/gen-demo-listings.ts` | Generates the DEMO listings block in `supabase/seed.sql` |
 | `src/lib/address/` | Address search provider interface (demo now, G-NAF later), portal links |
 | `src/lib/storage/` | Private object store for all buckets (Supabase Storage, or local for dev/CI) and file checks |
+| `src/lib/compare/` | Comparison engine, score, duty, facts, explanations, snapshot; server loaders |
+| `src/app/(public)/compare/`, `src/app/(app)/compare/` | Compare (guests), saved comparisons and actions, shared reports |
 | `src/lib/vision/` | Vision presets, image preparation (EXIF strip) and watermark, provider interface + mock, share tokens |
 | `src/app/(app)/vision/`, `src/app/(public)/vision/` | Vision projects, editor, owner-only image routes; public intro and shared-link page |
 | `src/app/(app)/my-property/`, `src/app/(app)/verify/` | My Property, homeowner claims, verifier queue and audited evidence route |

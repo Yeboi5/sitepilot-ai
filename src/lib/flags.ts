@@ -19,6 +19,8 @@ export const FLAGS = {
   visionRealProvider: process.env.NEXT_PUBLIC_FLAG_VISION_REAL_PROVIDER === "on",
   matterport: process.env.NEXT_PUBLIC_FLAG_MATTERPORT === "on",
   dutyPresets: process.env.NEXT_PUBLIC_FLAG_DUTY_PRESETS === "on",
+  // Master Blueprint v2.1
+  compare: process.env.NEXT_PUBLIC_FLAG_COMPARE === "on",
 } as const;
 
 export type Flag = keyof typeof FLAGS;

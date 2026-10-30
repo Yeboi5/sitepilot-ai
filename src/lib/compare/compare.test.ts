@@ -178,3 +178,32 @@ describe("Investment Match Score", () => {
     expect(rank([{ id: "a", score: null }, { id: "b", score: 40 }, { id: "c", score: 40 }]).map((x) => x.id)).toEqual(["b", "c", "a"]);
   });
 });
+
+describe("explanations and questions", async () => {
+  const { explain, QUESTIONS } = await import("./explain");
+  const mk = (id: string, f: Partial<PropertyFacts>) => {
+    const pf = facts({ id, label: id, ...f });
+    const result = evaluate(pf, A);
+    return { id, label: id, result, score: scoreProperty(pf, result, DEFAULT_WEIGHTS) };
+  };
+  const rows = [mk("Alpha", { price: 400_000, weeklyRent: 520, stampDuty: 13_000 }), mk("Bravo", { price: 600_000, weeklyRent: 480, stampDuty: 22_000 })];
+
+  it("names the leader and the main reasons", () => {
+    const lines = explain(rows, A);
+    expect(lines[0]).toMatch(/^Alpha ranks first with \d+\/100, mainly on rental return/);
+    expect(lines.at(-1)).toMatch(/excluded until there's verified planning evidence/);
+  });
+
+  it("answers questions from the engine's numbers", () => {
+    const q = Object.fromEntries(QUESTIONS.map((x) => [x.id, x.answer(rows, A)]));
+    expect(q.cash_required).toMatch(/^Alpha: \$96,000/); // 80,000 + 13,000 + 3,000
+    expect(q.gross_yield).toMatch(/^Alpha: 6\.8%/);
+    expect(q.net_return).toMatch(/over 10 years in the base scenario \(4% growth a year, your assumption\)/);
+  });
+
+  it("says when there isn't enough evidence", () => {
+    const none = [mk("A", { price: null, priceSource: null }), mk("B", { price: null, priceSource: null })];
+    expect(explain(none, A)[0]).toMatch(/None of these properties has enough evidence/);
+    expect(QUESTIONS[0]!.answer(none, A)).toMatch(/enough data/);
+  });
+});

@@ -9,7 +9,9 @@ import { DemoTag, NotForSaleTag } from "./listing-card";
 import { PropertyIllustration } from "./property-illustration";
 
 /** One row on the Saved page. `onRemove` handles guests; signed-in users remove via the server. */
-export function SavedItem({ listing: l, onRemove }: { listing: Listing; onRemove?: () => void }) {
+export type Selectable = { checked: boolean; disabled: boolean; onChange: () => void };
+
+export function SavedItem({ listing: l, onRemove, select, layout = "list" }: { listing: Listing; onRemove?: () => void; select?: Selectable; layout?: "list" | "grid" }) {
   const [pending, startTransition] = useTransition();
   const remove = () => {
     if (onRemove) return onRemove();
@@ -18,8 +20,21 @@ export function SavedItem({ listing: l, onRemove }: { listing: Listing; onRemove
     });
   };
   return (
-    <li className="flex gap-3 rounded-2xl border border-sand-200 bg-white p-3 shadow-sm">
-      <PropertyIllustration type={l.property_type} kind={l.kind} seed={l.illustration_seed} className="h-20 w-24 shrink-0 rounded-xl" />
+    <li
+      className={`flex gap-3 rounded-2xl border bg-white p-3 shadow-sm ${select?.checked ? "border-brand-500 ring-1 ring-brand-500" : "border-sand-200"} ${layout === "grid" ? "flex-col" : ""}`}
+    >
+      {select ? (
+        <label className={`flex shrink-0 cursor-pointer items-center ${layout === "grid" ? "gap-2 text-sm font-medium" : "w-8 justify-center self-center"}`}>
+          <input type="checkbox" checked={select.checked} disabled={select.disabled} onChange={select.onChange} className="h-5 w-5 accent-brand-600" />
+          <span className={layout === "grid" ? "" : "sr-only"}>Compare {layout === "grid" ? "" : l.headline}</span>
+        </label>
+      ) : null}
+      <PropertyIllustration
+        type={l.property_type}
+        kind={l.kind}
+        seed={l.illustration_seed}
+        className={layout === "grid" ? "aspect-[4/3] w-full rounded-xl" : "h-20 w-24 shrink-0 rounded-xl"}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap gap-1.5">
           {l.is_demo ? <DemoTag /> : null}

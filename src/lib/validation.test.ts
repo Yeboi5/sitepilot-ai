@@ -80,6 +80,9 @@ describe("isProtectedPath", () => {
     expect(isProtectedPath("/vision/new")).toBe(true);
     expect(isProtectedPath("/vision/0b8f3c1e-0000-4000-8000-000000000001")).toBe(true);
     expect(isProtectedPath("/vision/shared/abc")).toBe(false);
+    expect(isProtectedPath("/compare")).toBe(false);
+    expect(isProtectedPath("/compare/0b8f3c1e-0000-4000-8000-000000000001")).toBe(true);
+    expect(isProtectedPath("/compare/shared/abc")).toBe(false);
     expect(isProtectedPath("/")).toBe(false);
     expect(isProtectedPath("/pricing")).toBe(false);
     expect(isProtectedPath("/investorship")).toBe(false);

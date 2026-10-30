@@ -60,6 +60,9 @@ threat model, the list of controls in place, and the gates that must pass before
 | Misrepresentation | AI concepts mistaken for plans or approvals | AI CONCEPT mark burned into every output by SitePilot (not the provider); `watermarked` can't be false; disclaimers on every view | ✅ tested |
 | DoS / cost | Runaway image-generation spend | Credit reserved before each provider call (10/day); versions can't be stored without one; 50 projects per user; 15 MB / 50 MP input limits | ✅ tested |
 | Tampering | Malicious image files | Signature check, decode in sharp with a pixel limit, re-encode to JPEG; served only from our re-encoded copy with `nosniff` | ✅ |
+| Info disclosure | Comparisons read by other users | Owner-only RLS on sets, items and assumptions; items may only reference listings or workspaces the caller can read | ✅ tested |
+| Info disclosure | Share links leak private data | Frozen snapshot of suburb-level, listing-level facts and the sharer's assumptions only; no street address, notes, documents or workspace evidence; hashed token; revocable; unindexed | ✅ tested |
+| Misrepresentation | Comparison figures read as forecasts, prices or advice | Example assumptions identical for every property; estimates labelled "not a price"; Unknown instead of guesses; score bands and coverage published; disclaimers | ✅ tested |
 | Elevation | Self-verifying a firm | `verification_status` not client-writable | ✅ tested |
 
 ## Controls in place (Sprint 0/1)

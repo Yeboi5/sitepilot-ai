@@ -47,15 +47,24 @@ export const PLAN_LABEL: Record<Enums<"plan_tier">, string> = {
 };
 
 const audFmt = new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 });
-const audCompactFmt = new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", notation: "compact", maximumFractionDigits: 1 });
 
 /** Whole-dollar AUD with a true minus sign for negatives. */
 export function formatAud(value: number): string {
   return audFmt.format(Math.round(value)).replace("-", "−");
 }
 
+/**
+ * Compact AUD ("$1.3M", "−$25K"). Formatted by hand because ICU builds differ (Node prints
+ * "$25.0K" where browsers print "$25K"), which breaks hydration of server-rendered charts.
+ */
 export function formatAudCompact(value: number): string {
-  return audCompactFmt.format(value).replace("-", "−");
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "−" : "";
+  const trim = (n: number) => n.toFixed(1).replace(/\.0$/, "");
+  if (abs >= 1e9) return `${sign}$${trim(abs / 1e9)}B`;
+  if (abs >= 1e6) return `${sign}$${trim(abs / 1e6)}M`;
+  if (abs >= 1e3) return `${sign}$${trim(abs / 1e3)}K`;
+  return `${sign}$${Math.round(abs)}`;
 }
 
 /** Signed change, e.g. "+$12,000" / "−$4,500". */

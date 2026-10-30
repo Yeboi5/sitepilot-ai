@@ -52,6 +52,10 @@ Demo accounts, all with password `SitePilotDemo!2026`:
 | `nina.newbuyer@demo.sitepilot.test` | Home buyer with no workspace yet (first sign-in creates one) |
 | `vera.verifier@demo.sitepilot.test` | Homeowner-claim verifier (review queue at `/verify`) |
 
+Compare My Properties works on DEMO listings with DEMO estimate ranges. No stamp duty rates are
+loaded yet (`duty_presets` is empty), so enter a duty estimate per property to see cash required
+and scores; reviewed state presets will fill this automatically.
+
 SitePilot Vision uses a built-in mock image provider (no AI service, no cost). Concepts are
 limited to 10 per user per day; reseeding resets the counters.
 

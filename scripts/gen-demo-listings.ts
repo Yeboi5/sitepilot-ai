@@ -8,6 +8,7 @@
  *   realistic; street addresses are obviously fictional ("[DEMO] … Example Lane").
  * - Prices and rents are illustrative, not market data, and are labelled as such in the UI.
  * - Off-market rows are NOT FOR SALE: no price and no street address (enforced by constraints).
+ * - Every record gets a DEMO estimate range (value, and rent unless land), labelled as fictional.
  * - Tags describe the fictional home itself, never claims about the real suburb.
  */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -72,6 +73,9 @@ const id = (prefix: string, n: number) => `${prefix}-0000-4000-8000-${String(n).
 type Row = Record<string, string>;
 const records: Row[] = [];
 const listings: Row[] = [];
+const estimates: Row[] = [];
+const r5k = (n: number) => Math.round(n / 5000) * 5000;
+const r10 = (n: number) => Math.round(n / 10) * 10;
 let n = 0;
 
 // Per state: 2 home for sale, 1 home off-market, 2 investment for sale, 1 investment off-market.
@@ -116,6 +120,23 @@ states.forEach((state, si) => {
       ? `A fictional ${label} created for SitePilot's demo. The price and details are illustrative only and do not describe a real property.`
       : `A fictional ${type} shown to illustrate off-market screening. It is NOT FOR SALE, and nothing suggests the owner wants to sell.`;
 
+    // DEMO estimate ranges (v2.1 decision 6), standing in for a licensed valuation provider. Every
+    // demo property gets one, including off-market homes: an estimated value, never a price.
+    const estMid = forSale ? price : r5k(price * (0.97 + (n % 5) * 0.015));
+    const estRent = type === "land" ? null : rent ?? r10((estMid * yieldPct) / 52);
+    estimates.push({
+      property_record_id: q(recordId),
+      value_low: String(r5k(estMid * 0.92)),
+      value_mid: String(estMid),
+      value_high: String(r5k(estMid * 1.08)),
+      rent_weekly_low: estRent ? String(r10(estRent * 0.9)) : "null",
+      rent_weekly_mid: estRent ? String(estRent) : "null",
+      rent_weekly_high: estRent ? String(r10(estRent * 1.1)) : "null",
+      confidence: q(["medium", "low", "medium", "high"][n % 4]!),
+      source: q("SitePilot DEMO estimate (fictional)"),
+      as_of: q("2026-10-30"),
+      is_demo: "true",
+    });
     records.push({
       id: q(recordId),
       state: q(state),
@@ -167,7 +188,8 @@ const END = "-- END GENERATED DEMO LISTINGS";
 const block = `${BEGIN}
 -- ${listings.length} fictional listings across all states and territories. Illustrative only.
 ${insert("property_records", records)}
-${insert("listings", listings)}${END}`;
+${insert("listings", listings)}
+${insert("property_estimates", estimates)}${END}`;
 
 const seedPath = path.resolve(__dirname, "../supabase/seed.sql");
 const seed = readFileSync(seedPath, "utf8");

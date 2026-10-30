@@ -1236,3 +1236,110 @@ describe("SitePilot Vision (V2-4)", () => {
     });
   });
 });
+
+describe("Compare My Properties (v2.1)", () => {
+  const HASH = "c".repeat(64);
+
+  async function newSet(c: import("pg").PoolClient, items: string[] = [LISTING.homeForSale, LISTING.investmentForSale]) {
+    const { rows } = await c.query("insert into public.comparison_sets (name, mode) values ('Shortlist', 'investor') returning id, owner_user_id");
+    const set = rows[0] as { id: string; owner_user_id: string };
+    for (const [i, id] of items.entries()) {
+      await c.query("insert into public.comparison_items (comparison_set_id, listing_id, sort_order) values ($1, $2, $3)", [set.id, id, i]);
+    }
+    await c.query("insert into public.comparison_assumptions (comparison_set_id, assumptions_json, weights_json, engine_version, score_version) values ($1, '{}', '{}', 'investment-1.0.0', 'score-1.0.0')", [set.id]);
+    return set;
+  }
+
+  it("guests can't read comparisons; they can read DEMO estimates and duty presets", async () => {
+    for (const t of ["comparison_sets", "comparison_items", "comparison_assumptions"]) {
+      await expect(as(null, (c) => c.query(`select 1 from public.${t}`)), t).rejects.toThrow(/permission denied/);
+    }
+    await as(null, async (c) => {
+      expect((await c.query("select 1 from public.property_estimates where not is_demo")).rowCount).toBe(0);
+      await c.query("select 1 from public.duty_presets");
+    });
+  });
+
+  it("only service role writes reference data", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      await expectFails(
+        c,
+        "insert into public.duty_presets (state, version, brackets, source_url, as_of) values ('NSW', 'x', '[{\"from\":0,\"base\":0,\"ratePer100\":1}]', 'https://example.invalid', now())",
+        [],
+        /permission denied/,
+      );
+      await expectFails(c, "update public.property_estimates set value_mid = 1", [], /permission denied/);
+    });
+  });
+
+  it("a comparison is owner-only and stamped to the caller", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const set = await newSet(c);
+      expect(set.owner_user_id).toBe(USER.nina);
+      await actAs(c, AUTH.ivy);
+      for (const t of ["comparison_sets where id", "comparison_items where comparison_set_id", "comparison_assumptions where comparison_set_id"]) {
+        expect((await c.query(`select 1 from public.${t} = $1`, [set.id])).rowCount, t).toBe(0);
+      }
+      expect((await c.query("update public.comparison_sets set name = 'mine' where id = $1", [set.id])).rowCount).toBe(0);
+      expect((await c.query("delete from public.comparison_sets where id = $1", [set.id])).rowCount).toBe(0);
+      await expectFails(
+        c,
+        "insert into public.comparison_items (comparison_set_id, listing_id, sort_order) values ($1, $2, 2)",
+        [set.id, LISTING.homeOffMarket],
+        RLS_VIOLATION,
+      );
+    });
+  });
+
+  it("holds 2–5 properties: at most 5, no duplicates, one target per item", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const ids5 = [1, 2, 3, 4, 5].map((n) => `30000000-0000-4000-8000-${String(n).padStart(12, "0")}`);
+      const set = await newSet(c, ids5);
+      await expectFails(
+        c,
+        "insert into public.comparison_items (comparison_set_id, listing_id, sort_order) values ($1, $2, 4)",
+        [set.id, "30000000-0000-4000-8000-000000000006"],
+        /at most 5/,
+      );
+      const two = await newSet(c);
+      await expectFails(c, "insert into public.comparison_items (comparison_set_id, listing_id, sort_order) values ($1, $2, 2)", [two.id, LISTING.homeForSale], /duplicate key/);
+      await expectFails(c, "insert into public.comparison_items (comparison_set_id, sort_order) values ($1, 3)", [two.id], /one_target/);
+    });
+  });
+
+  it("workspaces can be compared only by people who can read them", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      const set = await newSet(c, []);
+      await c.query("insert into public.comparison_items (comparison_set_id, property_id, sort_order) values ($1, $2, 0)", [set.id, PROPERTY.sharedActive]);
+      await expectFails(
+        c,
+        "insert into public.comparison_items (comparison_set_id, property_id, sort_order) values ($1, $2, 1)",
+        [set.id, PROPERTY.westside],
+        RLS_VIOLATION,
+      );
+    });
+  });
+
+  it("sharing exposes only the snapshot, by token hash, until revoked", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const set = await newSet(c);
+      await c.query("update public.comparison_sets set share_token_hash = $1, share_snapshot = '{\"rows\":[]}' where id = $2", [HASH, set.id]);
+      expect((await c.query("select shared_at from public.comparison_sets where id = $1", [set.id])).rows[0].shared_at).not.toBeNull();
+      await actAs(c, null);
+      const { rows, fields } = await c.query("select * from public.shared_comparison($1)", [HASH]);
+      expect(rows).toHaveLength(1);
+      expect(fields.map((f) => f.name).sort()).toEqual(["mode", "name", "shared_at", "snapshot"]);
+      expect((await c.query("select * from public.shared_comparison($1)", ["d".repeat(64)])).rowCount).toBe(0);
+      await actAs(c, AUTH.nina);
+      await c.query("update public.comparison_sets set share_token_hash = null where id = $1", [set.id]);
+      expect((await c.query("select share_snapshot from public.comparison_sets where id = $1", [set.id])).rows[0].share_snapshot).toBeNull();
+      await actAs(c, null);
+      expect((await c.query("select * from public.shared_comparison($1)", [HASH])).rowCount).toBe(0);
+    });
+  });
+});
