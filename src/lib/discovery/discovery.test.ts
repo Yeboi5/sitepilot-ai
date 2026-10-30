@@ -98,3 +98,51 @@ describe("area search", async () => {
     expect(areaFilter(parseAreas(""))).toBeNull();
   });
 });
+
+describe("Discover filters", async () => {
+  const { parseFilters, applyFilters, filterParams, activeCount } = await import("./filters");
+  const L = (id: string, o: Record<string, unknown>) =>
+    ({ id, state: "NSW", asking_price: 800_000, property_type: "house", bedrooms: 3, bathrooms: 2, car_spaces: 1, land_area_sqm: 500, indicative_weekly_rent: null, listed_on: "2026-10-01", ...o }) as never;
+  const list = [
+    L("a", { asking_price: 450_000, property_type: "apartment", bedrooms: 2, bathrooms: 1, land_area_sqm: null }),
+    L("b", { asking_price: 950_000, bedrooms: 4, car_spaces: 2, land_area_sqm: 700, indicative_weekly_rent: 1_000 }),
+    L("c", { asking_price: 600_000, property_type: "land", bedrooms: 0, bathrooms: 0, car_spaces: 0, land_area_sqm: 600 }),
+    L("d", { state: "VIC", asking_price: 700_000, indicative_weekly_rent: 700 }),
+  ];
+  const ids = (xs: { id: string }[]) => xs.map((x) => x.id);
+
+  it("parses only allowed values and swaps a reversed price range", () => {
+    const f = parseFilters({ min: "1000000", max: "500000", type: "house,land,castle", beds: "9", baths: "-1", land: "123", yield: "5", sort: "nope", state: "XX" }, "home");
+    expect(f).toMatchObject({ priceMin: 500_000, priceMax: 1_000_000, types: ["house", "land"], beds: 6, baths: 0, landMin: null, yieldMin: null, sort: "newest", state: null });
+  });
+
+  it("filters by price, type, rooms and land", () => {
+    const f = (raw: Record<string, string>) => ids(applyFilters(list, parseFilters(raw, "home"), "for_sale"));
+    expect(f({ min: "500000", max: "900000" })).toEqual(["c", "d"]);
+    expect(f({ type: "apartment,land" })).toEqual(["a", "c"]);
+    expect(f({ beds: "3", baths: "2" })).toEqual(["b", "d"]);
+    expect(f({ cars: "2" })).toEqual(["b"]);
+    expect(f({ land: "600" })).toEqual(["b", "c"]);
+    expect(f({ state: "VIC" })).toEqual(["d"]);
+  });
+
+  it("filters investments by minimum gross yield (unknown yield is excluded)", () => {
+    // b: 52,000 ÷ 950,000 = 5.5%; d: 36,400 ÷ 700,000 = 5.2%
+    expect(ids(applyFilters(list, parseFilters({ yield: "5" }, "investment"), "for_sale"))).toEqual(["b", "d"]);
+    expect(ids(applyFilters(list, parseFilters({ yield: "6" }, "investment"), "for_sale"))).toEqual([]);
+  });
+
+  it("sorts by price, and ignores price on the off-market tab", () => {
+    expect(ids(applyFilters(list, parseFilters({ sort: "price_asc" }, "home"), "for_sale"))).toEqual(["a", "c", "d", "b"]);
+    expect(ids(applyFilters(list, parseFilters({ sort: "price_desc" }, "home"), "for_sale"))).toEqual(["b", "d", "c", "a"]);
+    const offMarket = list.map((l) => ({ ...(l as object), asking_price: null })) as never[];
+    expect(applyFilters(offMarket, parseFilters({ min: "500000", max: "600000" }, "home"), "off_market")).toHaveLength(4);
+  });
+
+  it("round-trips to URL parameters and counts active filters", () => {
+    const f = parseFilters({ min: "500000", type: "house", beds: "2", sort: "price_asc" }, "home");
+    expect(filterParams(f)).toEqual({ min: "500000", type: "house", beds: "2", sort: "price_asc" });
+    expect(activeCount(f)).toBe(3);
+    expect(activeCount(f, "off_market")).toBe(2); // the price filter doesn't apply off-market
+  });
+});

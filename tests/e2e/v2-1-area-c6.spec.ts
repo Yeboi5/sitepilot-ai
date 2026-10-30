@@ -25,7 +25,7 @@ test("Discover: focus the deck on one or more towns", async ({ page }) => {
   await page.getByRole("link", { name: "Off-Market Potential" }).click();
   await expect(page).toHaveURL(/market=off_market.*area=|area=.*market=off_market/);
   await page.goto("/discover/home?area=Nowhere%20Town");
-  await expect(page.getByText("No for sale listings in Nowhere Town yet")).toBeVisible();
+  await expect(page.getByText("No for sale listings in Nowhere Town match")).toBeVisible();
   await page.getByRole("link", { name: "All areas" }).click();
   await expect(remaining(page)).toHaveText("160 to go");
 });
@@ -80,4 +80,40 @@ test("Analyse this deal: development is scored only with verified evidence and a
   const devScore = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^Development feasibility/ }) });
   await expect(devScore.getByRole("cell").first()).toContainText("64");
   await expect(devScore.getByRole("cell").nth(1)).toContainText("Insufficient evidence");
+});
+
+test("Discover filters: price range, type, rooms, yield and sort", async ({ page }) => {
+  await page.goto("/discover/home");
+  await page.getByText("Filters", { exact: true }).click();
+  await page.getByLabel("Min price").selectOption("500000");
+  await page.getByLabel("Max price").selectOption("800000");
+  await page.getByRole("button", { name: "Apply" }).click();
+  await expect(page).toHaveURL(/min=500000&max=800000/);
+  await expect(remaining(page)).toHaveText("76 to go");
+  await expect(page.getByText("$500K–$800K")).toBeVisible();
+
+  // Property type checkboxes plus a max price.
+  await page.goto("/discover/home?type=apartment,townhouse&max=700000");
+  await expect(remaining(page)).toHaveText("33 to go");
+  await page.goto("/discover/home?beds=4&baths=2&cars=2");
+  await expect(remaining(page)).toHaveText("26 to go");
+
+  // Sort: cheapest first.
+  await page.goto("/discover/home?sort=price_asc");
+  await expect(page.getByRole("group", { name: /arrow keys/ }).getByRole("article").last()).toContainText("$540,000");
+
+  // Investments: minimum gross yield.
+  await page.goto("/discover/investment?yield=5");
+  await expect(remaining(page)).toHaveText("45 to go");
+
+  // Off-market: no price filters (not for sale).
+  await page.goto("/discover/home?market=off_market&min=500000");
+  await page.getByText("Filters", { exact: true }).click();
+  await expect(page.getByText("Price filters don't apply here")).toBeVisible();
+  await expect(remaining(page)).toHaveText("32 to go");
+
+  // Clear filters.
+  await page.goto("/discover/home?min=500000&max=800000");
+  await page.getByRole("link", { name: "Clear filters" }).click();
+  await expect(remaining(page)).toHaveText("160 to go");
 });

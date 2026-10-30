@@ -2,6 +2,17 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.11.0] - 2026-10-30
+
+### Added
+- **Discover filters** (the usual property-app set): price range (asking price), property type
+  (house, townhouse, apartment, duplex, land), bedrooms, bathrooms, car spaces, land size, minimum
+  gross yield (investments), state, and sort (newest, price low to high, price high to low).
+  Filters live in the URL, work with area search, and show a count and summary. Price, yield and
+  sort don't apply on the off-market tab (not for sale), and the panel says so.
+  (`src/lib/discovery/filters.ts`)
+- Tests: 5 unit tests (218 total), 1 browser test (55 total).
+
 ## [0.10.0] - 2026-10-30
 
 Discover area search, and Compare stage C6 (development feasibility from your workspace).
