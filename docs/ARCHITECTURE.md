@@ -38,6 +38,7 @@ Later sprints:  job queue + document worker (service role) ──▶ AI provider
 | `src/components/shell/` | Responsive app shell: desktop top bar, mobile bottom tabs, per-audience nav items |
 | `src/components/dashboard/` | Hero, entry cards, quick actions, "Your projects" |
 | `src/lib/flags.ts` | Feature flags (`NEXT_PUBLIC_FLAG_*`) |
+| `src/lib/jurisdictions.ts`, `src/lib/dates.ts` | States and territories, postcode ranges, per-property time zones |
 | `src/app/(app)/analyse/` | Start a workspace from an address |
 | `src/app/(app)/investor/` | Property workspaces, evidence register, scenarios, report (`/investor` redirects to `/`) |
 | `src/app/(app)/firm/` | Firm matter inbox, matter view (read-only, grant-filtered), review queue |
@@ -88,4 +89,5 @@ files requires `status = 'active'`.
 | 4 | Professional invitations, engagement checklist, matters, tasks, milestones, messages, notifications | |
 | 5 | Stripe sandbox, security tests, user testing, compliance review, controlled beta | |
 
-Update Pack 1.1 phases (B–F) are tracked in [UPDATE_1_1_PLAN.md](UPDATE_1_1_PLAN.md).
+Update Pack 1.1 phases (B–F) are tracked in [UPDATE_1_1_PLAN.md](UPDATE_1_1_PLAN.md); the current
+roadmap is Master Blueprint v2.0, [BLUEPRINT_V2_PLAN.md](BLUEPRINT_V2_PLAN.md).

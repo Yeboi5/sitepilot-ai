@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { timeZoneFor, type State } from "@/lib/jurisdictions";
 import { requireOrg } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { evidenceSchema, formDataToObject, propertySchema, type FormState } from "@/lib/validation";
@@ -23,6 +24,7 @@ export async function createProperty(_prev: FormState, formData: FormData): Prom
       address: parsed.data.address,
       suburb: parsed.data.suburb,
       postcode: parsed.data.postcode,
+      jurisdiction: parsed.data.state,
       lot_dp: parsed.data.lotDp,
     })
     .select("id")
@@ -38,10 +40,16 @@ const uuid = z.string().uuid();
 export async function addEvidence(propertyId: string, _prev: FormState, formData: FormData): Promise<FormState> {
   await requireOrg("investor");
   if (!uuid.safeParse(propertyId).success) return { error: "Unknown property." };
-  const parsed = evidenceSchema().safeParse(formDataToObject(formData));
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const supabase = await createClient();
+  // "Today" is checked in the property's own time zone (e.g. Perth vs Sydney).
+  const { data: property } = await supabase.from("properties").select("jurisdiction, postcode").eq("id", propertyId).maybeSingle();
+  if (!property) return { error: "Unknown property." };
+  const parsed = evidenceSchema(new Date(), timeZoneFor(property.jurisdiction as State, property.postcode)).safeParse(
+    formDataToObject(formData),
+  );
+  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+
   const { error } = await supabase.from("evidence").insert({
     property_id: propertyId,
     title: parsed.data.title,

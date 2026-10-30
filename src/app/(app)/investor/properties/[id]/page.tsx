@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { DemoDataBanner } from "@/components/demo";
-import { sydneyDate } from "@/lib/dates";
+import { dateForProperty } from "@/lib/dates";
 import { EVIDENCE_COLUMNS, EvidenceRegister } from "@/components/evidence-register";
 import { Alert, Badge, Card, PageHeader } from "@/components/ui";
 import { headline } from "@/lib/finance/feasibility";
@@ -45,7 +45,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         description={
           <>
             {property.suburb} {property.postcode} · {property.jurisdiction}
-            {property.lot_dp ? ` · ${property.lot_dp}` : " · Lot/DP not recorded"}
+            {property.lot_dp ? ` · ${property.lot_dp}` : " · Lot and plan not recorded"}
           </>
         }
       />
@@ -76,7 +76,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
 
           <Card>
             <h2 className="mb-4 font-semibold">Add evidence</h2>
-            <EvidenceForm propertyId={property.id} today={sydneyDate()} />
+            <EvidenceForm propertyId={property.id} today={dateForProperty(property)} />
           </Card>
         </div>
 

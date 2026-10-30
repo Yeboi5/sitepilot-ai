@@ -29,6 +29,13 @@ jobs:
       NEXT_PUBLIC_FLAG_COUPLES: "on"
       NEXT_PUBLIC_FLAG_ALERTS: "on"
       NEXT_PUBLIC_FLAG_FIND_A_PRO: "on"
+      NEXT_PUBLIC_FLAG_NATIONWIDE: "on"
+      NEXT_PUBLIC_FLAG_MY_PROPERTY: "on"
+      NEXT_PUBLIC_FLAG_HOMEOWNER_CLAIMS: "on"
+      NEXT_PUBLIC_FLAG_BUYER_ENQUIRIES: "on"
+      NEXT_PUBLIC_FLAG_VISION: "on"
+      NEXT_PUBLIC_FLAG_MATTERPORT: "on"
+      NEXT_PUBLIC_FLAG_DUTY_PRESETS: "on"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

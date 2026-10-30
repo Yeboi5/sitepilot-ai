@@ -33,7 +33,7 @@ export default async function PropertiesPage() {
             <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th scope="col" className="px-4 py-3">Address</th>
-                <th scope="col" className="px-4 py-3">Lot / DP</th>
+                <th scope="col" className="px-4 py-3">Lot and plan</th>
                 <th scope="col" className="px-4 py-3">Jurisdiction</th>
                 <th scope="col" className="px-4 py-3">Evidence</th>
                 <th scope="col" className="px-4 py-3">Created</th>

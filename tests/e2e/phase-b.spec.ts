@@ -10,8 +10,9 @@ test.describe("guest dashboard (desktop)", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Discover its potential.");
     await expect(page.getByRole("link", { name: /Find My Home/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Find My Investment/ })).toBeVisible();
-    for (const tile of ["Search address", "Analyse a property", "Saved properties", "Alerts", "Find a pro"]) {
-      await expect(page.getByRole("link", { name: new RegExp(tile) })).toBeVisible();
+    const quickActions = page.getByRole("region", { name: "Quick actions" });
+    for (const tile of ["Search any address", "My Property", "SitePilot Vision", "Analyse", "Saved", "Alerts", "Find a pro"]) {
+      await expect(quickActions.getByRole("link", { name: new RegExp(`^${tile}`) })).toBeVisible();
     }
     await expect(page.getByRole("heading", { name: "How it works" })).toBeVisible();
     await expect(page.getByText("DEMO", { exact: true })).toBeVisible();
@@ -34,7 +35,7 @@ test.describe("guest dashboard (desktop)", () => {
 
   test("account-only actions send guests to sign in", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: /Search address/ }).click();
+    await page.getByRole("link", { name: /Search any address/ }).click();
     await expect(page).toHaveURL(/\/sign-in\?next=%2Fanalyse/);
   });
 });

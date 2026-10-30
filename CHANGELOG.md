@@ -2,6 +2,29 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.0] - 2026-10-30
+
+Master Blueprint v2.0, increment V2-1: dashboard v2 and nationwide foundation.
+
+### Added
+- Dashboard quick actions per v2.0: **Search any address**, **My Property**, **SitePilot
+  Vision**, Analyse, Saved, Alerts, Find a pro. My Property and Vision have preview screens.
+- Nationwide property workspaces: migration `20261030010000_nationwide.sql` allows all eight
+  states and territories (NSW stays the default). The property form has a state selector.
+- `src/lib/jurisdictions.ts`: states, Australia Post postcode ranges, and time zones (Broken Hill
+  on South Australian time). `dateForProperty()`: "today" where the property is.
+- v2.0 feature flags: `nationwide`, `myProperty`, `homeownerClaims`, `buyerEnquiries`, `vision`,
+  `visionRealProvider` (off: mock provider), `matterport`, `dutyPresets`.
+- `docs/BLUEPRINT_V2_PLAN.md` (approved) and the v2.0 blueprint.
+- Tests: 9 RLS tests (80 total), 39 unit tests (134 total), 5 browser tests (31 total).
+
+### Changed
+- Postcodes are validated against the chosen state ("That postcode isn't in WA").
+- Evidence "date retrieved" defaults to, and is checked against, the property's local date (Perth,
+  Brisbane, Darwin and others), not Sydney's.
+- Wording is no longer NSW-only: state planning portal, state revenue office for duty, "Lot and
+  plan" with examples per state, a nationwide Find a pro preview, and an updated site description.
+
 ## [0.3.0] - 2026-10-30
 
 Update Pack 1.1, Phase B: dashboard, responsive navigation and design refresh.

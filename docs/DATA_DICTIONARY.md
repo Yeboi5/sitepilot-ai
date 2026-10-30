@@ -40,9 +40,9 @@ remove/demote themselves.
 | --- | --- | --- |
 | owner_org_id | uuid | Investor organisation that owns the workspace |
 | address, suburb | text | As on official records |
-| postcode | text | 4 digits (NSW validated in app) |
-| lot_dp | text | e.g. `Lot 1 DP 123456`, optional |
-| jurisdiction | text | `NSW` only during pilot |
+| postcode | text | 4 digits; checked against the state's Australia Post ranges in the app |
+| lot_dp | text | Lot and plan as on the title (e.g. `Lot 1 DP 123456`, `Lot 2 PS 123456`), optional |
+| jurisdiction | text | `NSW`, `VIC`, `QLD`, `WA`, `SA`, `TAS`, `ACT`, `NT` (default `NSW`). Time zone derived from it |
 | is_demo | boolean | Synthetic fixture. Set only by seed/service role; immutable for users |
 | created_by | uuid | **server** |
 

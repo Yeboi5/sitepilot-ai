@@ -7,7 +7,7 @@ const display = Nunito({ subsets: ["latin"], weight: ["600", "700", "800"], vari
 
 export const metadata: Metadata = {
   title: { default: "SitePilot AI", template: "%s · SitePilot AI" },
-  description: "Property feasibility and conveyancing collaboration for NSW investors and licensed professionals.",
+  description: "Discover, analyse and improve property anywhere in Australia, with licensed professionals when it matters.",
   robots: { index: false, follow: false }, // pre-launch
 };
 

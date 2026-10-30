@@ -22,7 +22,7 @@ export default function AboutPage() {
   return (
     <>
       <section className="py-10 sm:py-16">
-        <p className="text-sm font-medium uppercase tracking-wide text-brand-600">NSW pilot</p>
+        <p className="text-sm font-medium uppercase tracking-wide text-brand-600">Australia-wide · pilot</p>
         <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
           Property feasibility and conveyancing, in one secure workspace.
         </h1>

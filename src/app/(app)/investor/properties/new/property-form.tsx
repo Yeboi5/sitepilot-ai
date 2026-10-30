@@ -3,7 +3,9 @@
 import { useActionState } from "react";
 import { createProperty } from "../../actions";
 import { fieldA11y, FormMessage, SubmitButton } from "@/components/form";
-import { Field, Input } from "@/components/ui";
+import { Field, Input, Select } from "@/components/ui";
+import { FLAGS } from "@/lib/flags";
+import { STATES, STATE_INFO } from "@/lib/jurisdictions";
 
 export function PropertyForm() {
   const [state, action] = useActionState(createProperty, undefined);
@@ -14,20 +16,36 @@ export function PropertyForm() {
       <Field id="address" label="Street address" errors={fe?.address}>
         <Input {...fieldA11y("address", fe?.address)} autoComplete="address-line1" placeholder="12 Example Street" required />
       </Field>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
-          <Field id="suburb" label="Suburb" errors={fe?.suburb}>
-            <Input {...fieldA11y("suburb", fe?.suburb)} autoComplete="address-level2" required />
+      <Field id="suburb" label="Suburb" errors={fe?.suburb}>
+        <Input {...fieldA11y("suburb", fe?.suburb)} autoComplete="address-level2" required />
+      </Field>
+      <div className="grid grid-cols-2 gap-4">
+        {FLAGS.nationwide ? (
+          <Field id="state" label="State or territory" errors={fe?.state}>
+            <Select {...fieldA11y("state", fe?.state)} autoComplete="address-level1" defaultValue="NSW">
+              {STATES.map((s) => (
+                <option key={s} value={s}>
+                  {s} · {STATE_INFO[s].name}
+                </option>
+              ))}
+            </Select>
           </Field>
-        </div>
+        ) : (
+          <input type="hidden" name="state" value="NSW" />
+        )}
         <Field id="postcode" label="Postcode" errors={fe?.postcode}>
           <Input {...fieldA11y("postcode", fe?.postcode)} autoComplete="postal-code" inputMode="numeric" maxLength={4} required />
         </Field>
       </div>
-      <Field id="lotDp" label="Lot / DP (optional)" hint="As shown on the title search, e.g. Lot 1 DP 123456." errors={fe?.lotDp}>
+      <Field
+        id="lotDp"
+        label="Lot and plan (optional)"
+        hint="As shown on the title, e.g. Lot 1 DP 123456 (NSW), Lot 2 PS 123456 (VIC) or Lot 3 RP 12345 (QLD)."
+        errors={fe?.lotDp}
+      >
         <Input {...fieldA11y("lotDp", fe?.lotDp, true)} />
       </Field>
-      <p className="text-xs text-slate-500">Jurisdiction: NSW. Other states are not supported during the pilot.</p>
+      {FLAGS.nationwide ? null : <p className="text-xs text-slate-500">Jurisdiction: NSW.</p>}
       <SubmitButton pendingLabel="Creating…">Create property</SubmitButton>
     </form>
   );

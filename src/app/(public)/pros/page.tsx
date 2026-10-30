@@ -10,9 +10,9 @@ export default function FindAProPage() {
   return (
     <ComingSoon
       title="Find a pro"
-      points={["Licensed NSW conveyancers, verified manually during the pilot", "You choose what to share, and can revoke access at any time", "Any referral arrangements will be disclosed"]}
+      points={["Conveyancers and property lawyers in every state and territory, each licence checked against that state's register", "You choose what to share, and can revoke access at any time", "Any referral arrangements will be disclosed"]}
     >
-      <p>Connecting you with licensed professionals is coming after a legal review of referral rules.</p>
+      <p>Connecting you with licensed professionals, wherever the property is.</p>
     </ComingSoon>
   );
 }

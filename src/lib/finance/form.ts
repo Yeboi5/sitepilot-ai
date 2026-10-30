@@ -17,7 +17,7 @@ export const SECTIONS: SectionDef[] = [
     id: "acquisition",
     title: "Acquisition costs",
     fields: [
-      { path: "acquisition.stampDuty", label: "Stamp duty (your estimate)", unit: "aud", hint: "Assumption. SitePilot does not calculate duty; confirm the amount with Revenue NSW or your conveyancer." },
+      { path: "acquisition.stampDuty", label: "Stamp duty (your estimate)", unit: "aud", hint: "Assumption. SitePilot does not calculate duty; confirm the amount with your state revenue office or your conveyancer." },
       { path: "acquisition.legalAndOther", label: "Legal, searches and other acquisition costs", unit: "aud" },
     ],
   },

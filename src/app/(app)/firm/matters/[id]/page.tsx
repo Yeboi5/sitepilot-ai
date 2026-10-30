@@ -122,7 +122,7 @@ export default async function FirmMatterPage({ params }: { params: Promise<{ id:
                     <dd>{property.postcode ?? "—"}</dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-slate-500">Lot / DP</dt>
+                    <dt className="text-slate-500">Lot and plan</dt>
                     <dd>{property.lot_dp ?? "Not recorded"}</dd>
                   </div>
                 </dl>

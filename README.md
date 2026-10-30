@@ -9,11 +9,9 @@ with professional sign-off.
 > funds, settle, lodge or transfer title. **Use synthetic data only** until the compliance gates in
 > [docs/SECURITY.md](docs/SECURITY.md) are passed.
 
-**Status:** Sprints 0–2 complete (foundation, auth, organisations, RLS, property workspaces,
-manual planning evidence, feasibility scenarios, comparison, sensitivity, report export).
-Update Pack 1.1 Phase B complete (dashboard, responsive navigation, design refresh); Phase C
-(discovery swipe decks) next. See [CHANGELOG.md](CHANGELOG.md) and
-[docs/UPDATE_1_1_PLAN.md](docs/UPDATE_1_1_PLAN.md).
+**Status:** Sprints 0–2 and Update Pack 1.1 Phase B complete. Master Blueprint v2.0 approved:
+V2-1 (dashboard v2, nationwide workspaces) complete; V2-2 (nationwide demo Discover) next. See
+[docs/BLUEPRINT_V2_PLAN.md](docs/BLUEPRINT_V2_PLAN.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Stack
 
@@ -103,7 +101,7 @@ Tests tagged `@mobile` run in an iPhone-size project (390×844). Set `E2E_BASE_U
 ## Documentation
 
 - [docs/SPRINT_0_1_PLAN.md](docs/SPRINT_0_1_PLAN.md): architecture plan, directory tree, schema, RLS design, test strategy
-- [docs/BLUEPRINT_V2_PLAN.md](docs/BLUEPRINT_V2_PLAN.md): Master Blueprint v2.0 gap analysis, limitations and roadmap (proposed)
+- [docs/BLUEPRINT_V2_PLAN.md](docs/BLUEPRINT_V2_PLAN.md): Master Blueprint v2.0 gap analysis, limitations and roadmap (approved)
 - [docs/UPDATE_1_1_PLAN.md](docs/UPDATE_1_1_PLAN.md): Update Pack 1.1 gap analysis and phases
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): system design, request flow, sprint plan
 - [docs/FORMULAS.md](docs/FORMULAS.md): feasibility formulas, versioning and sensitivity spec

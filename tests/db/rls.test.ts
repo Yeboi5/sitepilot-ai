@@ -118,7 +118,7 @@ describe("investor workspace permissions", () => {
     });
   });
 
-  it("rejects non-https evidence URLs and non-NSW jurisdictions", async () => {
+  it("rejects non-https evidence URLs and unknown jurisdictions", async () => {
     await expect(
       as(AUTH.ivy, (c) =>
         c.query(
@@ -129,7 +129,7 @@ describe("investor workspace permissions", () => {
     ).rejects.toThrow(/evidence_source_url_check/);
     await expect(
       as(AUTH.ivy, (c) =>
-        c.query("insert into public.properties (owner_org_id, address, jurisdiction) values ($1, '1 Vic St', 'VIC')", [
+        c.query("insert into public.properties (owner_org_id, address, jurisdiction) values ($1, '1 Nowhere St', 'XX')", [
           ORG.harbourview,
         ]),
       ),
@@ -519,6 +519,34 @@ describe("organisations and memberships", () => {
     await expect(
       as(AUTH.ivy, (c) => c.query("update public.subscriptions set plan = 'developer'")),
     ).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("nationwide workspaces (Blueprint v2.0)", () => {
+  it.each(["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"])("accepts a %s property", async (state) => {
+    await as(AUTH.ivy, async (c) => {
+      const { rows } = await c.query(
+        "insert into public.properties (owner_org_id, address, jurisdiction) values ($1, '1 Test St', $2) returning jurisdiction",
+        [ORG.harbourview, state],
+      );
+      expect(rows[0].jurisdiction).toBe(state);
+    });
+  });
+
+  it("still defaults to NSW and keeps tenant isolation for other states", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      const { rows } = await c.query(
+        "insert into public.properties (owner_org_id, address, jurisdiction) values ($1, '9 Perth St', 'WA') returning id",
+        [ORG.harbourview],
+      );
+      const dflt = await c.query("insert into public.properties (owner_org_id, address) values ($1, '2 Default St') returning jurisdiction", [
+        ORG.harbourview,
+      ]);
+      expect(dflt.rows[0].jurisdiction).toBe("NSW");
+      await actAs(c, AUTH.oscar);
+      expect((await c.query("select 1 from public.properties where id = $1", [rows[0].id])).rowCount).toBe(0);
+    });
   });
 });
 

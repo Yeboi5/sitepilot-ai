@@ -1,19 +1,22 @@
-import { BadgeCheck, Bell, Calculator, Heart, Search, type LucideIcon } from "lucide-react";
+import { BadgeCheck, Bell, Calculator, Heart, Home, Search, Wand2, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { FLAGS } from "@/lib/flags";
 
 type Tile = { href: string; label: string; hint: string; icon: LucideIcon };
 
+/** Dashboard quick actions (Master Blueprint v2.0 §2). */
 export function ActionTiles() {
   const tiles: Tile[] = [
-    { href: "/analyse", label: "Search address", hint: "Start with a property you know", icon: Search },
-    { href: "/investor/properties", label: "Analyse a property", hint: "Open your projects", icon: Calculator },
-    { href: "/saved", label: "Saved properties", hint: "Your shortlists", icon: Heart },
+    { href: "/analyse", label: "Search any address", hint: "Anywhere in Australia", icon: Search },
+    ...(FLAGS.myProperty ? [{ href: "/my-property", label: "My Property", hint: "Your home: ideas, notes, value", icon: Home }] : []),
+    ...(FLAGS.vision ? [{ href: "/vision", label: "SitePilot Vision", hint: "See what it could look like", icon: Wand2 }] : []),
+    { href: "/investor/properties", label: "Analyse", hint: "Numbers on your projects", icon: Calculator },
+    { href: "/saved", label: "Saved", hint: "Your shortlists", icon: Heart },
     ...(FLAGS.alerts ? [{ href: "/alerts", label: "Alerts", hint: "New matches for you", icon: Bell }] : []),
-    ...(FLAGS.findAPro ? [{ href: "/pros", label: "Find a pro", hint: "Licensed conveyancers", icon: BadgeCheck }] : []),
+    ...(FLAGS.findAPro ? [{ href: "/pros", label: "Find a pro", hint: "Licensed professionals", icon: BadgeCheck }] : []),
   ];
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {tiles.map((t) => (
         <li key={t.href}>
           <Link

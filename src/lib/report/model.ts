@@ -131,7 +131,7 @@ export function buildReport(input: ReportInput): ReportModel {
         { label: "Suburb", value: p.suburb ?? "Not recorded" },
         { label: "Postcode", value: p.postcode ?? "Not recorded" },
         { label: "Jurisdiction", value: p.jurisdiction },
-        { label: "Lot / DP", value: p.lotDp ?? "Not recorded" },
+        { label: "Lot and plan", value: p.lotDp ?? "Not recorded" },
       ],
       verified: input.evidence.filter((e) => e.status === "verified"),
       unverified: input.evidence.filter((e) => e.status !== "verified"),

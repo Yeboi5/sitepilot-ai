@@ -4,7 +4,7 @@ Source: *SitePilot AI — Master Blueprint v2.0 (30 Oct 2026)*, an **addendum** 
 and Update Pack 1.1 (`docs/SitePilot_AI_Master_Blueprint_v2.docx`). Nothing here removes working
 functionality. All schema work is additive migrations; breaking changes are listed for approval.
 
-Status: **proposed, awaiting approval.** No application code has changed for v2.0 yet.
+Status: **approved 2026-10-30** with the changes recorded in section 10. V2-1 ✅ (0.4.0) · V2-2 next.
 
 Priorities (from the request): **1. Dashboard · 2. Nationwide discovery · 3. Homeowner features
 (My Property) · 4. SitePilot Vision**, with **Matterport optional and separate**.
@@ -30,7 +30,7 @@ Priorities (from the request): **1. Dashboard · 2. Nationwide discovery · 3. H
 | Area | Today | v2.0 change |
 | --- | --- | --- |
 | Dashboard quick actions | Search address, Analyse, Saved, Alerts, Find a pro | Add **My Property** and **SitePilot Vision**; rename **Search Any Address** |
-| Jurisdiction | NSW only: DB check, NSW postcode validation, Sydney dates, NSW copy | **All states and territories** for workspaces and discovery; state-aware postcode validation; per-property time zone for dates. The professional network stays NSW-first (state-regulated) |
+| Jurisdiction | NSW only: DB check, NSW postcode validation, Sydney dates, NSW copy | **All states and territories** for workspaces and discovery; state-aware postcode validation; per-property time zone for dates. Find a Pro is nationwide too, with per-state licence verification |
 | Evidence source types | Labelled for NSW ("NSW Planning Portal record") | Generic labels with the state shown ("State planning portal") |
 | Stamp duty | Investor enters an amount; not calculated | §7 wants "duty assumptions by state": optional **state presets as editable assumptions** with source and as-of date (see decision 3) |
 | Off-market label | Plan said "Not listed for sale" | Use **NOT FOR SALE**, per v2.0 §3 |
@@ -55,8 +55,8 @@ Priorities (from the request): **1. Dashboard · 2. Nationwide discovery · 3. H
 ### Conflicts and proposed resolutions
 
 1. **"Nationwide" vs NSW-only constraints.** Widen the jurisdiction check to all eight
-   states/territories (additive), keeping NSW as the default. The professional marketplace stays
-   NSW-only until other states' rules are reviewed (§8, §9).
+   states/territories (additive), keeping NSW as the default. Professionals are listed per state
+   only after their licence for that state is verified (§8, §9).
 2. **"Platform admins have no access to client data" vs claim verification.** Add a narrow
    **claim verifier** role that can see *only* claim evidence, with every view audited and evidence
    deleted after a decision. It's not a general admin bypass.
@@ -73,9 +73,9 @@ Priorities (from the request): **1. Dashboard · 2. Nationwide discovery · 3. H
 6. **"Taxes" in the calculator (§7) vs "no tax determinations".** Keep pre-tax results; add
    *tax placeholder* assumptions (land tax as a holding cost, GST/CGT "not modelled"). No computed
    tax figures.
-7. **Buyer expressions of interest on off-market homes.** This may amount to real-estate agency
-   activity or marketing (state agency licensing, the Spam Act, privacy). Build only the owner
-   opt-in and revocation plumbing behind a flag; keep it **off until legal review**.
+7. **Buyer expressions of interest on off-market homes.** These could touch state agency
+   licensing, the Spam Act and privacy rules. Decision: enabled, with the owner opt-in,
+   revocation and platform-mediated contact safeguards in section 10.
 
 ## 2. Technical limitations (please read)
 
@@ -165,12 +165,12 @@ MY PROPERTY                       VISION EDITOR                    3D TOUR (opti
 
 | Migration | Tables / changes | RLS summary |
 | --- | --- | --- |
-| M1 `nationwide` | `properties.jurisdiction` check → `NSW, VIC, QLD, WA, SA, TAS, ACT, NT`; `properties.time_zone` (derived default) | Unchanged policies; new tests per state |
+| M1 `nationwide` ✅ | `properties.jurisdiction` check → `NSW, VIC, QLD, WA, SA, TAS, ACT, NT`. Time zone is derived in code from state and postcode (no column needed) | Unchanged policies; new tests per state |
 | M2 `property_records` | `property_records` (canonical address: state, suburb, postcode, street, `source`, `is_demo`, `gnaf_pid` nullable) ; `properties.property_record_id` nullable | Demo records readable by guests; others readable by authenticated users only once a licensed source exists |
 | M3 `discovery` | `listings` (kind, market, NOT-FOR-SALE rules: no street address or price when off-market, provenance, `is_demo`), `swipe_events` (append-only), `saved_properties` (current state) | Guests read demo listings only; swipe and save rows are owner-only |
 | M4 `couples` | `couples_groups`, `couples_members` (max 2), `couples_invites` (hashed token), `couples_shared` | Members see only explicitly shared items; private swipes never visible |
 | M5 `my_property` | `owned_properties` (user ↔ record, nickname, notes), `property_notes`, `maintenance_items` | Owner-only |
-| M6 `claims` | `homeowner_claims` (status pending/verified/rejected/withdrawn, method, evidence path, decided_by/at), `app.is_claim_verifier()`; `buyer_enquiries` (owner opt-in flag, revocable; **flag off**) | Claimant sees own; verifier sees pending evidence only, every view audited; status changes via RPC only; never public |
+| M6 `claims` | `homeowner_claims` (status pending/verified/rejected/withdrawn, method, evidence path, decided_by/at), `app.is_claim_verifier()`; `buyer_enquiries` (owner opt-in, revocable, platform-mediated messages) | Claimant sees own; verifier sees pending evidence only, every view audited; status changes via RPC only; never public |
 | M7 `vision` | `visual_projects` (source photo path, mode, consent_at), `visual_versions` (prompt, preset, provider, model, cost_cents, output path, watermarked), `vision_usage` (per-user counters) | Owner-only; share tokens expose watermarked output only |
 | M8 `tours_3d` | `tours_3d` (property or owned_property id, provider `matterport`, model_id, attested_by/at) | Same access as the parent workspace |
 | M9 `duty_presets` (optional) | `duty_presets` (state, version, source_url, as_of, brackets jsonb, reviewed_by) | Read-only reference data |
@@ -212,7 +212,7 @@ Storage buckets: `vision-sources` and `vision-outputs` (private, image/jpeg/png/
 ## 8. Feature flags
 
 Existing: `discovery`, `couples`, `alerts`, `findAPro`.
-New: `nationwide`, `myProperty`, `homeownerClaims`, `buyerEnquiries` (**off until legal review**),
+New: `nationwide`, `myProperty`, `homeownerClaims`, `buyerEnquiries` (on; owner opt-in, revocable),
 `vision`, `visionRealProvider` (off: mock provider), `matterport`, `dutyPresets`.
 
 ## 9. Roadmap (re-sequenced to the requested priorities)
@@ -233,18 +233,20 @@ screenshots, a changed-file summary, then a review stop.
 
 \*Target days from approval, per §12; contingent on provider access and reviews.
 
-## 10. Decisions needed before V2-1
+## 10. Decisions (approved 2026-10-30)
 
-1. **Nationwide:** widen workspaces and discovery to all states and territories, with the
-   professional marketplace staying NSW-only for now?
-2. **Data separation:** add `property_records` and `homeowner_claims` as new tables (no change to
-   existing `properties` semantics)?
-3. **Duty presets by state:** add later as reviewed, sourced, editable assumptions (V2-6), or keep
-   manual entry only?
-4. **Claim verification:** manual review of uploaded evidence (rates notice or similar) by a
-   restricted verifier role, until a verification provider is chosen?
-5. **Buyer enquiries:** build the opt-in plumbing behind a flag that stays off until legal review?
-6. **Vision provider:** build against a mock now, and choose a real provider later (I'll prepare a
-   comparison)?
-7. **Matterport:** embed-only (public or unlisted tours) for now, with SDK research later?
-8. **Sequence:** V2-1 → V2-8 as above (Couples Mode moves after Vision)?
+1. **Nationwide:** workspaces, discovery **and Find a Pro** cover all states and territories.
+   Professionals record the states they're licensed in and the licence type (licensed conveyancer
+   or solicitor; Queensland conveyancing is done by solicitors). Each state is verified manually
+   against that state's public register before the firm appears there.
+2. **Data separation:** new `property_records` and `homeowner_claims` tables, as proposed.
+3. **Duty presets by state:** approved (V2-6) as reviewed, sourced, editable assumptions.
+4. **Claim verification:** manual review of evidence by a restricted, audited verifier role.
+5. **Buyer enquiries: enabled** (flag on), not held for legal review. A lawyer or conveyancer
+   engages once a buyer is serious and title work begins. Safeguards stay built in: the owner
+   opts in, can opt out or revoke at any time, and messages are mediated by the platform, so
+   neither party's contact details are shared until the owner chooses. Rate limits and reporting
+   apply. Off-market homes are never presented as for sale.
+6. **Vision:** mock provider now; provider comparison prepared before choosing.
+7. **Matterport:** embed-only now; SDK research later.
+8. **Sequence:** V2-1 → V2-8 as above.

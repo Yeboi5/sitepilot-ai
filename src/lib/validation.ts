@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { sydneyDate } from "./dates";
+import { APP_TIME_ZONE, localDate } from "./dates";
+import { STATES, isPostcodeInState } from "./jurisdictions";
 
 const trimmed = (max: number) => z.string().trim().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
 
@@ -28,24 +29,30 @@ export const organisationSchema = z.object({
   type: z.enum(["investor", "professional"]),
 });
 
-// NSW postcodes: 2000–2599, 2619–2899, 2921–2999 (2600–2618 & 2900–2920 are ACT) plus PO-box range 1000–1999.
+/** Kept for existing callers; see isPostcodeInState for every state. */
 export function isNswPostcode(postcode: string): boolean {
-  if (!/^\d{4}$/.test(postcode)) return false;
-  const n = Number(postcode);
-  return (n >= 1000 && n <= 2599) || (n >= 2619 && n <= 2899) || (n >= 2921 && n <= 2999);
+  return isPostcodeInState("NSW", postcode);
 }
 
-export const propertySchema = z.object({
-  address: z.string().trim().min(3, "Enter the street address").max(300),
-  suburb: trimmed(80),
-  postcode: z.string().trim().refine(isNswPostcode, "Enter a valid NSW postcode"),
-  lotDp: z
-    .string()
-    .trim()
-    .max(120)
-    .optional()
-    .transform((v) => (v ? v : null)),
-});
+export const propertySchema = z
+  .object({
+    address: z.string().trim().min(3, "Enter the street address").max(300),
+    suburb: trimmed(80),
+    // Defaults to NSW so forms without a state selector keep working.
+    state: z.enum(STATES).default("NSW"),
+    postcode: z.string().trim().regex(/^\d{4}$/, "Enter a 4-digit postcode"),
+    lotDp: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .transform((v) => (v ? v : null)),
+  })
+  .superRefine((p, ctx) => {
+    if (/^\d{4}$/.test(p.postcode) && !isPostcodeInState(p.state, p.postcode)) {
+      ctx.addIssue({ code: "custom", path: ["postcode"], message: `That postcode isn't in ${p.state}` });
+    }
+  });
 
 export const EVIDENCE_SOURCE_TYPES = [
   "planning_certificate",
@@ -60,7 +67,7 @@ export const EVIDENCE_SOURCE_TYPES = [
 
 export const EVIDENCE_SOURCE_LABELS: Record<(typeof EVIDENCE_SOURCE_TYPES)[number], string> = {
   planning_certificate: "Planning certificate (council)",
-  planning_portal: "NSW Planning Portal record",
+  planning_portal: "State planning portal record",
   lep_map: "LEP map / instrument",
   council_record: "Council record",
   title_search: "Title search",
@@ -69,7 +76,8 @@ export const EVIDENCE_SOURCE_LABELS: Record<(typeof EVIDENCE_SOURCE_TYPES)[numbe
   other: "Other",
 };
 
-export const evidenceSchema = (now: Date = new Date()) =>
+/** `timeZone` is the property's, so "today" means today where the property is. */
+export const evidenceSchema = (now: Date = new Date(), timeZone: string = APP_TIME_ZONE) =>
   z.object({
     title: trimmed(200),
     sourceType: z.enum(EVIDENCE_SOURCE_TYPES),
@@ -83,7 +91,7 @@ export const evidenceSchema = (now: Date = new Date()) =>
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter the date you retrieved it")
       .refine((d) => !Number.isNaN(Date.parse(d)), "Enter a valid date")
-      .refine((d) => d <= sydneyDate(now), "Retrieval date can't be in the future"),
+      .refine((d) => d <= localDate(timeZone, now), "Retrieval date can't be in the future"),
     notes: z
       .string()
       .trim()

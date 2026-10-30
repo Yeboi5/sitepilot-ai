@@ -58,7 +58,7 @@ test.describe("investor view", () => {
     await page.getByLabel("Suburb").fill("Melbourne");
     await page.getByLabel("Postcode").fill("3000");
     await page.getByRole("button", { name: "Create property" }).click();
-    await expect(page.getByText("Enter a valid NSW postcode")).toBeVisible();
+    await expect(page.getByText("That postcode isn't in NSW")).toBeVisible(); // state defaults to NSW
   });
 });
 
