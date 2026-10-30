@@ -522,6 +522,52 @@ describe("organisations and memberships", () => {
   });
 });
 
+describe("personal workspace (Update Pack 1.1)", () => {
+  it("creates one personal investor workspace on first call, then returns it", async () => {
+    await as(AUTH.nina, async (c) => {
+      const first = (await c.query("select public.ensure_personal_workspace() as id")).rows[0].id;
+      const second = (await c.query("select public.ensure_personal_workspace() as id")).rows[0].id;
+      expect(second).toBe(first);
+      const org = await c.query("select name, type from public.organisations where id = $1", [first]);
+      expect(org.rows[0]).toEqual({ name: "Nina Newbuyer's workspace", type: "investor" });
+      const m = await c.query("select role from public.memberships where user_id = $1", [USER.nina]);
+      expect(m.rows).toEqual([{ role: "admin" }]);
+      const sub = await c.query("select plan from public.subscriptions where organisation_id = $1", [first]);
+      expect(sub.rows[0].plan).toBe("explorer");
+    });
+  });
+
+  it("returns the existing organisation for users who already have one", async () => {
+    await as(AUTH.connie, async (c) => {
+      const { rows } = await c.query("select public.ensure_personal_workspace() as id");
+      expect(rows[0].id).toBe(ORG.firm);
+      expect((await c.query("select 1 from public.memberships where user_id = $1", [USER.connie])).rowCount).toBe(1);
+    });
+  });
+
+  it("the new workspace is isolated from other tenants", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const org = (await c.query("select public.ensure_personal_workspace() as id")).rows[0].id;
+      await c.query("insert into public.properties (owner_org_id, address) values ($1, '1 Nina St')", [org]);
+      await actAs(c, AUTH.ivy);
+      expect((await c.query("select 1 from public.properties where owner_org_id = $1", [org])).rowCount).toBe(0);
+    });
+  });
+
+  it("anonymous and signed-out callers are refused", async () => {
+    await expect(as(null, (c) => c.query("select public.ensure_personal_workspace()"))).rejects.toThrow(/permission denied/);
+    await expect(
+      inTx(async (c) => {
+        const session = await actAs(c, AUTH.nina);
+        await asOwner(c, "delete from auth.sessions where id = $1", [session]);
+        await actAs(c, AUTH.nina, { sessionId: session });
+        await c.query("select public.ensure_personal_workspace()");
+      }),
+    ).rejects.toThrow(/not authenticated/);
+  });
+});
+
 describe("audit trail", () => {
   it("records writes, visible to the organisation's admins only", async () => {
     await inTx(async (c) => {

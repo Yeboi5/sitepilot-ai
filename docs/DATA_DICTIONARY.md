@@ -25,6 +25,10 @@ Operational staff. **Grants no data access** by itself. Service-role managed.
 | type | `organisation_type` | `investor` \| `professional` |
 | verification_status | `verification_status` | `unverified`, `pending`, `verified`, `rejected`. Platform-managed (manual credential checks in pilot) |
 
+Personal workspaces (Update Pack 1.1): `ensure_personal_workspace()` gives a signed-in user with
+no memberships an investor organisation named "‹display name›'s workspace" (they become admin, on
+the Explorer plan). It's idempotent and serialised per user.
+
 ### `memberships`
 PK (`user_id`, `organisation_id`). `role`: `admin` \| `member`. Admins manage members but cannot
 remove/demote themselves.

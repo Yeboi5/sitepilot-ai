@@ -11,6 +11,11 @@ export const signUpSchema = z.object({
     .min(12, "Use at least 12 characters")
     .max(128)
     .refine((p) => /[a-z]/i.test(p) && /[0-9]/.test(p), "Include at least one letter and one number"),
+  /** Checkbox: "professional" for conveyancing/law firms; everyone else is a consumer. */
+  accountType: z
+    .enum(["professional"])
+    .optional()
+    .transform((v) => v ?? "consumer"),
 });
 
 export const signInSchema = z.object({

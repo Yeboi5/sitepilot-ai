@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { MarketingShell } from "@/components/marketing-shell";
 import { Alert, ButtonLink, Card } from "@/components/ui";
 import { METERING_NOTE, PLANS } from "@/lib/billing/plans";
 
@@ -9,8 +8,8 @@ const aud = new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD",
 
 export default function PricingPage() {
   return (
-    <MarketingShell>
-      <div className="mx-auto max-w-6xl px-6 py-16">
+    <>
+      <div className="py-6 sm:py-10">
         <h1 className="text-3xl font-semibold tracking-tight">Pricing</h1>
         <p className="mt-2 text-slate-600">Indicative pilot pricing in AUD. {METERING_NOTE}</p>
         <div className="mt-4">
@@ -41,6 +40,6 @@ export default function PricingPage() {
           ))}
         </div>
       </div>
-    </MarketingShell>
+    </>
   );
 }

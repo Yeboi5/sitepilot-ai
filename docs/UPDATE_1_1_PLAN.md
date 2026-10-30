@@ -4,8 +4,7 @@ Source: *SitePilot AI — Product & UI Update Pack, v1.1 (30 Oct 2026)*, an **ad
 MVP blueprint. Everything built in Sprints 0–2 is preserved. Nothing below removes a feature; new
 work is additive and behind feature flags where it changes what users see.
 
-Status: **proposed, awaiting approval** (the addendum asks for approval before major code or
-schema changes).
+Status: **approved 2026-10-30.** Phase A ✅ · Phase B ✅ (0.3.0) · Phase C next.
 
 ---
 

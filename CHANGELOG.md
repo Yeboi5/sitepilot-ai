@@ -2,6 +2,42 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.0] - 2026-10-30
+
+Update Pack 1.1, Phase B: dashboard, responsive navigation and design refresh.
+
+### Added
+- Dashboard at `/` for guests and signed-in users: "Find your place. Discover its potential."
+  hero, Find My Home / Find My Investment entry cards, quick actions (Search address, Analyse a
+  property, Saved properties, Alerts, Find a pro), "How it works" for guests, and "Your
+  projects" for investors.
+- Responsive app shell: top bar on desktop and a bottom tab bar on phones (Home, Discover,
+  Analyse, Projects, Profile). Conveyancers get Inbox, Review, Profile; guests get Sign in.
+  Tab targets are at least 44px, and the bar respects the iPhone safe area.
+- Design tokens: soft blue (`brand`), green (`leaf`) and warm neutrals (`sand`); Nunito display
+  font (self-hosted); rounder cards; 44px buttons and inputs; reduced-motion support.
+- Personal workspaces: `ensure_personal_workspace()` RPC creates a home buyer's investor
+  workspace on first sign-in or email confirmation. Sign-up has an "I'm setting up a
+  conveyancing or law firm" option; firms still set up in onboarding, which now also offers
+  one-click "Continue with a personal workspace".
+- `/analyse` (start a workspace from an address), `/about` (previous landing page), and
+  placeholder screens for Discover, Saved, Alerts and Find a pro.
+- Feature flags (`src/lib/flags.ts`): `discovery`, `couples`, `alerts`, `findAPro`, on only when
+  `NEXT_PUBLIC_FLAG_*` is `"on"`.
+- Seed: Nina Newbuyer, a consumer with no workspace, to test first sign-in.
+- Tests: 4 RLS tests (71 total), 3 unit tests (95 total), 10 browser tests (26 total) including an
+  iPhone-size project (390×844) that checks tap targets and horizontal overflow.
+
+### Changed
+- Investors land on `/` after sign-in; `/investor` redirects there (its content moved to
+  "Your projects").
+- "Settings" is labelled **Profile**, with an organisation switcher on mobile.
+- The pricing page is no longer linked from navigation (kept at `/pricing` until pricing is agreed).
+- Generated types use `never` for functions without arguments, matching the Supabase CLI.
+
+### Removed
+- `MarketingShell` (replaced by the app shell on every page).
+
 ## [0.2.0] - 2026-10-29
 
 Sprint 2: scenario engine, comparison, sensitivity and report export.

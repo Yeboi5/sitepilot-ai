@@ -39,3 +39,14 @@ export async function switchOrganisation(formData: FormData) {
   await setActiveOrgCookie(membership.organisation.id);
   redirect(homePathFor(membership.organisation.type));
 }
+
+/** One-click path for home buyers and investors who land on onboarding. */
+export async function continueWithPersonalWorkspace() {
+  const ctx = await getSessionContext();
+  if (!ctx) redirect("/sign-in");
+  const supabase = await createClient();
+  const { data: orgId, error } = await supabase.rpc("ensure_personal_workspace");
+  if (error || !orgId) redirect("/onboarding?error=workspace");
+  await setActiveOrgCookie(orgId);
+  redirect("/");
+}

@@ -87,3 +87,16 @@ describe("sydneyDate", () => {
     expect(sydneyDate(new Date("2026-07-01T14:00:00Z"))).toBe("2026-07-02"); // 00:00 AEST
   });
 });
+
+describe("signUpSchema account type", () => {
+  const base = { displayName: "Nina", email: "nina@example.com", password: "correct horse 42" };
+  it("defaults to a consumer account", () => {
+    expect(signUpSchema.parse(base).accountType).toBe("consumer");
+  });
+  it("accepts the firm checkbox", () => {
+    expect(signUpSchema.parse({ ...base, accountType: "professional" }).accountType).toBe("professional");
+  });
+  it("rejects anything else", () => {
+    expect(signUpSchema.safeParse({ ...base, accountType: "admin" }).success).toBe(false);
+  });
+});

@@ -21,7 +21,11 @@ export default defineConfig({
     trace: "retain-on-failure",
     launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {},
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, grepInvert: /@mobile/ },
+    // iPhone-size screen (Update Pack 1.1 acceptance). Chromium with mobile emulation.
+    { name: "iphone", use: { ...devices["iPhone 13"], browserName: "chromium" }, grep: /@mobile/ },
+  ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : { command: "npm run build && npm run start", url: baseURL, timeout: 240_000, reuseExistingServer: true },

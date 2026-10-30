@@ -71,5 +71,5 @@ export async function requireOrg(type?: Enums<"organisation_type">) {
 }
 
 export function homePathFor(type: Enums<"organisation_type">) {
-  return type === "investor" ? "/investor" : "/firm";
+  return type === "investor" ? "/" : "/firm";
 }

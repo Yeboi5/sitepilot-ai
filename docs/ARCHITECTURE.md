@@ -34,7 +34,12 @@ Later sprints:  job queue + document worker (service role) ──▶ AI provider
 | `src/lib/finance/` | Feasibility engine, sensitivity, assumption schema and form definitions (see FORMULAS.md) |
 | `src/lib/report/` | Report model, escaped HTML renderer, loader |
 | `src/components/scenario/` | Scenario editor, results, tornado chart, sensitivity heatmap |
-| `src/app/(app)/investor/` | Investor dashboard, property workspaces, evidence register |
+| `src/app/(public)/` | Pages guests can browse: dashboard `/`, `/about`, `/discover/*`, `/saved`, `/alerts`, `/pros`, `/pricing` (unlinked) |
+| `src/components/shell/` | Responsive app shell: desktop top bar, mobile bottom tabs, per-audience nav items |
+| `src/components/dashboard/` | Hero, entry cards, quick actions, "Your projects" |
+| `src/lib/flags.ts` | Feature flags (`NEXT_PUBLIC_FLAG_*`) |
+| `src/app/(app)/analyse/` | Start a workspace from an address |
+| `src/app/(app)/investor/` | Property workspaces, evidence register, scenarios, report (`/investor` redirects to `/`) |
 | `src/app/(app)/firm/` | Firm matter inbox, matter view (read-only, grant-filtered), review queue |
 | `src/app/(app)/settings/` | Organisation, members, plan, audit log |
 | `src/components/` | Accessible UI primitives and form helpers |
@@ -82,3 +87,5 @@ files requires `status = 'active'`.
 | 3 | Private upload, malware scan, text extraction, cited AI findings, human review, MFA enforcement | Next |
 | 4 | Professional invitations, engagement checklist, matters, tasks, milestones, messages, notifications | |
 | 5 | Stripe sandbox, security tests, user testing, compliance review, controlled beta | |
+
+Update Pack 1.1 phases (B–F) are tracked in [UPDATE_1_1_PLAN.md](UPDATE_1_1_PLAN.md).

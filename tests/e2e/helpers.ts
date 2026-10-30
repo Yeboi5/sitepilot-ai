@@ -19,3 +19,5 @@ export async function signIn(page: Page, email: string) {
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).not.toHaveURL(/\/sign-in/);
 }
+
+export const NINA = "nina.newbuyer@demo.sitepilot.test"; // consumer with no workspace in the seed

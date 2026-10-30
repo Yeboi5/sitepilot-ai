@@ -9,9 +9,11 @@ with professional sign-off.
 > funds, settle, lodge or transfer title. **Use synthetic data only** until the compliance gates in
 > [docs/SECURITY.md](docs/SECURITY.md) are passed.
 
-**Status:** Sprints 0–2 complete, awaiting review before Sprint 3: foundation, auth,
-organisations, RLS, property workspaces, manual planning evidence, investor and firm dashboards,
-feasibility scenarios, comparison, sensitivity and report export. See [CHANGELOG.md](CHANGELOG.md).
+**Status:** Sprints 0–2 complete (foundation, auth, organisations, RLS, property workspaces,
+manual planning evidence, feasibility scenarios, comparison, sensitivity, report export).
+Update Pack 1.1 Phase B complete (dashboard, responsive navigation, design refresh); Phase C
+(discovery swipe decks) next. See [CHANGELOG.md](CHANGELOG.md) and
+[docs/UPDATE_1_1_PLAN.md](docs/UPDATE_1_1_PLAN.md).
 
 ## Stack
 
@@ -48,6 +50,7 @@ Demo accounts, all with password `SitePilotDemo!2026`:
 | `connie.conveyancer@demo.sitepilot.test` | Firm admin, Demo Conveyancing; granted on the Halekulani matter |
 | `sam.staff@demo.sitepilot.test` | Firm member without matter grants |
 | `oscar.other@demo.sitepilot.test` | Admin of a separate investor organisation |
+| `nina.newbuyer@demo.sitepilot.test` | Home buyer with no workspace yet (first sign-in creates one) |
 
 Local auth emails (sign-up confirmation) are captured by Mailpit at http://127.0.0.1:54324.
 
@@ -95,11 +98,12 @@ npx playwright install chromium               # first run only
 npm run test:e2e                               # builds, starts on :3000, runs tests
 ```
 
-Set `E2E_BASE_URL` to test an already-running server. `PLAYWRIGHT_CHROMIUM_PATH` overrides the browser binary.
+Tests tagged `@mobile` run in an iPhone-size project (390×844). Set `E2E_BASE_URL` to test an already-running server. `PLAYWRIGHT_CHROMIUM_PATH` overrides the browser binary.
 
 ## Documentation
 
 - [docs/SPRINT_0_1_PLAN.md](docs/SPRINT_0_1_PLAN.md): architecture plan, directory tree, schema, RLS design, test strategy
+- [docs/UPDATE_1_1_PLAN.md](docs/UPDATE_1_1_PLAN.md): Update Pack 1.1 gap analysis and phases
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): system design, request flow, sprint plan
 - [docs/FORMULAS.md](docs/FORMULAS.md): feasibility formulas, versioning and sensitivity spec
 - [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md): every table and column

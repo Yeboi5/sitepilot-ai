@@ -5,6 +5,7 @@ export const AUTH = {
   sam: "a0000000-0000-4000-8000-000000000003", // firm member, no matter grants
   oscar: "a0000000-0000-4000-8000-000000000004", // investor admin of a different organisation
   pat: "a0000000-0000-4000-8000-000000000005", // platform admin, no memberships
+  nina: "a0000000-0000-4000-8000-000000000006", // new home buyer, no workspace yet
 } as const;
 
 export const USER = {
@@ -12,6 +13,7 @@ export const USER = {
   connie: "b0000000-0000-4000-8000-000000000002",
   sam: "b0000000-0000-4000-8000-000000000003",
   oscar: "b0000000-0000-4000-8000-000000000004",
+  nina: "b0000000-0000-4000-8000-000000000006",
 } as const;
 
 export const ORG = {

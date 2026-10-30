@@ -21,6 +21,13 @@ export function SignUpForm() {
       <Field id="password" label="Password" hint="At least 12 characters, including a letter and a number." errors={fe?.password}>
         <Input {...fieldA11y("password", fe?.password, true)} type="password" autoComplete="new-password" required />
       </Field>
+      <label className="flex items-start gap-3 rounded-xl border border-sand-300 p-3 text-sm has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+        <input type="checkbox" name="accountType" value="professional" className="mt-1 h-4 w-4" />
+        <span>
+          <span className="block font-medium">I&apos;m setting up a conveyancing or law firm</span>
+          <span className="block text-xs text-slate-600">Leave unticked if you&apos;re buying or investing. You&apos;ll get a personal workspace straight away.</span>
+        </span>
+      </label>
       <SubmitButton pendingLabel="Creating account…">Create account</SubmitButton>
     </form>
   );

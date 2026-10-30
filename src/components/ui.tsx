@@ -4,14 +4,14 @@ import type { ComponentProps, ReactNode } from "react";
 const cx = (...classes: (string | false | null | undefined)[]) => classes.filter(Boolean).join(" ");
 
 export function Card({ className, ...props }: ComponentProps<"section">) {
-  return <section className={cx("rounded-xl border border-slate-200 bg-white p-5 shadow-sm", className)} {...props} />;
+  return <section className={cx("rounded-2xl border border-sand-200 bg-white p-5 shadow-sm", className)} {...props} />;
 }
 
 export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
         {description ? <p className="mt-1 max-w-2xl text-sm text-slate-600">{description}</p> : null}
       </div>
       {actions ? <div className="flex gap-2">{actions}</div> : null}
@@ -20,9 +20,9 @@ export function PageHeader({ title, description, actions }: { title: string; des
 }
 
 const buttonStyles = {
-  primary: "bg-brand-600 text-white hover:bg-brand-700 disabled:bg-brand-500/60",
-  secondary: "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50",
-  ghost: "text-slate-700 hover:bg-slate-100",
+  primary: "bg-brand-600 text-white shadow-sm hover:bg-brand-700 disabled:bg-brand-500/60",
+  secondary: "border border-sand-300 bg-white text-slate-800 hover:bg-sand-100",
+  ghost: "text-slate-700 hover:bg-sand-100",
 } as const;
 
 type Variant = keyof typeof buttonStyles;
@@ -31,7 +31,7 @@ export function Button({ variant = "primary", className, ...props }: ComponentPr
   return (
     <button
       className={cx(
-        "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed",
         buttonStyles[variant],
         className,
       )}
@@ -43,7 +43,7 @@ export function Button({ variant = "primary", className, ...props }: ComponentPr
 export function ButtonLink({ variant = "primary", className, ...props }: ComponentProps<typeof Link> & { variant?: Variant }) {
   return (
     <Link
-      className={cx("inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition", buttonStyles[variant], className)}
+      className={cx("inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition", buttonStyles[variant], className)}
       {...props}
     />
   );
@@ -83,7 +83,7 @@ export function Field({
 }
 
 const inputBase =
-  "block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 aria-[invalid=true]:border-red-500";
+  "block min-h-11 w-full rounded-xl border border-sand-300 bg-white px-3 py-2 text-base shadow-sm placeholder:text-slate-400 aria-[invalid=true]:border-red-500 sm:text-sm";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cx(inputBase, className)} {...props} />;
@@ -122,7 +122,7 @@ export function Alert({ tone = "info", children }: { tone?: "info" | "warning" |
     danger: "border-red-200 bg-red-50 text-red-900",
   }[tone];
   return (
-    <div role={tone === "danger" ? "alert" : "status"} className={cx("rounded-lg border px-4 py-3 text-sm", styles)}>
+    <div role={tone === "danger" ? "alert" : "status"} className={cx("rounded-xl border px-4 py-3 text-sm", styles)}>
       {children}
     </div>
   );
@@ -130,7 +130,7 @@ export function Alert({ tone = "info", children }: { tone?: "info" | "warning" |
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+    <div className="rounded-2xl border border-dashed border-sand-300 bg-white px-6 py-10 text-center">
       <p className="font-medium text-slate-800">{title}</p>
       {children ? <div className="mt-2 text-sm text-slate-600">{children}</div> : null}
     </div>
@@ -141,7 +141,7 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
   return (
     <Card className="p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+      <p className="mt-1 font-display text-2xl font-bold">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </Card>
   );

@@ -1,5 +1,7 @@
-import { MarketingShell } from "@/components/marketing-shell";
+import type { Metadata } from "next";
 import { ButtonLink, Card } from "@/components/ui";
+
+export const metadata: Metadata = { title: "About" };
 
 const pillars = [
   {
@@ -16,10 +18,10 @@ const pillars = [
   },
 ];
 
-export default function HomePage() {
+export default function AboutPage() {
   return (
-    <MarketingShell>
-      <section className="mx-auto max-w-6xl px-6 py-20">
+    <>
+      <section className="py-10 sm:py-16">
         <p className="text-sm font-medium uppercase tracking-wide text-brand-600">NSW pilot</p>
         <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
           Property feasibility and conveyancing, in one secure workspace.
@@ -30,12 +32,12 @@ export default function HomePage() {
         </p>
         <div className="mt-8 flex gap-3">
           <ButtonLink href="/sign-up">Create a free workspace</ButtonLink>
-          <ButtonLink href="/pricing" variant="secondary">
-            See pricing
+          <ButtonLink href="/" variant="secondary">
+            Explore the dashboard
           </ButtonLink>
         </div>
       </section>
-      <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-20 md:grid-cols-3">
+      <section className="grid gap-4 pb-10 md:grid-cols-3">
         {pillars.map((p) => (
           <Card key={p.title}>
             <h2 className="font-semibold">{p.title}</h2>
@@ -43,6 +45,6 @@ export default function HomePage() {
           </Card>
         ))}
       </section>
-    </MarketingShell>
+    </>
   );
 }

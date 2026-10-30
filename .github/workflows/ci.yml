@@ -25,6 +25,10 @@ jobs:
       # Build-time placeholders only; no secrets are needed to build or test.
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_FLAG_DISCOVERY: "on"
+      NEXT_PUBLIC_FLAG_COUPLES: "on"
+      NEXT_PUBLIC_FLAG_ALERTS: "on"
+      NEXT_PUBLIC_FLAG_FIND_A_PRO: "on"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

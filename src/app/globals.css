@@ -7,7 +7,23 @@
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-sand-50 text-slate-900 antialiased;
+}
+
+h1,
+h2 {
+  @apply font-display;
+}
+
+/* Animations are opt-in: honour the user's reduced-motion preference everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Visible focus for keyboard users on every interactive element. */

@@ -147,7 +147,7 @@ async function main() {
         const mapped = enumNames.has(udt) ? `Database["public"]["Enums"]["${udt}"]` : "string";
         return `${name}: ${mapped}`;
       });
-    out.push(`      ${fn.name}: { Args: { ${args.join("; ")} }; Returns: ${tsType(fn.returns)} };`);
+    out.push(`      ${fn.name}: { Args: ${args.length ? `{ ${args.join("; ")} }` : "never"}; Returns: ${tsType(fn.returns)} };`);
   }
   out.push("    };");
   out.push("    Enums: {");

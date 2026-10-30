@@ -20,7 +20,7 @@ test.describe("anonymous", () => {
 test.describe("investor view", () => {
   test("sees the Halekulani demo property as unverified demo data", async ({ page }) => {
     await signIn(page, ACCOUNTS.ivy);
-    await expect(page).toHaveURL(/\/investor$/);
+    await expect(page).toHaveURL((url) => url.pathname === "/"); // dashboard (Update Pack 1.1)
     await page.getByRole("link", { name: /76 Sunrise Avenue, Halekulani 2262/ }).click();
 
     await expect(page.getByRole("heading", { name: "76 Sunrise Avenue" })).toBeVisible();
@@ -101,8 +101,8 @@ test.describe("tenant isolation", () => {
 test("sign out ends the session", async ({ page }) => {
   await signIn(page, ACCOUNTS.ivy);
   await page.getByRole("button", { name: "Sign out" }).click();
-  // Wait for the sign-out POST to complete (it redirects home) before navigating again.
-  await expect(page).toHaveURL(/\/$/);
+  // Wait for the sign-out POST to complete (home page shows guest actions) before navigating again.
+  await expect(page.getByRole("link", { name: "Create account" })).toBeVisible();
   await page.goto("/investor");
   await expect(page).toHaveURL(/\/sign-in/);
 });

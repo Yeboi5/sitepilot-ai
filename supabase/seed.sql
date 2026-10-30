@@ -23,7 +23,10 @@ values
    '{"provider":"email","providers":["email"]}', '{"display_name":"Oscar Other"}', now(), now(), '', '', '', ''),
   ('a0000000-0000-4000-8000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'pat.platform@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Pat Platform"}', now(), now(), '', '', '', '');
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Pat Platform"}', now(), now(), '', '', '', ''),
+  ('a0000000-0000-4000-8000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+   'nina.newbuyer@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Nina Newbuyer"}', now(), now(), '', '', '', '');
 
 -- One email identity per user (required by Supabase Auth).
 insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
@@ -36,6 +39,8 @@ update public.users set id = 'b0000000-0000-4000-8000-000000000002' where auth_i
 update public.users set id = 'b0000000-0000-4000-8000-000000000003' where auth_id = 'a0000000-0000-4000-8000-000000000003';
 update public.users set id = 'b0000000-0000-4000-8000-000000000004' where auth_id = 'a0000000-0000-4000-8000-000000000004';
 update public.users set id = 'b0000000-0000-4000-8000-000000000005' where auth_id = 'a0000000-0000-4000-8000-000000000005';
+-- Nina is a new home buyer with no workspace yet (first sign-in creates one).
+update public.users set id = 'b0000000-0000-4000-8000-000000000006' where auth_id = 'a0000000-0000-4000-8000-000000000006';
 
 insert into public.platform_admins (user_id) values ('b0000000-0000-4000-8000-000000000005');
 

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { OrgSwitcher } from "@/components/shell/app-shell";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { APP_TIME_ZONE } from "@/lib/dates";
 import { ORG_VERIFICATION, PLAN_LABEL, formatDate } from "@/lib/format";
 import { requireOrg } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Organisation settings" };
+export const metadata: Metadata = { title: "Profile" };
 
 const dateTime = new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIME_ZONE });
 
@@ -32,7 +33,10 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Organisation settings" description={org.name} />
+      <PageHeader title="Profile" description={`${ctx.user.display_name} · ${org.name}`} />
+      <div className="mb-6 md:hidden">
+        <OrgSwitcher ctx={ctx} />
+      </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card>
           <h2 className="font-semibold">Organisation</h2>
