@@ -90,3 +90,13 @@ async function loadDevelopment(supabase: Supabase, records: string[]): Promise<M
   }
   return out;
 }
+
+/** The signed-in user's saved listings, for adding to a comparison (RLS: own rows only). */
+export async function loadSavedOptions(supabase: Supabase) {
+  const { data } = await supabase
+    .from("saved_properties")
+    .select("created_at, listing:listings!inner(id, headline, suburb, state)")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  return (data ?? []).map((r) => r.listing as unknown as { id: string; headline: string; suburb: string; state: string });
+}

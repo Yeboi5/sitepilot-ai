@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Award, ImageOff } from "lucide-react";
+import { AlertTriangle, ArrowRight, Award, ImageOff } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { DemoTag, NotForSaleTag } from "@/components/discovery/listing-card";
@@ -8,11 +8,36 @@ import { PropertyIllustration } from "@/components/discovery/property-illustrati
 import type { CompareAssumptions } from "@/lib/compare/assumptions";
 import type { PropertyResult } from "@/lib/compare/engine";
 import type { CompareProperty } from "@/lib/compare/facts";
+import { confidenceLevel, pricePerSqm, sourceStatus, STATUS_LABEL } from "@/lib/compare/provenance";
 import { PRIORITIES, PRIORITY_IDS, quickMatch, type Priority } from "@/lib/compare/quick";
+import type { ScoreResult } from "@/lib/compare/score";
 import { formatAud, formatRatio } from "@/lib/format";
 import { NumberField } from "./controls";
 
-type Item = { p: CompareProperty; r: PropertyResult };
+type Item = { p: CompareProperty; r: PropertyResult; score: ScoreResult };
+
+const TONE = { good: "bg-leaf-50 text-leaf-800", fair: "bg-amber-50 text-amber-900", poor: "bg-red-50 text-red-800" } as const;
+
+function StatusChip({ status, note }: { status: keyof typeof STATUS_LABEL; note: string }) {
+  return (
+    <span className="inline-flex rounded-full bg-sand-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700" title={note}>
+      {STATUS_LABEL[status]}
+      <span className="sr-only">: {note}</span>
+    </span>
+  );
+}
+
+function Line({ label, children, sub }: { label: string; children: React.ReactNode; sub?: React.ReactNode }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <dt className="text-slate-600">{label}</dt>
+        <dd className="text-right tabular-nums">{children}</dd>
+      </div>
+      {sub ? <p className="text-right text-xs text-slate-500">{sub}</p> : null}
+    </div>
+  );
+}
 
 /**
  * Quick Compare: the everyday view. Photos (illustrations until licensed listing photos exist),
@@ -36,7 +61,7 @@ export function QuickCompare({
   const match = useMemo(
     () =>
       quickMatch(
-        items.map(({ p, r }) => ({ id: p.listing.id, label: p.listing.headline, result: r, bedrooms: p.listing.property_type === "land" ? null : p.listing.bedrooms, landAreaSqm: p.listing.land_area_sqm })),
+        items.map(({ p, r }) => ({ id: p.listing.id, label: p.listing.headline, result: r, bedrooms: p.listing.property_type === "land" ? null : p.listing.bedrooms, landAreaSqm: p.listing.land_area_sqm, completeness: p.facts.completeness })),
         priorities,
       ),
     [items, priorities],
@@ -51,7 +76,7 @@ export function QuickCompare({
         <h2 id="priorities-heading" className="font-display text-lg font-bold">
           What matters most to you?
         </h2>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Your priorities">
+        <div className="flex flex-wrap gap-2 print:hidden" role="group" aria-label="Your priorities">
           {PRIORITY_IDS.map((id) => (
             <button
               key={id}
@@ -66,8 +91,8 @@ export function QuickCompare({
         </div>
         <div className="rounded-2xl bg-brand-50 p-4" aria-live="polite">
           <p className="flex items-center gap-2 font-semibold">
-            <Award aria-hidden="true" className="h-5 w-5 text-brand-700" />
-            {match.best ? `Best match: ${match.best.label}` : match.tie ? "It's a close call" : "Choose your priorities"}
+            {match.insufficient ? <AlertTriangle aria-hidden="true" className="h-5 w-5 text-amber-700" /> : <Award aria-hidden="true" className="h-5 w-5 text-brand-700" />}
+            {match.best ? `Best match: ${match.best.label}` : match.tie ? "It's a close call" : match.insufficient ? "No clear leader yet" : "Choose your priorities"}
           </p>
           <ul className="mt-2 space-y-1 text-sm text-slate-700">
             {match.explanation.map((l) => (
@@ -76,16 +101,21 @@ export function QuickCompare({
           </ul>
         </div>
         <p className="text-xs text-slate-500">
-          Ranked only on the priorities you pick, from the figures below. Repayments assume a {a.depositPct}% deposit at {a.interestRatePct}% over {a.loanTermYears} years. Not financial
-          advice.
+          Ranked only on the priorities you pick, from reported and estimated figures (none independently verified yet). Repayments assume a {a.depositPct}% deposit at{" "}
+          {a.interestRatePct}% over {a.loanTermYears} years. Not financial advice.
         </p>
       </section>
 
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Properties">
-        {ordered.map(({ p, r }) => {
+        {ordered.map(({ p, r, score }) => {
           const l = p.listing;
           const isBest = match.best?.id === l.id;
           const rent = r.annualRent.known ? r.annualRent.value / 52 : null;
+          const ppsm = pricePerSqm(r.price.known ? r.price.value : null, l.land_area_sqm, l.property_type);
+          const conf = confidenceLevel(p.facts.completeness);
+          const priceStatus = sourceStatus(r.priceSource, l.is_demo);
+          const rentStatus = sourceStatus(p.facts.rentSource === "listing" ? "listing" : p.facts.rentSource === "estimate" ? "estimate" : null, l.is_demo);
+          const wins = match.ranking.find((x) => x.id === l.id)?.wins ?? [];
           return (
             <li key={l.id} className={`overflow-hidden rounded-2xl border bg-white shadow-sm ${isBest ? "border-brand-500 ring-2 ring-brand-500" : "border-sand-200"}`}>
               <div className="relative">
@@ -114,55 +144,105 @@ export function QuickCompare({
                   </p>
                 </div>
                 <dl className="space-y-2 text-sm">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <dt className="text-slate-600">{r.priceSource === "estimate" ? "Estimated value" : r.priceSource === "user" ? "Your price" : "Price"}</dt>
-                    <dd className="text-right font-display text-lg font-extrabold tabular-nums">{r.price.known ? formatAud(r.price.value) : "Unknown"}</dd>
-                  </div>
-                  {r.priceSource === "estimate" && p.estimate ? (
-                    <p className="-mt-1 text-right text-xs text-slate-500">
-                      Range {formatAud(p.estimate.value_low)}–{formatAud(p.estimate.value_high)}
-                      {p.estimate.is_demo ? " (DEMO)" : ""}. Not a price.
-                    </p>
-                  ) : null}
-                  <div className="flex items-baseline justify-between gap-2">
-                    <dt className="text-slate-600">Estimated repayments</dt>
-                    <dd className="tabular-nums">{r.annualRepayments.known ? `${formatAud(r.annualRepayments.value / 12)}/month` : "Unknown"}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <dt className="text-slate-600">Rental potential</dt>
-                    <dd className="text-right tabular-nums">
-                      {rent != null ? (
-                        <>
-                          {formatAud(rent)}/week
-                          <span className="block text-xs text-slate-500">
-                            {r.grossYield.known ? `${formatRatio(r.grossYield.value)} gross yield · ` : ""}
-                            {p.facts.rentSource === "estimate" ? `estimate${p.estimate?.is_demo ? " (DEMO)" : ""}` : "listing assumption"}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-slate-500">Unknown</span>
-                      )}
-                    </dd>
-                  </div>
+                  <Line
+                    label={r.priceSource === "estimate" ? "Estimated value" : r.priceSource === "user" ? "Your price" : "Asking price"}
+                    sub={
+                      r.priceSource === "estimate" && p.estimate
+                        ? `Range ${formatAud(p.estimate.value_low)}–${formatAud(p.estimate.value_high)}${p.estimate.is_demo ? " (DEMO)" : ""}. Not a price.`
+                        : null
+                    }
+                  >
+                    <span className="font-display text-lg font-extrabold">{r.price.known ? formatAud(r.price.value) : "Unknown"}</span>
+                  </Line>
+                  <Line label="Price per m² of land">
+                    {ppsm != null ? formatAud(ppsm) : <span className="text-slate-500">{l.property_type === "apartment" ? "n/a (apartment)" : "Unknown"}</span>}
+                  </Line>
+                  <Line label="Land · building area">
+                    {l.land_area_sqm ? `${l.land_area_sqm.toLocaleString("en-AU")} m²` : <span className="text-slate-500">Unknown</span>}
+                    {" · "}
+                    <span className="text-slate-500">Unknown</span>
+                  </Line>
+                  <Line label="Estimated repayments">{r.annualRepayments.known ? `${formatAud(r.annualRepayments.value / 12)}/month` : <span className="text-slate-500">Unknown</span>}</Line>
+                  <Line
+                    label="Rental potential"
+                    sub={rent != null ? `${r.grossYield.known ? `${formatRatio(r.grossYield.value)} gross yield · ` : ""}${rentStatus?.note ?? ""}` : null}
+                  >
+                    {rent != null ? `${formatAud(rent)}/week` : <span className="text-slate-500">Unknown</span>}
+                  </Line>
+                  <Line label="Investment Match Score" sub={score.score == null ? `${Math.round(score.coverage * 100)}% of the weighting has evidence` : `${Math.round(score.coverage * 100)}% of the weighting scored`}>
+                    {score.score != null ? <strong>{score.score}/100</strong> : <span className="text-slate-500">Not enough evidence</span>}
+                  </Line>
                 </dl>
-                {(match.ranking.find((x) => x.id === l.id)?.wins ?? []).length ? (
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${TONE[conf.tone]}`}>
+                    {conf.label} confidence · {Math.round(p.facts.completeness * 100)}% of key data
+                  </span>
+                  {priceStatus ? <StatusChip status={priceStatus.status} note={`Price: ${priceStatus.note}`} /> : null}
+                  {rentStatus ? <StatusChip status={rentStatus.status} note={`Rent: ${rentStatus.note}`} /> : null}
+                </div>
+
+                {wins.length ? (
                   <p className="flex flex-wrap gap-1">
-                    {match.ranking
-                      .find((x) => x.id === l.id)!
-                      .wins.map((w) => (
-                        <span key={w} className="rounded-full bg-leaf-50 px-2 py-0.5 text-xs font-medium text-leaf-800">
-                          {PRIORITIES[w].label}
-                        </span>
-                      ))}
+                    {wins.map((w) => (
+                      <span key={w} className="rounded-full bg-leaf-50 px-2 py-0.5 text-xs font-medium text-leaf-800">
+                        {PRIORITIES[w].label}
+                      </span>
+                    ))}
                   </p>
                 ) : null}
+
+                <details className="rounded-xl bg-sand-50 px-3 py-2 text-sm">
+                  <summary className="min-h-11 cursor-pointer content-center font-semibold text-brand-700">Why, risks and development</summary>
+                  <div className="space-y-3 pb-2 pt-1">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Your priorities</p>
+                      <ul className="mt-1 space-y-0.5">
+                        {priorities.map((pid) => {
+                          const v = PRIORITIES[pid].value({ id: l.id, label: l.headline, result: r, bedrooms: l.property_type === "land" ? null : l.bedrooms, landAreaSqm: l.land_area_sqm, completeness: p.facts.completeness });
+                          return (
+                            <li key={pid} className="flex justify-between gap-2">
+                              <span>{PRIORITIES[pid].label}</span>
+                              <span className={v == null ? "text-slate-500" : "tabular-nums"}>{v == null ? "Unknown" : PRIORITIES[pid].show(v)}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Major risks</p>
+                      <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                        {l.risk_flags.map((f) => (
+                          <li key={f}>Open check: {f}</li>
+                        ))}
+                        <li className="text-slate-600">Flood, bushfire and other hazards: Unknown (no official hazard data connected yet)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Development potential</p>
+                      <p className="mt-1">
+                        {p.development?.roi != null
+                          ? `Scored from your workspace scenario: ${formatRatio(p.development.roi)} return on cost (verified planning record on file).`
+                          : p.development
+                            ? `Workspace linked, not scored yet: ${p.development.missing.join("; ")}.`
+                            : l.development_idea
+                              ? `Idea only: ${l.development_idea}. Needs zoning confirmation and professional advice.`
+                              : "Not assessed."}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Capital growth indicators</p>
+                      <p className="mt-1 text-slate-600">Unknown: needs licensed price history and population, employment and supply data.</p>
+                    </div>
+                  </div>
+                </details>
               </div>
             </li>
           );
         })}
       </ul>
 
-      <section aria-labelledby="quick-assumptions" className="flex flex-wrap items-end gap-3 rounded-2xl border border-sand-200 bg-white p-4">
+      <section aria-labelledby="quick-assumptions" className="flex flex-wrap items-end gap-3 rounded-2xl border border-sand-200 bg-white p-4 print:hidden">
         <h2 id="quick-assumptions" className="sr-only">
           Loan assumptions
         </h2>

@@ -176,7 +176,7 @@ A category without evidence is **excluded** and labelled "Insufficient evidence"
 as 0. `coverage` = scored weight ÷ total weight. Score = weighted average of scored categories, shown
 only when coverage ≥ 60%; otherwise "Not enough evidence to score". Ties keep the user's order.
 
-# Quick Compare best match: `quick-match-1.0.0`
+# Quick Compare best match: `quick-match-1.1.0`
 
 Source: `src/lib/compare/quick.ts`. The user picks priorities; nothing else counts. For each priority
 with at least two known values, the best property scores 1 and the worst 0, linearly in between
@@ -193,3 +193,11 @@ in the viewer's workspace linked to the property, and only when (a) that workspa
 verified, non-DEMO official planning record (planning certificate, planning portal record, LEP map
 or council record) and (b) the scenario is complete (land value, build cost and assumed sale value
 all above zero). Otherwise the category is "insufficient evidence" with the missing steps listed.
+
+### Evidence rule for the leader (`quick-match-1.1.0`)
+
+The top-ranked property is highlighted as the best match only when (a) at least half of the chosen
+priorities had two or more known values to compare, (b) the leader has a figure for every chosen
+priority that another property has, and (c) at least 60% of the leader's key data is available.
+Otherwise the ranking is still shown but no leader is highlighted, with the message "Not enough
+verified information to rank this property reliably" and the specific reason.

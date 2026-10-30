@@ -1,6 +1,6 @@
 # Flagship Property Investment Intelligence Upgrade: audit and plan
 
-Status: **proposed, awaiting approval** (2026-10-30). Source: the "Flagship Property Investment
+Status: **approved 2026-10-30** (all recommendations in section 6). Stage 2a ✅ (0.12.0); 2b next. Source: the "Flagship Property Investment
 Intelligence Upgrade" brief. This upgrades the existing app (0.11.0); nothing is rebuilt and no
 working feature is removed.
 

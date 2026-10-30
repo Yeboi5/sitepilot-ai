@@ -7,7 +7,12 @@ import type { PropertyResult } from "./engine";
  * values, the best property gets 1 point and the worst 0 (evenly spaced between). Unknown values
  * get no points and are named. Not a prediction or advice.
  */
-export const QUICK_VERSION = "quick-match-1.0.0";
+export const QUICK_VERSION = "quick-match-1.1.0";
+
+/** Shown instead of a leader when the evidence doesn't support one (brief §2, §4). */
+export const NOT_ENOUGH_EVIDENCE = "Not enough verified information to rank this property reliably.";
+/** A leader also needs at least this share of key data (see facts.completeness). */
+export const MIN_LEADER_COMPLETENESS = 0.6;
 
 export type QuickInput = {
   id: string;
@@ -15,6 +20,8 @@ export type QuickInput = {
   result: PropertyResult;
   bedrooms: number | null;
   landAreaSqm: number | null;
+  /** Share of key data available, 0–1 (PropertyFacts.completeness). */
+  completeness: number;
 };
 
 type Pick = { label: string; short: string; better: "high" | "low"; value: (p: QuickInput) => number | null; show: (n: number) => string };
@@ -48,6 +55,8 @@ export type QuickMatch = {
   ranking: { id: string; label: string; points: number; wins: Priority[] }[];
   best: { id: string; label: string } | null;
   tie: boolean;
+  /** Why no leader is highlighted, when one isn't (tie excluded). */
+  insufficient: string | null;
   explanation: string[];
 };
 
@@ -83,14 +92,32 @@ export function quickMatch(props: QuickInput[], priorities: Priority[]): QuickMa
     .sort((a, b) => b.points - a.points);
   const explanation: string[] = [];
   if (!used.length) {
-    return { ranking, best: null, tie: false, explanation: ["Pick at least one priority with enough data to find a match.", ...notes] };
+    return { ranking, best: null, tie: false, insufficient: null, explanation: ["Pick at least one priority with enough data to find a match.", ...notes] };
   }
   const [top, second] = [ranking[0]!, ranking[1]];
   const tie = second != null && Math.abs(top.points - second.points) < 0.05;
   const detail = (id: string, ps: Priority[]) =>
     ps.map((pid) => `${PRIORITIES[pid].short} (${PRIORITIES[pid].show(PRIORITIES[pid].value(props.find((p) => p.id === id)!)!)})`).join(" and ");
+
+  // Evidence rule (v1.1): a leader is highlighted only when most chosen priorities could be
+  // compared, the leader has a value for every one of them, and enough of its key data is known.
+  const topProp = props.find((p) => p.id === top.id)!;
+  // A gap: a chosen priority the leader has no figure for while another property does.
+  const gaps = priorities.filter((pid) => PRIORITIES[pid].value(topProp) == null && props.some((p) => PRIORITIES[pid].value(p) != null));
+  const insufficient = tie
+    ? null
+    : used.length < Math.ceil(priorities.length / 2)
+      ? `${NOT_ENOUGH_EVIDENCE} Most of your priorities can't be compared with the data available.`
+      : gaps.length
+        ? `${NOT_ENOUGH_EVIDENCE} ${top.label} has no figure for ${gaps.map((g) => PRIORITIES[g].label.toLowerCase()).join(", ")}.`
+        : topProp.completeness < MIN_LEADER_COMPLETENESS
+          ? `${NOT_ENOUGH_EVIDENCE} Only ${Math.round(topProp.completeness * 100)}% of ${top.label}'s key data is available.`
+          : null;
+
   if (tie) {
     explanation.push(`${top.label} and ${second!.label} are an even match for your priorities. Open the advanced view to dig deeper.`);
+  } else if (insufficient) {
+    explanation.push(insufficient);
   } else {
     explanation.push(
       top.wins.length
@@ -98,9 +125,9 @@ export function quickMatch(props: QuickInput[], priorities: Priority[]): QuickMa
         : `${top.label} best matches your priorities overall, without being first on any single one.`,
     );
   }
-  for (const r of ranking.slice(tie ? 2 : 1)) {
+  for (const r of ranking.slice(tie || insufficient ? 0 : 1)) {
     if (r.wins.length) explanation.push(`${r.label} has the ${detail(r.id, r.wins)}.`);
   }
   explanation.push(...notes);
-  return { ranking, best: tie ? null : { id: top.id, label: top.label }, tie, explanation };
+  return { ranking, best: tie || insufficient ? null : { id: top.id, label: top.label }, tie, insufficient, explanation };
 }

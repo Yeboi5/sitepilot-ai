@@ -149,3 +149,19 @@ describe("duty preset file", async () => {
     expect(dutyPresetFileSchema.safeParse([ok, ok]).success).toBe(false);
   });
 });
+
+describe("provenance helpers", async () => {
+  const { sourceStatus, confidenceLevel, pricePerSqm } = await import("./provenance");
+  it("labels where a figure came from", () => {
+    expect(sourceStatus("listing", true)).toEqual({ status: "reported", note: "Reported by the listing (DEMO)" });
+    expect(sourceStatus("estimate", false)).toEqual({ status: "estimated", note: "Automated estimate" });
+    expect(sourceStatus("user", false)?.status).toBe("unverified");
+    expect(sourceStatus(null, false)).toBeNull();
+  });
+  it("grades confidence and price per m²", () => {
+    expect([0.9, 0.6, 0.3].map((c) => confidenceLevel(c).label)).toEqual(["High", "Medium", "Low"]);
+    expect(pricePerSqm(980_000, 439, "duplex")).toBe(2232);
+    expect(pricePerSqm(600_000, 0, "house")).toBeNull();
+    expect(pricePerSqm(600_000, 200, "apartment")).toBeNull();
+  });
+});

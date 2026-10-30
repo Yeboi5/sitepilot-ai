@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CompareView } from "@/components/compare/compare-view";
 import { PageHeader } from "@/components/ui";
-import { loadCompareProperties, MIN_COMPARE, parseIds } from "@/lib/compare/load";
+import { loadCompareProperties, loadSavedOptions, MIN_COMPARE, parseIds } from "@/lib/compare/load";
 import { initialState } from "@/lib/compare/state";
 import { FLAGS } from "@/lib/flags";
 import { getSessionContext } from "@/lib/session";
@@ -17,7 +17,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const ids = parseIds(sp.ids);
   const [ctx, supabase] = await Promise.all([getSessionContext(), createClient()]);
-  const properties = await loadCompareProperties(supabase, ids);
+  const [properties, savedOptions] = await Promise.all([loadCompareProperties(supabase, ids), ctx ? loadSavedOptions(supabase) : Promise.resolve(null)]);
 
   if (properties.length < MIN_COMPARE) {
     return (
@@ -40,7 +40,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
         </Link>
       </p>
       <PageHeader title="Compare properties" description={`${properties.length} properties side by side. Start with Quick compare, or open Advanced for the full analysis.`} />
-      <CompareView initialView={sp.view === "advanced" ? "advanced" : "quick"} properties={properties} initial={initialState(properties.map((p) => p.listing.id), mode)} signedIn={Boolean(ctx)} />
+      <CompareView initialView={sp.view === "advanced" ? "advanced" : "quick"} properties={properties} initial={initialState(properties.map((p) => p.listing.id), mode)} signedIn={Boolean(ctx)} savedOptions={savedOptions} />
     </div>
   );
 }

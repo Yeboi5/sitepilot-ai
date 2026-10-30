@@ -212,7 +212,7 @@ describe("Quick Compare", async () => {
   const { quickMatch, DEFAULT_PRIORITIES } = await import("./quick");
   const q = (id: string, f: Partial<PropertyFacts>, bedrooms: number | null = 3, land: number | null = 500) => {
     const pf = facts({ id, label: id, ...f });
-    return { id, label: id, result: evaluate(pf, A), bedrooms, landAreaSqm: land };
+    return { id, label: id, result: evaluate(pf, A), bedrooms, landAreaSqm: land, completeness: pf.completeness };
   };
   const cheap = q("Cheap", { price: 400_000, weeklyRent: 450, stampDuty: 13_000 }, 2, 300);
   const roomy = q("Roomy", { price: 700_000, weeklyRent: 600, stampDuty: 26_000 }, 5, 700);
@@ -235,6 +235,24 @@ describe("Quick Compare", async () => {
     expect(m.tie).toBe(true);
     expect(m.best).toBeNull();
     expect(m.explanation[0]).toMatch(/even match/);
+  });
+
+  it("only highlights a leader when the evidence supports it", async () => {
+    const { NOT_ENOUGH_EVIDENCE } = await import("./quick");
+    // The leader lacks a figure for one of the chosen priorities.
+    const noRentLeader = q("Gappy", { price: 300_000, weeklyRent: null, rentSource: null, stampDuty: 10_000 });
+    const m = quickMatch([noRentLeader, roomy], ["lowest_price", "lowest_repayments", "rental_return"]);
+    expect(m.best).toBeNull();
+    expect(m.insufficient).toMatch(new RegExp(`^${NOT_ENOUGH_EVIDENCE.replace(/\./g, "\\.")} Gappy has no figure for rental return\\.$`));
+    expect(m.ranking[0]!.id).toBe("Gappy"); // still ranked, just not highlighted
+    // Too little key data.
+    const thin = { ...q("Thin", { price: 300_000 }), completeness: 0.4 };
+    expect(quickMatch([thin, roomy], ["lowest_price"]).insufficient).toMatch(/Only 40% of Thin's key data/);
+    // Most priorities can't be compared.
+    const noRent = [q("A", { weeklyRent: null, price: 400_000 }), q("B", { weeklyRent: null })];
+    expect(quickMatch(noRent, ["rental_return", "cash_flow", "lowest_price"]).insufficient).toMatch(/Most of your priorities/);
+    // With good evidence the leader is highlighted.
+    expect(quickMatch([cheap, roomy], ["lowest_price"]).best?.id).toBe("Cheap");
   });
 
   it("unknown values earn no points and are named; a priority without data is skipped", () => {

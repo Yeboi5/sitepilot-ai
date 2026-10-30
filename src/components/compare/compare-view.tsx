@@ -1,9 +1,9 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { Printer, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { analyseListing } from "@/app/(app)/analyse/actions";
 import { deleteComparison, saveComparison, shareComparison, unshareComparison } from "@/app/(app)/compare/actions";
 import { DemoTag, NotForSaleTag } from "@/components/discovery/listing-card";
@@ -18,6 +18,7 @@ import type { CompareState } from "@/lib/compare/state";
 import { formatAud, formatDate, formatRatio } from "@/lib/format";
 import { BarChart, LineChart, SERIES } from "./charts";
 import { NumberField, Segmented, Slider } from "./controls";
+import { ManageProperties, type PropertyOption } from "./manage-properties";
 import { QuickCompare } from "./quick-compare";
 
 const SCENARIO_LABEL: Record<Scenario, string> = { conservative: "Conservative", base: "Base", optimistic: "Optimistic" };
@@ -43,9 +44,16 @@ type Props = {
   setId?: string;
   signedIn: boolean;
   sharedAt?: string | null;
+  /** Saved properties that can be added (signed-in users); guests' come from this device. */
+  savedOptions?: PropertyOption[] | null;
+  /** True when the property list differs from the saved comparison. */
+  unsavedItems?: boolean;
 };
 
-export function CompareView({ properties, initial, setId, signedIn, sharedAt, initialView = "quick" }: Props) {
+// Carries the user's edits across the navigation that changes the property list.
+const CARRY_KEY = "sitepilot.compare.carry";
+
+export function CompareView({ properties, initial, setId, signedIn, sharedAt, initialView = "quick", savedOptions = null, unsavedItems = false }: Props) {
   const router = useRouter();
   const [view, setView] = useState<CompareViewMode>(initialView);
   const [mode, setMode] = useState(initial.mode);
@@ -60,6 +68,34 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const investor = mode === "investor";
+
+  // Restore edits carried over from before the property list changed (one-shot).
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(CARRY_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(CARRY_KEY);
+      const c = JSON.parse(raw) as Partial<CompareState> & { priorities?: Priority[] };
+      if (c.assumptions) setA(c.assumptions);
+      if (c.weights) setWeights(c.weights);
+      if (c.overrides) setOverrides(c.overrides);
+      if (c.mode) setMode(c.mode);
+      if (c.name) setName(c.name);
+      if (c.priorities) setPriorities(c.priorities);
+    } catch {
+      /* storage unavailable: start from the saved or default state */
+    }
+  }, []);
+
+  const changeProperties = (ids: string[]) => {
+    try {
+      sessionStorage.setItem(CARRY_KEY, JSON.stringify({ assumptions: a, weights, overrides, mode, name, priorities }));
+    } catch {
+      /* edits are lost without storage; the comparison itself still changes */
+    }
+    const q = `ids=${ids.join(",")}&view=${view}`;
+    router.push(setId ? `/compare/${setId}?${q}` : `/compare?${q}`);
+  };
 
   const series = properties.map((p, i) => ({ id: p.listing.id, label: p.listing.headline, color: SERIES[i]! }));
   const rows: (Row & { p: CompareProperty; r: PropertyResult })[] = useMemo(
@@ -132,7 +168,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Segmented
           label="View"
           value={view}
@@ -147,6 +183,9 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
             { value: "advanced", label: "Advanced" },
           ]}
         />
+        <button type="button" onClick={() => window.print()} className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-sand-300 bg-white px-4 text-sm font-semibold hover:bg-sand-100 sm:order-last">
+          <Printer aria-hidden="true" className="h-4 w-4" /> Print or save as PDF
+        </button>
         {view === "advanced" ? (
           <Segmented
             label="Comparison preset"
@@ -161,9 +200,22 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
       </div>
       <p className="text-xs text-slate-500">Educational only: pre-tax, based on your assumptions. Not financial advice or a forecast.</p>
 
+      <ManageProperties
+        current={properties.map((p) => ({ id: p.listing.id, headline: p.listing.headline, suburb: p.listing.suburb, state: p.listing.state }))}
+        colors={[...SERIES]}
+        options={savedOptions}
+        signedIn={signedIn}
+        onChange={changeProperties}
+      />
+      {unsavedItems ? (
+        <p role="status" className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
+          You&apos;ve changed the properties in this comparison. Save changes below to keep them.
+        </p>
+      ) : null}
+
       {view === "quick" ? (
         <QuickCompare
-          items={rows.map((r) => ({ p: r.p, r: r.r }))}
+          items={rows.map((r) => ({ p: r.p, r: r.r, score: r.score }))}
           assumptions={a}
           onAssumption={set}
           priorities={priorities}
@@ -199,7 +251,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
           Side by side
         </h2>
         <p className="px-4 text-xs text-slate-500 sm:hidden">Swipe sideways to see every property.</p>
-        <div className="mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label="Comparison table">
+        <div className="mt-2 overflow-x-auto print:overflow-visible" tabIndex={0} role="region" aria-label="Comparison table">
           <table className="w-full border-collapse">
             <caption className="sr-only">Properties compared side by side</caption>
             <thead>
@@ -437,7 +489,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section aria-labelledby="assumptions-heading" className="space-y-4 rounded-2xl border border-sand-200 bg-white p-4">
+        <section aria-labelledby="assumptions-heading" className="space-y-4 rounded-2xl print:hidden border border-sand-200 bg-white p-4">
           <div className="flex items-center justify-between gap-2">
             <h2 id="assumptions-heading" className="font-display text-lg font-bold">
               Your assumptions
@@ -477,7 +529,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
         </section>
 
         {investor ? (
-          <section aria-labelledby="weights-heading" className="space-y-4 rounded-2xl border border-sand-200 bg-white p-4">
+          <section aria-labelledby="weights-heading" className="space-y-4 rounded-2xl print:hidden border border-sand-200 bg-white p-4">
             <div className="flex items-center justify-between gap-2">
               <h2 id="weights-heading" className="font-display text-lg font-bold">
                 Score weights
@@ -511,7 +563,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
         </>
       )}
 
-      <section aria-labelledby="save-heading" className="space-y-3 rounded-2xl border border-sand-200 bg-white p-4">
+      <section aria-labelledby="save-heading" className="space-y-3 rounded-2xl print:hidden border border-sand-200 bg-white p-4">
         <h2 id="save-heading" className="font-display text-lg font-bold">
           {setId ? "This comparison" : "Save this comparison"}
         </h2>

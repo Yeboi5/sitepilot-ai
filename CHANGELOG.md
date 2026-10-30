@@ -2,6 +2,28 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.12.0] - 2026-10-30
+
+Investment intelligence upgrade, stage 2a (no schema changes).
+
+### Added
+- Quick Compare cards: price per m² of land, land and building area (building area Unknown until a
+  source provides it), Investment Match Score with coverage, a confidence badge (share of key data)
+  and source chips for price and rent (Reported by the listing / Automated estimate / Your figure).
+  Expandable "Why, risks and development": each chosen priority's figure, open checks, hazards
+  (Unknown until official data is connected), development (scored only from a verified workspace
+  scenario, otherwise "idea only, needs zoning confirmation") and capital growth indicators (Unknown).
+- `quick-match-1.1.0`: a leader is highlighted only when most chosen priorities can be compared, the
+  leader has a figure for each one that others have, and at least 60% of its key data is known.
+  Otherwise: "Not enough verified information to rank this property reliably", with the reason.
+- Add, remove or replace properties inside Compare (2–5), from your saved list (or this device's
+  saves for guests). Assumptions, figures, priorities and the name carry over. Saved comparisons
+  show an unsaved-changes notice until you save.
+- Print or save as PDF (browser print) with editing controls hidden.
+- `src/lib/compare/provenance.ts` (evidence status, confidence, price per m²).
+- Tests: 6 unit tests (224 total), 5 browser tests (60 total), including a check that the phone's
+  bottom navigation never covers compare or saved controls.
+
 ## [Unreleased]
 
 ### Added
