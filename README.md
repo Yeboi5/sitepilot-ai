@@ -56,6 +56,12 @@ Compare My Properties works on DEMO listings with DEMO estimate ranges. No stamp
 loaded yet (`duty_presets` is empty), so enter a duty estimate per property to see cash required
 and scores; reviewed state presets will fill this automatically.
 
+To load duty rates: enter each state's general transfer duty brackets in
+`supabase/reference/duty-presets.json`, copied from that state's revenue office website (the loader
+rejects any other source), then run `npx tsx scripts/load-duty-presets.ts` and reseed. New entries
+are marked "needs review" in the app until `status`, `reviewed_by` and `reviewed_at` are set.
+NT duty below its top threshold is formula-based, not bracketed, and needs formula support first.
+
 SitePilot Vision uses a built-in mock image provider (no AI service, no cost). Concepts are
 limited to 10 per user per day; reseeding resets the counters.
 

@@ -2,6 +2,14 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- Stamp duty preset loader: `supabase/reference/duty-presets.json` → `scripts/load-duty-presets.ts`
+  → seed. Validates that each source is the state's own revenue office website, brackets ascend from
+  $0, and review fields are consistent. No rates loaded yet: the revenue office websites aren't
+  reachable from the build environment. 3 unit tests.
+
 ## [0.11.0] - 2026-10-30
 
 ### Added

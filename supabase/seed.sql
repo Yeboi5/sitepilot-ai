@@ -1321,3 +1321,7 @@ insert into public.homeowner_claims (owned_property_id, claimant_id, status, met
 insert into public.maintenance_items (owned_property_id, title, due_on) values
   ('40000000-0000-4000-8000-000000000001', 'Clean gutters before storm season', current_date + 14),
   ('40000000-0000-4000-8000-000000000001', 'Test smoke alarms', current_date + 30);
+
+-- BEGIN DUTY PRESETS (scripts/load-duty-presets.ts)
+-- 0 state preset(s) from supabase/reference/duty-presets.json
+-- END DUTY PRESETS

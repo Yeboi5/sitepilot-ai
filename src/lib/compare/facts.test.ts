@@ -124,3 +124,28 @@ describe("assessDevelopment", async () => {
     expect(d.scenario?.complete).toBe(true);
   });
 });
+
+describe("duty preset file", async () => {
+  const { dutyPresetFileSchema } = await import("./duty-presets");
+  const ok = { state: "NSW", version: "2026-07", brackets: [{ from: 0, base: 0, ratePer100: 1.25 }], source_url: "https://www.revenue.nsw.gov.au/taxes-duties-levies-royalties/transfer-duty", as_of: "2026-07-01" };
+  it("accepts an official source and defaults to needs_review", () => {
+    const r = dutyPresetFileSchema.safeParse([ok]);
+    expect(r.success && r.data[0]!.status).toBe("needs_review");
+  });
+  it("rejects other websites, plain http, bad brackets and inconsistent review fields", () => {
+    for (const bad of [
+      { ...ok, source_url: "https://www.example.com/nsw-duty" },
+      { ...ok, source_url: "https://www.sro.vic.gov.au/rates" }, // another state's site
+      { ...ok, source_url: "http://www.revenue.nsw.gov.au/x" },
+      { ...ok, brackets: [{ from: 100, base: 0, ratePer100: 1 }] },
+      { ...ok, status: "reviewed" },
+      { ...ok, reviewed_by: "Someone", reviewed_at: "2026-10-30T00:00:00Z" },
+    ]) {
+      expect(dutyPresetFileSchema.safeParse([bad]).success, JSON.stringify(bad)).toBe(false);
+    }
+    expect(dutyPresetFileSchema.safeParse([{ ...ok, status: "reviewed", reviewed_by: "A. Accountant", reviewed_at: "2026-10-30T00:00:00Z" }]).success).toBe(true);
+  });
+  it("rejects duplicate state versions", () => {
+    expect(dutyPresetFileSchema.safeParse([ok, ok]).success).toBe(false);
+  });
+});
