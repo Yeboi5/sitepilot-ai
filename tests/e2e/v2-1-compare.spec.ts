@@ -29,13 +29,49 @@ test("guest: swipe right on three properties, select them in Saved and compare",
   await compareBar.getByRole("link", { name: "Compare (3)" }).click();
 
   await expect(page.getByRole("heading", { name: "Compare properties" })).toBeVisible();
-  for (const h of headlines) await expect(table(page).getByRole("link", { name: h })).toBeVisible();
-  await expect(table(page).getByText("DEMO").first()).toBeVisible();
+  const cards = page.getByRole("list", { name: "Properties" });
+  for (const h of headlines) await expect(cards.getByRole("link", { name: h })).toBeVisible();
+  await expect(cards.getByText("DEMO").first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Sign in to save" })).toBeVisible();
 });
 
-test("figures are transparent, editable and never guessed", async ({ page }) => {
+test("Quick compare: photos, price, repayments, rent, and a best match for the user's priorities", async ({ page }) => {
   await page.goto(`/compare?ids=${IDS}`);
+  await expect(page.getByRole("radio", { name: "Quick compare" })).toHaveAttribute("aria-checked", "true");
+  const cards = page.getByRole("list", { name: "Properties" }).getByRole("listitem");
+  await expect(cards).toHaveCount(3);
+  await expect(cards.first().getByText("Illustration: no photo yet")).toBeVisible();
+  const offMarket = cards.filter({ hasText: OFF_MARKET.name });
+  await expect(offMarket).toContainText("Estimated value");
+  await expect(offMarket).toContainText("Not a price");
+  await expect(offMarket).toContainText(/\$\d[\d,]*\/month/);
+  await expect(cards.filter({ hasText: LAND.name })).toContainText("Unknown");
+
+  // Investor defaults: rental return and cash flow. The off-market house leads on both.
+  await expect(page.getByText(`Best match: ${OFF_MARKET.name}`)).toBeVisible();
+  await expect(page.getByText(/best matches your priorities, with the best rental return \(4\.9% gross yield\)/)).toBeVisible();
+  await expect(page.getByText(/Rental return is unknown for Orange land: new home build concept, so it gets no points/)).toBeVisible();
+  await expect(offMarket.getByText("Best match")).toBeVisible();
+
+  // Switch priorities to repayments only: the cheapest property wins.
+  const priorities = page.getByRole("group", { name: "Your priorities" });
+  await priorities.getByRole("button", { name: "Rental return" }).click();
+  await priorities.getByRole("button", { name: "Cash flow" }).click();
+  await priorities.getByRole("button", { name: "Lowest repayments" }).click();
+  await expect(page.getByText(`Best match: ${LAND.name}`)).toBeVisible();
+
+  // A higher rate raises every repayment.
+  const before = await cards.first().textContent();
+  await page.getByLabel("Interest rate").fill("8");
+  await expect(cards.first()).not.toHaveText(before!);
+
+  await page.getByRole("button", { name: "See the full analysis" }).click();
+  await expect(page.getByRole("region", { name: "Comparison table" })).toBeVisible();
+  await expect(page).toHaveURL(/view=advanced/);
+});
+
+test("figures are transparent, editable and never guessed", async ({ page }) => {
+  await page.goto(`/compare?ids=${IDS}&view=advanced`);
   // Off-market: an estimated value, not a price; land: rent unknown.
   await expect(rowCells(page, "Status")).toContainText("NOT FOR SALE");
   await expect(rowCells(page, /Price or estimate/)).toContainText("Estimated value");
@@ -76,11 +112,11 @@ test("figures are transparent, editable and never guessed", async ({ page }) => 
 test("save, reopen, share and delete a comparison; others can't read it", async ({ browser }) => {
   const ivy = await browser.newPage();
   await signIn(ivy, ACCOUNTS.ivy);
-  await ivy.goto(`/compare?ids=${IDS}`);
+  await ivy.goto(`/compare?ids=${IDS}&view=advanced`);
   await ivy.getByLabel(`Stamp duty for ${DUPLEX.name}`).fill("41000");
   await ivy.getByLabel("Name").fill("NSW shortlist");
   await ivy.getByRole("button", { name: "Save comparison" }).click();
-  await expect(ivy).toHaveURL(/\/compare\/[0-9a-f-]{36}$/);
+  await expect(ivy).toHaveURL(/\/compare\/[0-9a-f-]{36}\?view=advanced$/);
   await expect(ivy.getByRole("heading", { name: "NSW shortlist" })).toBeVisible();
   await expect(ivy.getByLabel(`Stamp duty for ${DUPLEX.name}`)).toHaveValue("41000");
   const url = ivy.url();
@@ -114,6 +150,9 @@ test("save, reopen, share and delete a comparison; others can't read it", async 
 
 test("compare fits an iPhone screen; the table scrolls sideways @mobile", async ({ page }) => {
   await page.goto(`/compare?ids=${IDS}`);
+  await expect(page.getByText(/^Best match:/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  await page.getByRole("radio", { name: "Advanced" }).click();
   await expect(page.getByText("Swipe sideways to see every property.")).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);

@@ -12,9 +12,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Saved comparison", referrer: "no-referrer" };
 
-export default async function SavedComparisonPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SavedComparisonPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ view?: string }> }) {
   if (!FLAGS.compare) notFound();
   const { id } = await params;
+  const { view } = await searchParams;
   if (!z.string().uuid().safeParse(id).success) notFound();
   await requireOrg();
   const saved = await loadSavedState(id);
@@ -34,7 +35,7 @@ export default async function SavedComparisonPage({ params }: { params: Promise<
       </p>
       <PageHeader title={state.name} description="Your saved comparison. Only you can see it unless you share a link." />
       {missing ? <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">{missing} property is no longer available and has been left out.</p> : null}
-      <CompareView properties={properties} initial={{ ...state, listingIds: [...available] }} setId={id} signedIn sharedAt={sharedAt} />
+      <CompareView initialView={view === "advanced" ? "advanced" : "quick"} properties={properties} initial={{ ...state, listingIds: [...available] }} setId={id} signedIn sharedAt={sharedAt} />
     </div>
   );
 }

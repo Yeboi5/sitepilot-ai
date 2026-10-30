@@ -2,6 +2,23 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.9.0] - 2026-10-30
+
+Compare My Properties: Quick Compare for everyday users; the full screen becomes Advanced.
+
+### Added
+- **Quick Compare** (the default view): a card per property with its picture (illustration until
+  licensed listing photos exist, and labelled as such), price or estimated value, estimated monthly
+  repayments, rental potential, and a plain-English **best match** for the priorities the user picks
+  (lowest repayments, lowest price, rental return, cash flow, least cash up front, more bedrooms,
+  bigger block). Deposit and interest rate are editable in place. "See the full analysis" opens Advanced.
+- `quick-match-1.0.0` (`src/lib/compare/quick.ts`): for each chosen priority with at least two known
+  values, the best property earns 1 point and the worst 0, linearly between; unknown values earn
+  nothing and are named; near-ties are called ties. Documented in FORMULAS.md.
+- **Advanced Comparison**: the existing full dashboard, unchanged. `?view=advanced` opens it directly,
+  and the choice is kept in the URL.
+- Tests: 4 unit tests (206 total), 1 browser test (52 total).
+
 ## [0.8.0] - 2026-10-30
 
 Master Blueprint v2.1: Compare My Properties (stages C1–C4, and C5's question templates).

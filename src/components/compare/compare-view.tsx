@@ -10,12 +10,14 @@ import { ShareLink } from "@/components/vision/share-link";
 import { DEFAULT_ASSUMPTIONS, SCENARIOS, type CompareAssumptions, type PropertyOverrides, type Scenario } from "@/lib/compare/assumptions";
 import { evaluate, type Metric, type PropertyResult } from "@/lib/compare/engine";
 import { explain, QUESTIONS, type Row } from "@/lib/compare/explain";
+import { DEFAULT_PRIORITIES, type Priority } from "@/lib/compare/quick";
 import type { CompareProperty } from "@/lib/compare/facts";
 import { BANDS, CATEGORIES, CATEGORY_LABELS, DEFAULT_WEIGHTS, MIN_COVERAGE, scoreProperty, type Weights } from "@/lib/compare/score";
 import type { CompareState } from "@/lib/compare/state";
 import { formatAud, formatDate, formatRatio } from "@/lib/format";
 import { BarChart, LineChart, SERIES } from "./charts";
 import { NumberField, Segmented, Slider } from "./controls";
+import { QuickCompare } from "./quick-compare";
 
 const SCENARIO_LABEL: Record<Scenario, string> = { conservative: "Conservative", base: "Base", optimistic: "Optimistic" };
 const button = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold";
@@ -31,7 +33,10 @@ function Cell({ m, f, note }: { m: Metric; f?: (n: number) => string; note?: str
   );
 }
 
+export type CompareViewMode = "quick" | "advanced";
+
 type Props = {
+  initialView?: CompareViewMode;
   properties: CompareProperty[];
   initial: CompareState;
   setId?: string;
@@ -39,9 +44,11 @@ type Props = {
   sharedAt?: string | null;
 };
 
-export function CompareView({ properties, initial, setId, signedIn, sharedAt }: Props) {
+export function CompareView({ properties, initial, setId, signedIn, sharedAt, initialView = "quick" }: Props) {
   const router = useRouter();
+  const [view, setView] = useState<CompareViewMode>(initialView);
   const [mode, setMode] = useState(initial.mode);
+  const [priorities, setPriorities] = useState<Priority[]>(DEFAULT_PRIORITIES[initial.mode]);
   const [a, setA] = useState<CompareAssumptions>(initial.assumptions);
   const [weights, setWeights] = useState<Weights>(initial.weights);
   const [overrides, setOverrides] = useState<Record<string, PropertyOverrides>>(initial.overrides);
@@ -79,7 +86,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt }: 
       const res = await saveComparison(setId ?? null, state);
       if (!res.ok) return setStatus(res.error);
       setStatus("Saved.");
-      if (!setId) router.push(`/compare/${res.id}`);
+      if (!setId) router.push(`/compare/${res.id}?view=${view}`);
       else router.refresh();
     });
 
@@ -126,17 +133,50 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt }: 
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented
-          label="Comparison view"
-          value={mode}
-          onChange={setMode}
+          label="View"
+          value={view}
+          onChange={(v) => {
+            setView(v);
+            const url = new URL(window.location.href);
+            url.searchParams.set("view", v);
+            window.history.replaceState(null, "", url);
+          }}
           options={[
-            { value: "investor", label: "Investor" },
-            { value: "homebuyer", label: "Homebuyer" },
+            { value: "quick", label: "Quick compare" },
+            { value: "advanced", label: "Advanced" },
           ]}
         />
-        <p className="text-xs text-slate-500">Educational only: pre-tax, based on your assumptions. Not financial advice or a forecast.</p>
+        {view === "advanced" ? (
+          <Segmented
+            label="Comparison preset"
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "investor", label: "Investor" },
+              { value: "homebuyer", label: "Homebuyer" },
+            ]}
+          />
+        ) : null}
       </div>
+      <p className="text-xs text-slate-500">Educational only: pre-tax, based on your assumptions. Not financial advice or a forecast.</p>
 
+      {view === "quick" ? (
+        <QuickCompare
+          items={rows.map((r) => ({ p: r.p, r: r.r }))}
+          assumptions={a}
+          onAssumption={set}
+          priorities={priorities}
+          onPriorities={setPriorities}
+          onAdvanced={() => {
+            setView("advanced");
+            const url = new URL(window.location.href);
+            url.searchParams.set("view", "advanced");
+            window.history.replaceState(null, "", url);
+            window.scrollTo({ top: 0 });
+          }}
+        />
+      ) : (
+        <>
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-3">
         {summary.map((s) => (
           <div key={s.title} className="rounded-2xl border border-sand-200 bg-white p-4">
@@ -471,6 +511,9 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt }: 
           </section>
         ) : null}
       </div>
+
+        </>
+      )}
 
       <section aria-labelledby="save-heading" className="space-y-3 rounded-2xl border border-sand-200 bg-white p-4">
         <h2 id="save-heading" className="font-display text-lg font-bold">

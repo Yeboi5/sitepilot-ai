@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Compare properties" };
 
 /** Compare 2–5 saved properties (Blueprint v2.1). Works for guests on DEMO data; saving needs an account. */
-export default async function ComparePage({ searchParams }: { searchParams: Promise<{ ids?: string; mode?: string }> }) {
+export default async function ComparePage({ searchParams }: { searchParams: Promise<{ ids?: string; mode?: string; view?: string }> }) {
   if (!FLAGS.compare) notFound();
   const sp = await searchParams;
   const ids = parseIds(sp.ids);
@@ -39,8 +39,8 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
           ← Saved properties
         </Link>
       </p>
-      <PageHeader title="Compare properties" description={`${properties.length} properties side by side. Change any assumption and everything updates.`} />
-      <CompareView properties={properties} initial={initialState(properties.map((p) => p.listing.id), mode)} signedIn={Boolean(ctx)} />
+      <PageHeader title="Compare properties" description={`${properties.length} properties side by side. Start with Quick compare, or open Advanced for the full analysis.`} />
+      <CompareView initialView={sp.view === "advanced" ? "advanced" : "quick"} properties={properties} initial={initialState(properties.map((p) => p.listing.id), mode)} signedIn={Boolean(ctx)} />
     </div>
   );
 }

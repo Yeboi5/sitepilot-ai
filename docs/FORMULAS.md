@@ -175,3 +175,12 @@ so scores don't depend on which properties are being compared:
 A category without evidence is **excluded** and labelled "Insufficient evidence"; it is never scored
 as 0. `coverage` = scored weight ÷ total weight. Score = weighted average of scored categories, shown
 only when coverage ≥ 60%; otherwise "Not enough evidence to score". Ties keep the user's order.
+
+# Quick Compare best match: `quick-match-1.0.0`
+
+Source: `src/lib/compare/quick.ts`. The user picks priorities; nothing else counts. For each priority
+with at least two known values, the best property scores 1 and the worst 0, linearly in between
+(equal values score the same). Points are summed; the highest total is the best match, and totals
+within 0.05 are reported as a tie. Unknown values earn no points and are named in the explanation; a
+priority with fewer than two known values is skipped. Measures: monthly repayments, price or
+estimated value, gross yield, year-1 cash flow, cash required, bedrooms, land area.

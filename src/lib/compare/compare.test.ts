@@ -207,3 +207,41 @@ describe("explanations and questions", async () => {
     expect(QUESTIONS[0]!.answer(none, A)).toMatch(/enough data/);
   });
 });
+
+describe("Quick Compare", async () => {
+  const { quickMatch, DEFAULT_PRIORITIES } = await import("./quick");
+  const q = (id: string, f: Partial<PropertyFacts>, bedrooms: number | null = 3, land: number | null = 500) => {
+    const pf = facts({ id, label: id, ...f });
+    return { id, label: id, result: evaluate(pf, A), bedrooms, landAreaSqm: land };
+  };
+  const cheap = q("Cheap", { price: 400_000, weeklyRent: 450, stampDuty: 13_000 }, 2, 300);
+  const roomy = q("Roomy", { price: 700_000, weeklyRent: 600, stampDuty: 26_000 }, 5, 700);
+  const middle = q("Middle", { price: 550_000, weeklyRent: 480, stampDuty: 20_000 }, 3, 450);
+
+  it("picks the property that best matches the chosen priorities", () => {
+    expect(quickMatch([cheap, roomy, middle], ["lowest_repayments"]).best?.id).toBe("Cheap");
+    expect(quickMatch([cheap, roomy, middle], ["space", "land"]).best?.id).toBe("Roomy");
+    const m = quickMatch([cheap, roomy, middle], DEFAULT_PRIORITIES.homebuyer);
+    expect(m.ranking.map((r) => r.id)).toEqual(["Cheap", "Roomy", "Middle"]);
+  });
+
+  it("explains the match with the actual figures", () => {
+    const m = quickMatch([cheap, roomy], ["lowest_repayments"]);
+    expect(m.explanation[0]).toMatch(/^Cheap best matches your priorities, with the lowest repayments \(\$1,\d{3}\/month\)\.$/);
+  });
+
+  it("calls a tie a tie", () => {
+    const m = quickMatch([cheap, roomy], ["lowest_repayments", "space"]);
+    expect(m.tie).toBe(true);
+    expect(m.best).toBeNull();
+    expect(m.explanation[0]).toMatch(/even match/);
+  });
+
+  it("unknown values earn no points and are named; a priority without data is skipped", () => {
+    const noRent = q("NoRent", { weeklyRent: null, rentSource: null });
+    const m = quickMatch([cheap, noRent], ["rental_return", "lowest_price"]);
+    expect(m.explanation.join(" ")).toMatch(/Rental return: not enough data to compare \(unknown for NoRent\)/);
+    expect(m.best?.id).toBe("Cheap");
+    expect(quickMatch([noRent, q("Also", { weeklyRent: null })], ["rental_return"]).best).toBeNull();
+  });
+});
