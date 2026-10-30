@@ -4,7 +4,7 @@ Source: *SitePilot AI — Master Blueprint v2.0 (30 Oct 2026)*, an **addendum** 
 and Update Pack 1.1 (`docs/SitePilot_AI_Master_Blueprint_v2.docx`). Nothing here removes working
 functionality. All schema work is additive migrations; breaking changes are listed for approval.
 
-Status: **approved 2026-10-30** with the changes recorded in section 10. V2-1 ✅ (0.4.0) · V2-2 next.
+Status: **approved 2026-10-30** with the changes recorded in section 10. V2-1 ✅ (0.4.0) · V2-2 ✅ (0.5.0) · V2-3 next.
 
 Priorities (from the request): **1. Dashboard · 2. Nationwide discovery · 3. Homeowner features
 (My Property) · 4. SitePilot Vision**, with **Matterport optional and separate**.
@@ -166,8 +166,8 @@ MY PROPERTY                       VISION EDITOR                    3D TOUR (opti
 | Migration | Tables / changes | RLS summary |
 | --- | --- | --- |
 | M1 `nationwide` ✅ | `properties.jurisdiction` check → `NSW, VIC, QLD, WA, SA, TAS, ACT, NT`. Time zone is derived in code from state and postcode (no column needed) | Unchanged policies; new tests per state |
-| M2 `property_records` | `property_records` (canonical address: state, suburb, postcode, street, `source`, `is_demo`, `gnaf_pid` nullable) ; `properties.property_record_id` nullable | Demo records readable by guests; others readable by authenticated users only once a licensed source exists |
-| M3 `discovery` | `listings` (kind, market, NOT-FOR-SALE rules: no street address or price when off-market, provenance, `is_demo`), `swipe_events` (append-only), `saved_properties` (current state) | Guests read demo listings only; swipe and save rows are owner-only |
+| M2 `property_records` ✅ | `property_records` (canonical address: state, suburb, postcode, street, `source`, `is_demo`, `gnaf_pid` nullable) ; `properties.property_record_id` nullable | Demo records readable by guests; others readable by authenticated users only once a licensed source exists |
+| M3 `discovery` ✅ | `listings` (kind, market, NOT-FOR-SALE rules: no street address or price when off-market, provenance, `is_demo`), `swipe_events` (append-only), `saved_properties` (current state) | Guests read demo listings only; swipe and save rows are owner-only |
 | M4 `couples` | `couples_groups`, `couples_members` (max 2), `couples_invites` (hashed token), `couples_shared` | Members see only explicitly shared items; private swipes never visible |
 | M5 `my_property` | `owned_properties` (user ↔ record, nickname, notes), `property_notes`, `maintenance_items` | Owner-only |
 | M6 `claims` | `homeowner_claims` (status pending/verified/rejected/withdrawn, method, evidence path, decided_by/at), `app.is_claim_verifier()`; `buyer_enquiries` (owner opt-in, revocable, platform-mediated messages) | Claimant sees own; verifier sees pending evidence only, every view audited; status changes via RPC only; never public |

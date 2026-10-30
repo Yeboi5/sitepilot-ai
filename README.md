@@ -10,7 +10,8 @@ with professional sign-off.
 > [docs/SECURITY.md](docs/SECURITY.md) are passed.
 
 **Status:** Sprints 0–2 and Update Pack 1.1 Phase B complete. Master Blueprint v2.0 approved:
-V2-1 (dashboard v2, nationwide workspaces) complete; V2-2 (nationwide demo Discover) next. See
+V2-1 (dashboard v2, nationwide workspaces) and V2-2 (nationwide demo Discover: swipe decks,
+saved lists) complete; V2-3 (Search Any Address, My Property) next. See
 [docs/BLUEPRINT_V2_PLAN.md](docs/BLUEPRINT_V2_PLAN.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Stack

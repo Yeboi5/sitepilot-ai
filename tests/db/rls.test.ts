@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { actAs, as, asOwner, closePool, ids, inTx } from "./db";
-import { AUTH, DOCUMENT, EVIDENCE, FINDING, MATTER, ORG, PROPERTY, USER } from "./fixtures";
+import { AUTH, DOCUMENT, EVIDENCE, FINDING, LISTING, MATTER, ORG, PROPERTY, USER } from "./fixtures";
 
 afterAll(closePool);
 
@@ -546,6 +546,121 @@ describe("nationwide workspaces (Blueprint v2.0)", () => {
       expect(dflt.rows[0].jurisdiction).toBe("NSW");
       await actAs(c, AUTH.oscar);
       expect((await c.query("select 1 from public.properties where id = $1", [rows[0].id])).rowCount).toBe(0);
+    });
+  });
+});
+
+describe("discovery: listings and property records (Blueprint v2.0 V2-2)", () => {
+  it("guests can read demo listings and demo property records", async () => {
+    await as(null, async (c) => {
+      expect((await c.query("select 1 from public.listings")).rowCount).toBe(48);
+      expect((await c.query("select 1 from public.property_records")).rowCount).toBe(48);
+    });
+  });
+
+  it("guests still can't read anything else", async () => {
+    for (const table of ["swipe_events", "saved_properties", "properties", "users"]) {
+      await expect(as(null, (c) => c.query(`select 1 from public.${table}`)), table).rejects.toThrow(/permission denied/);
+    }
+  });
+
+  it("non-demo listings are hidden from guests and users until licensed access rules exist", async () => {
+    await inTx(async (c) => {
+      await c.query(
+        `insert into public.listings (kind, market, is_demo, headline, description, property_type, state, suburb, postcode, asking_price, provenance)
+         values ('home', 'for_sale', false, 'Real?', 'x', 'house', 'NSW', 'Sydney', '2000', 1000000, '{"source":"licensed-feed"}')`,
+      );
+      await actAs(c, null);
+      expect((await c.query("select 1 from public.listings where not is_demo")).rowCount).toBe(0);
+      await actAs(c, AUTH.ivy);
+      expect((await c.query("select 1 from public.listings where not is_demo")).rowCount).toBe(0);
+    });
+  });
+
+  it("nobody but the service role can write listings", async () => {
+    await expect(as(AUTH.ivy, (c) => c.query("update public.listings set headline = 'x'"))).rejects.toThrow(/permission denied/);
+    await expect(as(null, (c) => c.query("delete from public.listings"))).rejects.toThrow(/permission denied/);
+  });
+
+  it("off-market listings can never carry a price or a street address", async () => {
+    const base = `insert into public.listings (kind, market, is_demo, headline, description, property_type, state, suburb, postcode, provenance`;
+    await expect(
+      inTx((c) => c.query(`${base}, asking_price) values ('home', 'off_market', true, 'x', 'x', 'house', 'NSW', 'Sydney', '2000', '{"source":"demo"}', 500000)`)),
+    ).rejects.toThrow(/listings_off_market_no_price/);
+    await expect(
+      inTx((c) => c.query(`${base}, street_address) values ('home', 'off_market', true, 'x', 'x', 'house', 'NSW', 'Sydney', '2000', '{"source":"demo"}', '1 Real St')`)),
+    ).rejects.toThrow(/listings_off_market_no_address/);
+    await expect(
+      inTx((c) => c.query(`${base}) values ('home', 'for_sale', true, 'x', 'x', 'house', 'NSW', 'Sydney', '2000', '{"source":"demo"}')`)),
+    ).rejects.toThrow(/listings_for_sale_priced/);
+  });
+
+  it("seeded off-market rows have no price or address", async () => {
+    await as(null, async (c) => {
+      const { rows } = await c.query("select count(*)::int as n from public.listings where market = 'off_market' and (asking_price is not null or street_address is not null)");
+      expect(rows[0].n).toBe(0);
+    });
+  });
+});
+
+describe("discovery: swipes and saved properties", () => {
+  it("a user's swipes and saves are stamped to them and private", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      const ev = await c.query(
+        "insert into public.swipe_events (user_id, listing_id, action, source) values ($1, $2, 'save', 'button') returning user_id",
+        [USER.oscar, LISTING.homeForSale],
+      );
+      expect(ev.rows[0].user_id).toBe(USER.ivy); // forged user_id is overwritten
+      await c.query("insert into public.saved_properties (listing_id) values ($1)", [LISTING.homeForSale]);
+
+      await actAs(c, AUTH.oscar);
+      expect((await c.query("select 1 from public.swipe_events")).rowCount).toBe(0);
+      expect((await c.query("select 1 from public.saved_properties")).rowCount).toBe(0);
+      const del = await c.query("delete from public.saved_properties where listing_id = $1", [LISTING.homeForSale]);
+      expect(del.rowCount).toBe(0);
+
+      await actAs(c, AUTH.ivy);
+      expect((await c.query("select 1 from public.saved_properties")).rowCount).toBe(1);
+    });
+  });
+
+  it("swipe history is append-only", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      await c.query("insert into public.swipe_events (listing_id, action, source) values ($1, 'pass', 'swipe')", [LISTING.homeForSale]);
+      await expect(c.query("update public.swipe_events set action = 'save'")).rejects.toThrow(/permission denied/);
+    });
+    await expect(as(AUTH.ivy, (c) => c.query("delete from public.swipe_events"))).rejects.toThrow(/permission denied/);
+  });
+
+  it("guests can't record swipes or saves (they're kept in the browser)", async () => {
+    await expect(
+      as(null, (c) => c.query("insert into public.saved_properties (listing_id) values ($1)", [LISTING.homeForSale])),
+    ).rejects.toThrow(/permission denied/);
+  });
+
+  it("signed-out sessions can't save", async () => {
+    await expect(
+      inTx(async (c) => {
+        const session = await actAs(c, AUTH.ivy);
+        await asOwner(c, "delete from auth.sessions where id = $1", [session]);
+        await actAs(c, AUTH.ivy, { sessionId: session });
+        await c.query("insert into public.saved_properties (listing_id) values ($1)", [LISTING.homeForSale]);
+      }),
+    ).rejects.toThrow(/null value|row-level security/);
+  });
+
+  it("rate-limits swipes at 1,000 per hour", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      await c.query(
+        "insert into public.swipe_events (listing_id, action, source) select $1, 'pass', 'swipe' from generate_series(1, 1000)",
+        [LISTING.homeForSale],
+      );
+      await expect(
+        c.query("insert into public.swipe_events (listing_id, action, source) values ($1, 'pass', 'swipe')", [LISTING.homeForSale]),
+      ).rejects.toThrow(/swipe rate limit exceeded/);
     });
   });
 });

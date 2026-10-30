@@ -128,6 +128,41 @@ organisation to members of the engaged firm only.
 `matter_id`, `title`, `assignee_id`, `due_at`, `status` (`open`, `in_progress`, `done`,
 `cancelled`), `verified_by`, `created_by` (**server**).
 
+## Discovery (Blueprint v2.0, V2-2)
+
+Listing data, property records and user activity are kept separate (v2.0 §9).
+
+### `property_records`
+Canonical addresses. `state`, `suburb`, `postcode`, `street_address` (nullable), `source`
+(`demo` / `licensed`), `is_demo` (must equal `source = 'demo'`), `gnaf_pid` (future G-NAF id).
+Guests and users can read demo rows only.
+
+### `listings`
+| Column | Notes |
+| --- | --- |
+| kind | `home` / `investment` |
+| market | `for_sale` / `off_market`. **Off-market = NOT FOR SALE**: `asking_price`, `price_display` and `street_address` must be null (constraints) |
+| is_demo | Demo listings are the only ones readable today |
+| property_type | `house`, `townhouse`, `apartment`, `duplex`, `land` |
+| state, suburb, postcode, street_address | Display location (street address for-sale only) |
+| bedrooms, bathrooms, car_spaces, land_area_sqm | |
+| asking_price, price_display | For sale only; illustrative for demo |
+| indicative_weekly_rent | Investment assumption (demo); used for indicative gross yield |
+| development_idea, risk_flags | Prompts to check with council and professionals, not conclusions |
+| lifestyle_tags | Features of the (fictional) home |
+| illustration_seed | Drives the generated illustration (no photos) |
+| provenance | jsonb: `source`, `licence`, `as_of`, `verification` (required `source`) |
+| property_record_id | Optional link to `property_records` |
+
+### `swipe_events`
+Append-only per user: `listing_id`, `action` (`save`, `pass`, `undo`, `unsave`), `source`
+(`swipe`, `button`, `keyboard`, `import`, `list`), `created_at`. `user_id` is **server**-stamped.
+Rate-limited to 1,000 per user per hour.
+
+### `saved_properties`
+The current shortlist: PK (`user_id`, `listing_id`), `created_at`. Owner-only; `user_id` is
+**server**-stamped.
+
 ## Platform
 
 ### `audit_events`

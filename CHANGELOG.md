@@ -2,6 +2,32 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.0] - 2026-10-30
+
+Master Blueprint v2.0, V2-2: nationwide demo Discover.
+
+### Added
+- Migration `20261030020000_discovery.sql`: `property_records` (canonical addresses), `listings`
+  (constraints: off-market rows are NOT FOR SALE, with no price or street address), `swipe_events`
+  (append-only, rate-limited to 1,000 per user per hour) and `saved_properties`. Guests can read
+  DEMO listings and records only; activity is owner-only. `properties.property_record_id` (nullable).
+- 48 synthetic DEMO listings across all eight states and territories
+  (`scripts/gen-demo-listings.ts`): real suburbs, fictional "[DEMO] … Example Lane" addresses,
+  illustrative prices, and land-appropriate ideas. Off-market rows carry no price, address or rent.
+- Find My Home and Find My Investment swipe decks: drag, Save/Pass buttons, ← / → keys, undo,
+  screen-reader announcements, reduced-motion support. For Sale and Off-Market Potential tabs, a
+  NOT FOR SALE notice, and state and bedroom filters.
+- Listing cards with deterministic illustrations (no photos). Investment cards show an indicative
+  gross yield (`signals-1.0.0`) with "Assumptions and source", idea and risk prompts.
+- Listing detail with provenance; Save toggle.
+- `/saved` (Homes and Investments): synced for signed-in users, kept on the device for guests,
+  with one-click import of on-device saves after sign-in.
+- Tests: 11 RLS tests (91 total), 25 unit tests (159 total), 10 browser tests (41 total).
+
+### Fixed (before release)
+- The swipe rate limit ran before the user was stamped, so it never triggered. The triggers are
+  now numbered to fix their order, and a test proves the limit works.
+
 ## [0.4.0] - 2026-10-30
 
 Master Blueprint v2.0, increment V2-1: dashboard v2 and nationwide foundation.

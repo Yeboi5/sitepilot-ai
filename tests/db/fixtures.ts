@@ -45,3 +45,10 @@ export const DOCUMENT = {
 export const FINDING = {
   settlement: "20000000-0000-4000-8000-000000000001",
 } as const;
+
+// Generated demo listings (scripts/gen-demo-listings.ts): n=1 NSW home for sale, n=3 NSW home off-market.
+export const LISTING = {
+  homeForSale: "30000000-0000-4000-8000-000000000001",
+  homeOffMarket: "30000000-0000-4000-8000-000000000003",
+  investmentForSale: "30000000-0000-4000-8000-000000000004",
+} as const;

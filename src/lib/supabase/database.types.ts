@@ -262,6 +262,101 @@ export type Database = {
           },
         ];
       };
+      listings: {
+        Row: {
+          id: string;
+          property_record_id: string | null;
+          kind: Database["public"]["Enums"]["listing_kind"];
+          market: Database["public"]["Enums"]["listing_market"];
+          is_demo: boolean;
+          headline: string;
+          description: string;
+          property_type: Database["public"]["Enums"]["listing_property_type"];
+          state: string;
+          suburb: string;
+          postcode: string;
+          street_address: string | null;
+          bedrooms: number | null;
+          bathrooms: number | null;
+          car_spaces: number | null;
+          land_area_sqm: number | null;
+          asking_price: number | null;
+          price_display: string | null;
+          indicative_weekly_rent: number | null;
+          development_idea: string | null;
+          risk_flags: string[];
+          lifestyle_tags: string[];
+          illustration_seed: number;
+          provenance: Json;
+          listed_on: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_record_id?: string | null;
+          kind: Database["public"]["Enums"]["listing_kind"];
+          market: Database["public"]["Enums"]["listing_market"];
+          is_demo?: boolean;
+          headline: string;
+          description: string;
+          property_type: Database["public"]["Enums"]["listing_property_type"];
+          state: string;
+          suburb: string;
+          postcode: string;
+          street_address?: string | null;
+          bedrooms?: number | null;
+          bathrooms?: number | null;
+          car_spaces?: number | null;
+          land_area_sqm?: number | null;
+          asking_price?: number | null;
+          price_display?: string | null;
+          indicative_weekly_rent?: number | null;
+          development_idea?: string | null;
+          risk_flags?: string[];
+          lifestyle_tags?: string[];
+          illustration_seed?: number;
+          provenance: Json;
+          listed_on?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          property_record_id?: string | null;
+          kind?: Database["public"]["Enums"]["listing_kind"];
+          market?: Database["public"]["Enums"]["listing_market"];
+          is_demo?: boolean;
+          headline?: string;
+          description?: string;
+          property_type?: Database["public"]["Enums"]["listing_property_type"];
+          state?: string;
+          suburb?: string;
+          postcode?: string;
+          street_address?: string | null;
+          bedrooms?: number | null;
+          bathrooms?: number | null;
+          car_spaces?: number | null;
+          land_area_sqm?: number | null;
+          asking_price?: number | null;
+          price_display?: string | null;
+          indicative_weekly_rent?: number | null;
+          development_idea?: string | null;
+          risk_flags?: string[];
+          lifestyle_tags?: string[];
+          illustration_seed?: number;
+          provenance?: Json;
+          listed_on?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "listings_property_record_id_fkey";
+            columns: ["property_record_id"];
+            isOneToOne: false;
+            referencedRelation: "property_records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       matter_access: {
         Row: {
           matter_id: string;
@@ -467,6 +562,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           is_demo: boolean;
+          property_record_id: string | null;
         };
         Insert: {
           id?: string;
@@ -480,6 +576,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           is_demo?: boolean;
+          property_record_id?: string | null;
         };
         Update: {
           id?: string;
@@ -493,6 +590,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           is_demo?: boolean;
+          property_record_id?: string | null;
         };
         Relationships: [
           {
@@ -507,6 +605,83 @@ export type Database = {
             columns: ["owner_org_id"];
             isOneToOne: false;
             referencedRelation: "organisations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "properties_property_record_id_fkey";
+            columns: ["property_record_id"];
+            isOneToOne: false;
+            referencedRelation: "property_records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      property_records: {
+        Row: {
+          id: string;
+          state: string;
+          suburb: string;
+          postcode: string;
+          street_address: string | null;
+          source: string;
+          is_demo: boolean;
+          gnaf_pid: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          state: string;
+          suburb: string;
+          postcode: string;
+          street_address?: string | null;
+          source: string;
+          is_demo?: boolean;
+          gnaf_pid?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          state?: string;
+          suburb?: string;
+          postcode?: string;
+          street_address?: string | null;
+          source?: string;
+          is_demo?: boolean;
+          gnaf_pid?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+        ];
+      };
+      saved_properties: {
+        Row: {
+          user_id: string;
+          listing_id: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          listing_id: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          listing_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "saved_properties_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "saved_properties_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -632,6 +807,48 @@ export type Database = {
           },
         ];
       };
+      swipe_events: {
+        Row: {
+          id: number;
+          user_id: string;
+          listing_id: string;
+          action: Database["public"]["Enums"]["swipe_action"];
+          source: Database["public"]["Enums"]["swipe_source"];
+          created_at: string;
+        };
+        Insert: {
+          id?: never;
+          user_id: string;
+          listing_id: string;
+          action: Database["public"]["Enums"]["swipe_action"];
+          source: Database["public"]["Enums"]["swipe_source"];
+          created_at?: string;
+        };
+        Update: {
+          id?: never;
+          user_id?: string;
+          listing_id?: string;
+          action?: Database["public"]["Enums"]["swipe_action"];
+          source?: Database["public"]["Enums"]["swipe_source"];
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "swipe_events_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "swipe_events_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tasks: {
         Row: {
           id: string;
@@ -735,12 +952,17 @@ export type Database = {
       evidence_source_type: "planning_certificate" | "planning_portal" | "lep_map" | "council_record" | "title_search" | "survey" | "other" | "valuation";
       evidence_status: "unverified" | "verified" | "disputed" | "superseded";
       finding_status: "unreviewed" | "needs_clarification" | "confirmed" | "rejected";
+      listing_kind: "home" | "investment";
+      listing_market: "for_sale" | "off_market";
+      listing_property_type: "house" | "townhouse" | "apartment" | "duplex" | "land";
       matter_permission: "view" | "edit" | "manage";
       matter_status: "invited" | "active" | "declined" | "revoked" | "closed";
       membership_role: "admin" | "member";
       organisation_type: "investor" | "professional";
       plan_tier: "explorer" | "investor_pro" | "developer" | "conveyancer";
       subscription_status: "trialing" | "active" | "past_due" | "canceled";
+      swipe_action: "save" | "pass" | "undo" | "unsave";
+      swipe_source: "swipe" | "button" | "keyboard" | "import" | "list";
       task_status: "open" | "in_progress" | "done" | "cancelled";
       verification_status: "unverified" | "pending" | "verified" | "rejected";
     };

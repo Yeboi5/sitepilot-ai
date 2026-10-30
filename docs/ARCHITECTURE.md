@@ -38,6 +38,9 @@ Later sprints:  job queue + document worker (service role) ──▶ AI provider
 | `src/components/shell/` | Responsive app shell: desktop top bar, mobile bottom tabs, per-audience nav items |
 | `src/components/dashboard/` | Hero, entry cards, quick actions, "Your projects" |
 | `src/lib/flags.ts` | Feature flags (`NEXT_PUBLIC_FLAG_*`) |
+| `src/lib/discovery/` | Deck reducer, guest on-device store, indicative signals, listing types |
+| `src/components/discovery/` | Swipe deck, listing card, illustration, deck page, saved list |
+| `scripts/gen-demo-listings.ts` | Generates the DEMO listings block in `supabase/seed.sql` |
 | `src/lib/jurisdictions.ts`, `src/lib/dates.ts` | States and territories, postcode ranges, per-property time zones |
 | `src/app/(app)/analyse/` | Start a workspace from an address |
 | `src/app/(app)/investor/` | Property workspaces, evidence register, scenarios, report (`/investor` redirects to `/`) |

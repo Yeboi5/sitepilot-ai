@@ -46,6 +46,10 @@ threat model, the list of controls in place, and the gates that must pass before
 | DoS | Large/malicious uploads | 25 MiB, PDF-only at bucket + table; malware scan before processing | Limits ✅; scan Sprint 3 |
 | Elevation | Self-granting matter access or admin role | Grants only by investor org to engaged firm's members; admin-only membership writes | ✅ tested |
 | Misrepresentation | Demo/synthetic data presented as official | `is_demo` flag, never-verified constraint, UI badges/banners, `.invalid` URLs | ✅ tested |
+| Info disclosure | Guests reading data | The only anonymous-readable rows are DEMO `listings` and `property_records` (RLS `is_demo`); every other table denies `anon` | ✅ tested |
+| Misrepresentation | Off-market homes shown as for sale, or owners identified | DB constraints: no price or street address on off-market rows; NOT FOR SALE labels; no owner data stored | ✅ tested |
+| DoS / abuse | Swipe spam | 1,000 swipe events per user per hour (trigger) | ✅ tested |
+| Tampering | Guest storage tampered with | On-device decisions are parsed defensively; imports accept only visible listing ids | ✅ unit-tested |
 | Elevation | Self-verifying a firm | `verification_status` not client-writable | ✅ tested |
 
 ## Controls in place (Sprint 0/1)
