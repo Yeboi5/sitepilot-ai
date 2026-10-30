@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { actAs, as, asOwner, closePool, ids, inTx } from "./db";
-import { AUTH, DOCUMENT, EVIDENCE, FINDING, LISTING, MATTER, ORG, PROPERTY, USER } from "./fixtures";
+import { actAs, as, asOwner, closePool, expectFails, ids, inTx } from "./db";
+import { AUTH, DOCUMENT, EVIDENCE, FINDING, LISTING, MATTER, ORG, OWNED, PROPERTY, RECORD, USER } from "./fixtures";
 
 afterAll(closePool);
 
@@ -661,6 +661,277 @@ describe("discovery: swipes and saved properties", () => {
       await expect(
         c.query("insert into public.swipe_events (listing_id, action, source) values ($1, 'pass', 'swipe')", [LISTING.homeForSale]),
       ).rejects.toThrow(/swipe rate limit exceeded/);
+    });
+  });
+});
+
+async function addHome(c: import("pg").PoolClient, record: string | null = RECORD.forSaleHome) {
+  const { rows } = await c.query(
+    "insert into public.owned_properties (property_record_id, address, suburb, state, postcode) values ($1, '1 Test St', 'Halekulani', 'NSW', '2262') returning id, user_id",
+    [record],
+  );
+  return rows[0] as { id: string; user_id: string };
+}
+
+async function claim(c: import("pg").PoolClient, owned: string, key = "x/evidence.pdf") {
+  const { rows } = await c.query(
+    "insert into public.homeowner_claims (owned_property_id, evidence_key, evidence_name, evidence_mime) values ($1, $2, 'rates.pdf', 'application/pdf') returning id, status, claimant_id",
+    [owned, key],
+  );
+  return rows[0] as { id: string; status: string; claimant_id: string };
+}
+
+describe("My Property (V2-3)", () => {
+  it("owned properties, notes and maintenance are private to their owner", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.oscar);
+      expect((await c.query("select 1 from public.owned_properties")).rowCount).toBe(0);
+      expect((await c.query("select 1 from public.maintenance_items")).rowCount).toBe(0);
+      await expectFails(c, "insert into public.property_notes (owned_property_id, body) values ($1, 'hi')", [OWNED.ivyHome], RLS_VIOLATION);
+      await actAs(c, AUTH.ivy);
+      expect((await c.query("select 1 from public.maintenance_items")).rowCount).toBe(2);
+    });
+  });
+
+  it("adding a home stamps the owner; it is not an ownership claim", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const home = await addHome(c);
+      expect(home.user_id).toBe(USER.nina);
+      expect((await c.query("select 1 from public.homeowner_claims where owned_property_id = $1", [home.id])).rowCount).toBe(0);
+    });
+  });
+
+  it("anonymous users have no access to My Property data", async () => {
+    for (const t of ["owned_properties", "homeowner_claims", "buyer_enquiries", "claim_verifiers"]) {
+      await expect(as(null, (c) => c.query(`select 1 from public.${t}`)), t).rejects.toThrow(/permission denied/);
+    }
+  });
+});
+
+describe("homeowner claims (V2-3)", () => {
+  it("a new claim is always pending and stamped to the claimant", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const home = await addHome(c);
+      const cl = await claim(c, home.id);
+      expect(cl.status).toBe("pending");
+      expect(cl.claimant_id).toBe(USER.nina);
+      await expect(
+        c.query("insert into public.homeowner_claims (owned_property_id, status) values ($1, 'verified')", [home.id]),
+      ).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it("the app's insert shape works, and a spoofed claimant is replaced by the caller", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const home = await addHome(c);
+      const { rows } = await c.query(
+        "insert into public.homeowner_claims (owned_property_id, claimant_id, evidence_key, evidence_name, evidence_mime) values ($1, $2, 'k/x.pdf', 'x.pdf', 'application/pdf') returning claimant_id",
+        [home.id, USER.ivy],
+      );
+      expect(rows[0].claimant_id).toBe(USER.nina);
+    });
+  });
+
+  it("claimants can't verify their own claim, but can withdraw it", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const cl = await claim(c, (await addHome(c)).id);
+      await expectFails(c, "update public.homeowner_claims set status = 'verified' where id = $1", [cl.id], /only a pending claim can be withdrawn/);
+      await expectFails(c, "update public.homeowner_claims set decided_at = now() where id = $1", [cl.id], /permission denied/);
+      const w = await c.query("update public.homeowner_claims set status = 'withdrawn' where id = $1 returning status", [cl.id]);
+      expect(w.rows[0].status).toBe("withdrawn");
+    });
+  });
+
+  it("can't claim someone else's property entry", async () => {
+    await expect(
+      inTx(async (c) => {
+        await actAs(c, AUTH.oscar);
+        await claim(c, OWNED.ivyHome);
+      }),
+    ).rejects.toThrow(RLS_VIOLATION);
+  });
+
+  it("verifiers see pending claims and the address only, then decide; decisions are audited and evidence cleared", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const home = await addHome(c);
+      await c.query("insert into public.property_notes (owned_property_id, body) values ($1, 'private note')", [home.id]);
+      const cl = await claim(c, home.id);
+
+      await actAs(c, AUTH.vera);
+      expect(await ids(c, "select id from public.homeowner_claims")).toEqual([cl.id]); // not Ivy's verified claim
+      expect((await c.query("select address from public.owned_properties where id = $1", [home.id])).rows[0].address).toBe("1 Test St");
+      expect((await c.query("select 1 from public.property_notes")).rowCount).toBe(0);
+      expect((await c.query("select 1 from public.owned_properties where id = $1", [OWNED.ivyHome])).rowCount).toBe(0);
+
+      const key = (await c.query("select public.record_claim_evidence_view($1) as k", [cl.id])).rows[0].k;
+      expect(key).toBe("x/evidence.pdf");
+      await c.query("select public.decide_claim($1, 'verified', 'Rates notice matches')", [cl.id]);
+
+      await asOwner(c, "select 1");
+      const after = await c.query("select status, decided_by from public.homeowner_claims where id = $1", [cl.id]);
+      expect(after.rows[0]).toEqual({ status: "verified", decided_by: USER.vera });
+      const audit = await c.query(
+        "select action from public.audit_events where resource_id = $1 order by id",
+        [cl.id],
+      );
+      expect(audit.rows.map((r) => r.action)).toEqual(["claim.evidence_viewed", "claim.verified"]);
+    });
+  });
+
+  it("only verifiers can decide or open evidence", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const cl = await claim(c, (await addHome(c)).id);
+      await actAs(c, AUTH.pat); // platform admin is not a verifier
+      await expect(c.query("select public.decide_claim($1, 'verified')", [cl.id])).rejects.toThrow(/not permitted/);
+    });
+    await expect(
+      inTx(async (c) => {
+        await actAs(c, AUTH.nina);
+        const cl = await claim(c, (await addHome(c)).id);
+        await actAs(c, AUTH.ivy);
+        await c.query("select public.record_claim_evidence_view($1)", [cl.id]);
+      }),
+    ).rejects.toThrow(/not permitted/);
+  });
+
+  it("a property record can have only one verified owner", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const cl = await claim(c, (await addHome(c, RECORD.ivyHome)).id); // Ivy is already verified here
+      await actAs(c, AUTH.vera);
+      await expect(c.query("select public.decide_claim($1, 'verified')", [cl.id])).rejects.toThrow(/already has a verified owner/);
+    });
+  });
+
+  it("verifiers can't decide their own claims", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.vera);
+      const cl = await claim(c, (await addHome(c)).id);
+      await expect(c.query("select public.decide_claim($1, 'verified')", [cl.id])).rejects.toThrow(/cannot decide their own/);
+    });
+  });
+});
+
+describe("buyer enquiries (V2-3)", () => {
+  async function enquire(c: import("pg").PoolClient, owned: string = OWNED.ivyHome) {
+    const { rows } = await c.query(
+      "insert into public.buyer_enquiries (owned_property_id, message) values ($1, 'We love this street, would you consider selling?') returning id, buyer_id, status",
+      [owned],
+    );
+    return rows[0] as { id: string; buyer_id: string; status: string };
+  }
+
+  it("a buyer can find the opaque target for a record and enquire; the owner sees it", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.oscar);
+      const target = (await c.query("select public.enquiry_target_for_record($1) as id", [RECORD.ivyHome])).rows[0].id;
+      expect(target).toBe(OWNED.ivyHome);
+      expect((await c.query("select 1 from public.owned_properties where id = $1", [target])).rowCount).toBe(0); // no owner details
+      const e = await enquire(c, target);
+      expect(e.buyer_id).toBe(USER.oscar);
+
+      await actAs(c, AUTH.ivy);
+      expect(await ids(c, "select id from public.buyer_enquiries")).toEqual([e.id]);
+      await actAs(c, AUTH.connie);
+      expect((await c.query("select 1 from public.buyer_enquiries")).rowCount).toBe(0);
+    });
+  });
+
+  it("the app's insert shape works, and a spoofed buyer is replaced by the caller", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.oscar);
+      const { rows } = await c.query(
+        "insert into public.buyer_enquiries (owned_property_id, buyer_id, message) values ($1, $2, 'Keen to hear if you ever sell.') returning buyer_id",
+        [OWNED.ivyHome, USER.connie],
+      );
+      expect(rows[0].buyer_id).toBe(USER.oscar);
+    });
+  });
+
+  it("no enquiries to unverified or opted-out properties, or to yourself", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const home = await addHome(c);
+      await c.query("update public.owned_properties set accepts_enquiries = true where id = $1", [home.id]);
+      await actAs(c, AUTH.oscar);
+      await expect(enquire(c, home.id)).rejects.toThrow(RLS_VIOLATION); // claim not verified
+    });
+    await expect(as(AUTH.ivy, (c) => enquire(c))).rejects.toThrow(RLS_VIOLATION); // own property
+  });
+
+  it("owner replies or declines; buyer withdraws; nobody edits the message", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.oscar);
+      const e = await enquire(c);
+      await expectFails(c, "update public.buyer_enquiries set status = 'replied', owner_reply = 'sure' where id = $1", [e.id], /not permitted/);
+      await actAs(c, AUTH.ivy);
+      const r = await c.query("update public.buyer_enquiries set status = 'replied', owner_reply = 'Happy to chat' where id = $1 returning status", [e.id]);
+      expect(r.rows[0].status).toBe("replied");
+      await actAs(c, AUTH.oscar);
+      await c.query("update public.buyer_enquiries set status = 'withdrawn' where id = $1", [e.id]);
+      await actAs(c, AUTH.ivy);
+      await expect(c.query("update public.buyer_enquiries set status = 'replied' where id = $1", [e.id])).rejects.toThrow(/closed/);
+    });
+  });
+
+  it("switching enquiries off closes open ones and stops new ones", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.oscar);
+      const e = await enquire(c);
+      await actAs(c, AUTH.ivy);
+      await c.query("update public.owned_properties set accepts_enquiries = false where id = $1", [OWNED.ivyHome]);
+      expect((await c.query("select status from public.buyer_enquiries where id = $1", [e.id])).rows[0].status).toBe("closed");
+      await actAs(c, AUTH.oscar);
+      expect((await c.query("select public.enquiry_target_for_record($1) as id", [RECORD.ivyHome])).rows[0].id).toBeNull();
+      await expect(enquire(c)).rejects.toThrow(RLS_VIOLATION);
+    });
+  });
+
+  it("limits each buyer to 5 enquiries a day", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.oscar);
+      for (let i = 0; i < 5; i++) await enquire(c);
+      await expect(enquire(c)).rejects.toThrow(/enquiry limit reached/);
+    });
+  });
+
+  it("guests can't look up enquiry targets", async () => {
+    await expect(as(null, (c) => c.query("select public.enquiry_target_for_record($1)", [RECORD.ivyHome]))).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("claim evidence storage (V2-3)", () => {
+  it("users upload only into their own folder; others can't read; verifiers read pending evidence", async () => {
+    await inTx(async (c) => {
+      await actAs(c, AUTH.nina);
+      const key = `${USER.nina}/claim-1.pdf`;
+      await c.query("insert into storage.objects (bucket_id, name) values ('claim-evidence', $1)", [key]);
+      await expectFails(c, "insert into storage.objects (bucket_id, name) values ('claim-evidence', $1)", [`${USER.ivy}/sneaky.pdf`], RLS_VIOLATION);
+      const cl = await claim(c, (await addHome(c)).id, key);
+
+      await actAs(c, AUTH.oscar);
+      expect((await c.query("select 1 from storage.objects where bucket_id = 'claim-evidence'")).rowCount).toBe(0);
+      await actAs(c, AUTH.vera);
+      expect((await c.query("select 1 from storage.objects where name = $1", [key])).rowCount).toBe(1);
+      const returned = (await c.query("select public.decide_claim($1, 'rejected', 'Name did not match') as k", [cl.id])).rows[0].k;
+      expect(returned).toBe(key);
+      // The deciding verifier deletes the file, then clears the reference.
+      expect((await c.query("delete from storage.objects where name = $1", [key])).rowCount).toBe(1);
+      await c.query("select public.clear_claim_evidence($1)", [cl.id]);
+      await asOwner(c, "select 1");
+      expect((await c.query("select evidence_key from public.homeowner_claims where id = $1", [cl.id])).rows[0].evidence_key).toBeNull();
+
+      // Non-verifiers can't touch other users' evidence.
+      await actAs(c, AUTH.oscar);
+      await c.query("insert into storage.objects (bucket_id, name) values ('claim-evidence', $1)", [`${USER.oscar}/mine.pdf`]);
+      await actAs(c, AUTH.ivy);
+      expect((await c.query("delete from storage.objects where name = $1", [`${USER.oscar}/mine.pdf`])).rowCount).toBe(0);
     });
   });
 });

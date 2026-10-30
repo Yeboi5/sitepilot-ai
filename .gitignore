@@ -10,3 +10,6 @@ next-env.d.ts
 
 test-results/
 playwright-report/
+
+# Local claim-evidence storage (STORAGE_DRIVER=local)
+.local-storage/

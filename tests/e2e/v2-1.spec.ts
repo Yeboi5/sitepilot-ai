@@ -4,11 +4,14 @@ import { ACCOUNTS, signIn } from "./helpers";
 // Master Blueprint v2.0, increment V2-1: dashboard v2 and nationwide foundation.
 
 test.describe("dashboard v2", () => {
-  test("guest sees My Property and SitePilot Vision, with friendly previews", async ({ page }) => {
+  test("guest sees My Property and SitePilot Vision; My Property asks them to sign in", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: /My Property/ }).click();
-    await expect(page.getByRole("heading", { name: "My Property" })).toBeVisible();
-    await expect(page.getByText("Claims stay pending until verified", { exact: false })).toBeVisible();
+    await page.getByRole("link", { name: /My Property/ }).first().click();
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fmy-property/);
+
+    await page.goto("/");
+    await page.getByRole("link", { name: /Search any address/ }).click();
+    await expect(page.getByRole("heading", { name: "Search any address" })).toBeVisible();
 
     await page.goto("/");
     await page.getByRole("link", { name: /SitePilot Vision/ }).click();

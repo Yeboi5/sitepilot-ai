@@ -7,7 +7,7 @@ type Tile = { href: string; label: string; hint: string; icon: LucideIcon };
 /** Dashboard quick actions (Master Blueprint v2.0 §2). */
 export function ActionTiles() {
   const tiles: Tile[] = [
-    { href: "/analyse", label: "Search any address", hint: "Anywhere in Australia", icon: Search },
+    { href: "/search", label: "Search any address", hint: "Anywhere in Australia", icon: Search },
     ...(FLAGS.myProperty ? [{ href: "/my-property", label: "My Property", hint: "Your home: ideas, notes, value", icon: Home }] : []),
     ...(FLAGS.vision ? [{ href: "/vision", label: "SitePilot Vision", hint: "See what it could look like", icon: Wand2 }] : []),
     { href: "/investor/properties", label: "Analyse", hint: "Numbers on your projects", icon: Calculator },

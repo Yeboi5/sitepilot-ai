@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { OrgSwitcher } from "@/components/shell/app-shell";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { APP_TIME_ZONE } from "@/lib/dates";
+import { FLAGS } from "@/lib/flags";
 import { ORG_VERIFICATION, PLAN_LABEL, formatDate } from "@/lib/format";
 import { requireOrg } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +18,7 @@ export default async function SettingsPage() {
   const isAdmin = ctx.active.role === "admin";
   const supabase = await createClient();
 
-  const [{ data: members }, { data: subscription }, audit] = await Promise.all([
+  const [{ data: members }, { data: subscription }, audit, { data: isVerifier }] = await Promise.all([
     supabase.from("memberships").select("role, created_at, user:users(id, display_name)").eq("organisation_id", org.id).order("created_at"),
     supabase.from("subscriptions").select("plan, status, current_period_end").eq("organisation_id", org.id).maybeSingle(),
     isAdmin
@@ -27,6 +29,7 @@ export default async function SettingsPage() {
           .order("timestamp", { ascending: false })
           .limit(50)
       : Promise.resolve({ data: null }),
+    FLAGS.homeownerClaims ? supabase.rpc("am_i_claim_verifier") : Promise.resolve({ data: false }),
   ]);
 
   const names = new Map((members ?? []).map((m) => [m.user?.id, m.user?.display_name]));
@@ -85,6 +88,16 @@ export default async function SettingsPage() {
           </ul>
         </Card>
       </div>
+
+      {isVerifier ? (
+        <Card className="mt-6">
+          <h2 className="font-semibold">Claim verification</h2>
+          <p className="mt-2 text-sm text-slate-600">You review homeowner claims for SitePilot.</p>
+          <Link href="/verify" className="mt-3 inline-flex min-h-11 items-center font-semibold text-brand-700 underline">
+            Open the review queue
+          </Link>
+        </Card>
+      ) : null}
 
       {isAdmin ? (
         <Card className="mt-6 overflow-x-auto p-0">

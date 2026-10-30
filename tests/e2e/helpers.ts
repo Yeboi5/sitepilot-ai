@@ -21,3 +21,4 @@ export async function signIn(page: Page, email: string) {
 }
 
 export const NINA = "nina.newbuyer@demo.sitepilot.test"; // consumer with no workspace in the seed
+export const VERA = "vera.verifier@demo.sitepilot.test"; // homeowner-claim verifier (V2-3)

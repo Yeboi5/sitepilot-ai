@@ -34,8 +34,7 @@ test.describe("guest dashboard (desktop)", () => {
   });
 
   test("account-only actions send guests to sign in", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("link", { name: /Search any address/ }).click();
+    await page.goto("/analyse");
     await expect(page).toHaveURL(/\/sign-in\?next=%2Fanalyse/);
   });
 });

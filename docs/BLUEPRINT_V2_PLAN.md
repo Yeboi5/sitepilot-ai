@@ -4,7 +4,7 @@ Source: *SitePilot AI — Master Blueprint v2.0 (30 Oct 2026)*, an **addendum** 
 and Update Pack 1.1 (`docs/SitePilot_AI_Master_Blueprint_v2.docx`). Nothing here removes working
 functionality. All schema work is additive migrations; breaking changes are listed for approval.
 
-Status: **approved 2026-10-30** with the changes recorded in section 10. V2-1 ✅ (0.4.0) · V2-2 ✅ (0.5.0) · V2-3 next.
+Status: **approved 2026-10-30** with the changes recorded in section 10. V2-1 ✅ (0.4.0) · V2-2 ✅ (0.5.0) · V2-3 ✅ (0.6.0) · V2-4 next.
 
 Priorities (from the request): **1. Dashboard · 2. Nationwide discovery · 3. Homeowner features
 (My Property) · 4. SitePilot Vision**, with **Matterport optional and separate**.

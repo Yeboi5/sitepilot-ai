@@ -50,6 +50,11 @@ threat model, the list of controls in place, and the gates that must pass before
 | Misrepresentation | Off-market homes shown as for sale, or owners identified | DB constraints: no price or street address on off-market rows; NOT FOR SALE labels; no owner data stored | ✅ tested |
 | DoS / abuse | Swipe spam | 1,000 swipe events per user per hour (trigger) | ✅ tested |
 | Tampering | Guest storage tampered with | On-device decisions are parsed defensively; imports accept only visible listing ids | ✅ unit-tested |
+| Elevation | Self-verified homeowner claims | Claims are always inserted as `pending`; only verifiers (`claim_verifiers`, service-role managed) can decide, never their own; one verified owner per address | ✅ tested |
+| Info disclosure | Ownership evidence leaks | Private `claim-evidence` bucket, own-folder uploads, verifier reads only while pending or decided by them; each view audited; served as attachment with `nosniff`; deleted after decision | ✅ tested |
+| Tampering | Fake documents | File signature check (PDF/JPEG/PNG), 10 MB limit, owner declaration, human review | ✅ |
+| Info disclosure | Buyers identifying off-market owners | Enquiry target is an opaque id; buyers can't read owner rows; owners see "A SitePilot member"; contact details rejected in messages | ✅ tested |
+| DoS / abuse | Enquiry spam / harassment | Verified + opted-in owners only; 5 per buyer per day; no self-enquiries; opting out closes open enquiries | ✅ tested |
 | Elevation | Self-verifying a firm | `verification_status` not client-writable | ✅ tested |
 
 ## Controls in place (Sprint 0/1)
@@ -87,6 +92,8 @@ threat model, the list of controls in place, and the gates that must pass before
 - Read-access auditing (document views/downloads) via signed-URL route (Sprint 3).
 - Backups, PITR, DR runbook; separate staging/production projects; secret rotation.
 - Sentry with PII scrubbing.
+- `STORAGE_DRIVER=local` bypasses Storage RLS (DB checks still run); it throws when `VERCEL_ENV`
+  is set. Claim evidence is not yet malware-scanned (shared with the Sprint 3 scanner).
 
 ## New-table checklist (every migration)
 

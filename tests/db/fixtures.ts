@@ -6,6 +6,7 @@ export const AUTH = {
   oscar: "a0000000-0000-4000-8000-000000000004", // investor admin of a different organisation
   pat: "a0000000-0000-4000-8000-000000000005", // platform admin, no memberships
   nina: "a0000000-0000-4000-8000-000000000006", // new home buyer, no workspace yet
+  vera: "a0000000-0000-4000-8000-000000000007", // claim verifier (restricted role)
 } as const;
 
 export const USER = {
@@ -14,6 +15,7 @@ export const USER = {
   sam: "b0000000-0000-4000-8000-000000000003",
   oscar: "b0000000-0000-4000-8000-000000000004",
   nina: "b0000000-0000-4000-8000-000000000006",
+  vera: "b0000000-0000-4000-8000-000000000007",
 } as const;
 
 export const ORG = {
@@ -52,3 +54,7 @@ export const LISTING = {
   homeOffMarket: "30000000-0000-4000-8000-000000000003",
   investmentForSale: "30000000-0000-4000-8000-000000000004",
 } as const;
+
+// My Property (V2-3): Ivy's verified, enquiry-accepting home behind off-market listing n=3.
+export const OWNED = { ivyHome: "40000000-0000-4000-8000-000000000001" } as const;
+export const RECORD = { ivyHome: "31000000-0000-4000-8000-000000000003", forSaleHome: "31000000-0000-4000-8000-000000000001" } as const;

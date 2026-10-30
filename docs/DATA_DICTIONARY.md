@@ -163,6 +163,31 @@ Rate-limited to 1,000 per user per hour.
 The current shortlist: PK (`user_id`, `listing_id`), `created_at`. Owner-only; `user_id` is
 **server**-stamped.
 
+## My Property (Blueprint v2.0, V2-3)
+
+### `owned_properties`
+A user's own home: `user_id` (**server**-stamped), optional `property_record_id` (unique per user),
+`nickname`, `address`, `suburb`, `state`, `postcode`, `accepts_enquiries` (effective only once a
+claim is verified). Owner-only; verifiers can read the address of homes with a pending claim.
+
+### `property_notes`, `maintenance_items`
+Owner-only notes (`body`) and checklist items (`title`, `due_on`, `done_at`).
+
+### `claim_verifiers`
+Users allowed to review homeowner claims. Managed with the service role only.
+
+### `homeowner_claims`
+`owned_property_id`, `claimant_id` (**server**-stamped), `status` (`pending`, `verified`,
+`rejected`, `withdrawn`; always inserted as `pending`), `method` (`document`), `evidence_key`
+/ `evidence_name` / `evidence_mime` (key cleared after the file is deleted), `declared_at`,
+`decided_by`, `decided_at`, `decision_note`. One open claim per home; one verified owner per
+property record. Decisions only through `decide_claim()`, audited.
+
+### `buyer_enquiries`
+`owned_property_id`, `buyer_id` (**server**-stamped), `message` (10–1000 chars, immutable),
+`status` (`open`, `replied`, `declined`, `withdrawn`, `closed`; `closed` is final),
+`owner_reply`. Visible to the buyer and the owner only.
+
 ## Platform
 
 ### `audit_events`

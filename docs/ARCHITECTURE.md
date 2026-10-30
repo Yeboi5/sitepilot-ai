@@ -41,6 +41,9 @@ Later sprints:  job queue + document worker (service role) ──▶ AI provider
 | `src/lib/discovery/` | Deck reducer, guest on-device store, indicative signals, listing types |
 | `src/components/discovery/` | Swipe deck, listing card, illustration, deck page, saved list |
 | `scripts/gen-demo-listings.ts` | Generates the DEMO listings block in `supabase/seed.sql` |
+| `src/lib/address/` | Address search provider interface (demo now, G-NAF later), portal links |
+| `src/lib/storage/` | Claim-evidence store (Supabase Storage, or local for dev/CI) and file checks |
+| `src/app/(app)/my-property/`, `src/app/(app)/verify/` | My Property, homeowner claims, verifier queue and audited evidence route |
 | `src/lib/jurisdictions.ts`, `src/lib/dates.ts` | States and territories, postcode ranges, per-property time zones |
 | `src/app/(app)/analyse/` | Start a workspace from an address |
 | `src/app/(app)/investor/` | Property workspaces, evidence register, scenarios, report (`/investor` redirects to `/`) |

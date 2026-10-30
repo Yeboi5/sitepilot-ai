@@ -2,6 +2,45 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.6.0] - 2026-10-30
+
+Master Blueprint v2.0, V2-3: Search Any Address, My Property, homeowner claims and buyer enquiries.
+
+### Added
+- Migration `20261030030000_my_property.sql`: `owned_properties`, `property_notes`,
+  `maintenance_items`, `claim_verifiers`, `homeowner_claims` (pending → verified / rejected /
+  withdrawn; one open claim per home, one verified owner per address) and `buyer_enquiries`
+  (owner opt-in, verified owners only, 5 per buyer per day, message immutable). RPCs
+  `decide_claim`, `record_claim_evidence_view`, `clear_claim_evidence`,
+  `enquiry_target_for_record` (opaque id only) and `am_i_claim_verifier`. Private
+  `claim-evidence` storage bucket (PDF/JPEG/PNG, 10 MB).
+- `/search`: demo address search behind an `AddressProvider` interface (G-NAF can slot in later),
+  with "This is my home", "Analyse" (prefills `/analyse`) and plain outbound links to Domain and
+  realestate.com.au. No listing-site data is fetched or scraped.
+- My Property: add a home, ownership card, value-history placeholder (no licensed valuation data),
+  maintenance checklist (dated in the property's time zone), curated maintenance and renovation
+  ideas, notes, saved-concepts placeholder, and remove-home (deletes evidence too).
+- Homeowner claims: owner declaration plus a document checked by file signature; manual review
+  queue at `/verify` for verifiers, audited evidence downloads (always as attachments), and the
+  document is deleted after a decision. A rejection must give the claimant a reason.
+- Buyer enquiries on off-market listings: verified owners opt in; buyers register interest
+  through SitePilot without exchanging contact details (phone numbers and emails are rejected);
+  owners reply, decline or close; opting out closes open enquiries.
+- `STORAGE_DRIVER=local` for development and CI (no Storage service locally); refused in
+  deployed environments.
+- Demo verifier account `vera.verifier@demo.sitepilot.test`; Ivy owns a verified demo home that
+  accepts enquiries.
+- Tests: 19 RLS tests (110 total), 7 unit tests (166 total), 3 browser tests (44 total).
+
+### Changed
+- The dashboard's "Search any address" tile opens `/search`. `/my-property` now requires sign-in.
+
+### Fixed (before release)
+- The type generator treated partial unique indexes as one-to-one relationships.
+- Claim and enquiry inserts were refused because the stamped owner columns had no insert grant;
+  regression tests now use the app's insert shape (the triggers still overwrite spoofed values).
+- A flaky browser test cleared cookies before a Save request finished.
+
 ## [0.5.0] - 2026-10-30
 
 Master Blueprint v2.0, V2-2: nationwide demo Discover.

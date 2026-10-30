@@ -50,6 +50,10 @@ Demo accounts, all with password `SitePilotDemo!2026`:
 | `sam.staff@demo.sitepilot.test` | Firm member without matter grants |
 | `oscar.other@demo.sitepilot.test` | Admin of a separate investor organisation |
 | `nina.newbuyer@demo.sitepilot.test` | Home buyer with no workspace yet (first sign-in creates one) |
+| `vera.verifier@demo.sitepilot.test` | Homeowner-claim verifier (review queue at `/verify`) |
+
+Claim evidence uploads use Supabase Storage. Without a Storage service (e.g. CI), set
+`STORAGE_DRIVER=local` to keep files in `.local-storage/`; it is refused in deployed environments.
 
 Local auth emails (sign-up confirmation) are captured by Mailpit at http://127.0.0.1:54324.
 

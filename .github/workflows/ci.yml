@@ -36,6 +36,7 @@ jobs:
       NEXT_PUBLIC_FLAG_VISION: "on"
       NEXT_PUBLIC_FLAG_MATTERPORT: "on"
       NEXT_PUBLIC_FLAG_DUTY_PRESETS: "on"
+      STORAGE_DRIVER: local
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

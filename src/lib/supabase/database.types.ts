@@ -39,6 +39,77 @@ export type Database = {
         Relationships: [
         ];
       };
+      buyer_enquiries: {
+        Row: {
+          id: string;
+          owned_property_id: string;
+          buyer_id: string;
+          message: string;
+          status: Database["public"]["Enums"]["enquiry_status"];
+          owner_reply: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owned_property_id: string;
+          buyer_id: string;
+          message: string;
+          status?: Database["public"]["Enums"]["enquiry_status"];
+          owner_reply?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owned_property_id?: string;
+          buyer_id?: string;
+          message?: string;
+          status?: Database["public"]["Enums"]["enquiry_status"];
+          owner_reply?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "buyer_enquiries_buyer_id_fkey";
+            columns: ["buyer_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "buyer_enquiries_owned_property_id_fkey";
+            columns: ["owned_property_id"];
+            isOneToOne: false;
+            referencedRelation: "owned_properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      claim_verifiers: {
+        Row: {
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "claim_verifiers_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       documents: {
         Row: {
           id: string;
@@ -262,6 +333,76 @@ export type Database = {
           },
         ];
       };
+      homeowner_claims: {
+        Row: {
+          id: string;
+          owned_property_id: string;
+          claimant_id: string;
+          status: Database["public"]["Enums"]["claim_status"];
+          method: string;
+          evidence_key: string | null;
+          evidence_name: string | null;
+          evidence_mime: string | null;
+          declared_at: string;
+          decided_by: string | null;
+          decided_at: string | null;
+          decision_note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owned_property_id: string;
+          claimant_id: string;
+          status?: Database["public"]["Enums"]["claim_status"];
+          method?: string;
+          evidence_key?: string | null;
+          evidence_name?: string | null;
+          evidence_mime?: string | null;
+          declared_at?: string;
+          decided_by?: string | null;
+          decided_at?: string | null;
+          decision_note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owned_property_id?: string;
+          claimant_id?: string;
+          status?: Database["public"]["Enums"]["claim_status"];
+          method?: string;
+          evidence_key?: string | null;
+          evidence_name?: string | null;
+          evidence_mime?: string | null;
+          declared_at?: string;
+          decided_by?: string | null;
+          decided_at?: string | null;
+          decision_note?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_claims_claimant_id_fkey";
+            columns: ["claimant_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "homeowner_claims_decided_by_fkey";
+            columns: ["decided_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "homeowner_claims_owned_property_id_fkey";
+            columns: ["owned_property_id"];
+            isOneToOne: false;
+            referencedRelation: "owned_properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       listings: {
         Row: {
           id: string;
@@ -353,6 +494,41 @@ export type Database = {
             columns: ["property_record_id"];
             isOneToOne: false;
             referencedRelation: "property_records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      maintenance_items: {
+        Row: {
+          id: string;
+          owned_property_id: string;
+          title: string;
+          due_on: string | null;
+          done_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owned_property_id: string;
+          title: string;
+          due_on?: string | null;
+          done_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owned_property_id?: string;
+          title?: string;
+          due_on?: string | null;
+          done_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_items_owned_property_id_fkey";
+            columns: ["owned_property_id"];
+            isOneToOne: false;
+            referencedRelation: "owned_properties";
             referencedColumns: ["id"];
           },
         ];
@@ -526,6 +702,60 @@ export type Database = {
         Relationships: [
         ];
       };
+      owned_properties: {
+        Row: {
+          id: string;
+          user_id: string;
+          property_record_id: string | null;
+          nickname: string | null;
+          address: string;
+          suburb: string;
+          state: string;
+          postcode: string;
+          accepts_enquiries: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          property_record_id?: string | null;
+          nickname?: string | null;
+          address: string;
+          suburb: string;
+          state: string;
+          postcode: string;
+          accepts_enquiries?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          property_record_id?: string | null;
+          nickname?: string | null;
+          address?: string;
+          suburb?: string;
+          state?: string;
+          postcode?: string;
+          accepts_enquiries?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "owned_properties_property_record_id_fkey";
+            columns: ["property_record_id"];
+            isOneToOne: false;
+            referencedRelation: "property_records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "owned_properties_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       platform_admins: {
         Row: {
           user_id: string;
@@ -612,6 +842,35 @@ export type Database = {
             columns: ["property_record_id"];
             isOneToOne: false;
             referencedRelation: "property_records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      property_notes: {
+        Row: {
+          id: string;
+          owned_property_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owned_property_id: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owned_property_id?: string;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_notes_owned_property_id_fkey";
+            columns: ["owned_property_id"];
+            isOneToOne: false;
+            referencedRelation: "owned_properties";
             referencedColumns: ["id"];
           },
         ];
@@ -942,13 +1201,20 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      am_i_claim_verifier: { Args: never; Returns: boolean };
+      clear_claim_evidence: { Args: { claim: string }; Returns: undefined };
       create_organisation: { Args: { org_name: string; org_type: Database["public"]["Enums"]["organisation_type"] }; Returns: string };
+      decide_claim: { Args: { claim: string; decision: Database["public"]["Enums"]["claim_status"]; note: string }; Returns: string };
+      enquiry_target_for_record: { Args: { record: string }; Returns: string };
       ensure_personal_workspace: { Args: never; Returns: string };
+      record_claim_evidence_view: { Args: { claim: string }; Returns: string };
       record_report_export: { Args: { prop: string; export_format: string }; Returns: undefined };
     };
     Enums: {
+      claim_status: "pending" | "verified" | "rejected" | "withdrawn";
       document_classification: "unclassified" | "contract_for_sale" | "title_search" | "planning_certificate" | "survey" | "strata_report" | "building_report" | "other";
       document_scan_status: "pending" | "clean" | "infected" | "rejected";
+      enquiry_status: "open" | "replied" | "declined" | "withdrawn" | "closed";
       evidence_source_type: "planning_certificate" | "planning_portal" | "lep_map" | "council_record" | "title_search" | "survey" | "other" | "valuation";
       evidence_status: "unverified" | "verified" | "disputed" | "superseded";
       finding_status: "unreviewed" | "needs_clarification" | "confirmed" | "rejected";

@@ -26,7 +26,10 @@ values
    '{"provider":"email","providers":["email"]}', '{"display_name":"Pat Platform"}', now(), now(), '', '', '', ''),
   ('a0000000-0000-4000-8000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
    'nina.newbuyer@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{"display_name":"Nina Newbuyer"}', now(), now(), '', '', '', '');
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Nina Newbuyer"}', now(), now(), '', '', '', ''),
+  ('a0000000-0000-4000-8000-000000000007', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+   'vera.verifier@demo.sitepilot.test', extensions.crypt('SitePilotDemo!2026', extensions.gen_salt('bf')), now(),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Vera Verifier"}', now(), now(), '', '', '', '');
 
 -- One email identity per user (required by Supabase Auth).
 insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
@@ -41,6 +44,8 @@ update public.users set id = 'b0000000-0000-4000-8000-000000000004' where auth_i
 update public.users set id = 'b0000000-0000-4000-8000-000000000005' where auth_id = 'a0000000-0000-4000-8000-000000000005';
 -- Nina is a new home buyer with no workspace yet (first sign-in creates one).
 update public.users set id = 'b0000000-0000-4000-8000-000000000006' where auth_id = 'a0000000-0000-4000-8000-000000000006';
+-- Vera reviews homeowner claims (restricted verifier role; no other special access).
+update public.users set id = 'b0000000-0000-4000-8000-000000000007' where auth_id = 'a0000000-0000-4000-8000-000000000007';
 
 insert into public.platform_admins (user_id) values ('b0000000-0000-4000-8000-000000000005');
 
@@ -241,3 +246,20 @@ insert into public.listings (id, property_record_id, kind, market, is_demo, head
   ('30000000-0000-4000-8000-000000000047', '31000000-0000-4000-8000-000000000047', 'investment', 'for_sale', true, 'Katherine 4-bedroom townhouse: renovate and rent', 'A fictional 4-bedroom townhouse created for SitePilot''s demo. The price and details are illustrative only and do not describe a real property.', 'townhouse', 'NT', 'Katherine', '0850', '[DEMO] 57 Example Lane', 4, 2, 2, 651, 720000, '$720,000', 620, 'Renovate and rent: kitchen and bathroom refresh', array['Tenanted: confirm lease terms'], '{}'::text[], 1739, '{"source":"SitePilot synthetic demo data","licence":"fictional, no third-party data","as_of":"2026-10-30","verification":"unverified"}', '2026-10-02'),
   ('30000000-0000-4000-8000-000000000048', '31000000-0000-4000-8000-000000000048', 'investment', 'off_market', true, 'Off-market potential: Stuart Park apartment', 'A fictional apartment shown to illustrate off-market screening. It is NOT FOR SALE, and nothing suggests the owner wants to sell.', 'apartment', 'NT', 'Stuart Park', '0820', null, 2, 1, 1, null, null, null, null, 'Renovate and rent: kitchen and bathroom refresh', array['Older wiring: building inspection advised'], '{}'::text[], 1776, '{"source":"SitePilot synthetic demo data","licence":"fictional, no third-party data","as_of":"2026-10-30","verification":"unverified"}', null);
 -- END GENERATED DEMO LISTINGS
+
+-- ─── My Property (Blueprint v2.0 V2-3) ──────────────────────────────────────
+insert into public.claim_verifiers (user_id) values ('b0000000-0000-4000-8000-000000000007');
+
+-- Ivy owns the (fictional) Newcastle home behind the off-market demo listing n=3, has a verified
+-- claim and accepts enquiries, so the buyer-enquiry flow can be demonstrated end to end.
+insert into public.owned_properties (id, user_id, property_record_id, nickname, address, suburb, state, postcode, accepts_enquiries) values
+  ('40000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', '31000000-0000-4000-8000-000000000003',
+   'Our place', '[DEMO] Ivy''s home', 'Newcastle', 'NSW', '2300', true);
+
+insert into public.homeowner_claims (owned_property_id, claimant_id, status, method, decided_by, decided_at, decision_note) values
+  ('40000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', 'verified', 'document',
+   'b0000000-0000-4000-8000-000000000007', now(), 'Synthetic demo verification');
+
+insert into public.maintenance_items (owned_property_id, title, due_on) values
+  ('40000000-0000-4000-8000-000000000001', 'Clean gutters before storm season', current_date + 14),
+  ('40000000-0000-4000-8000-000000000001', 'Test smoke alarms', current_date + 30);

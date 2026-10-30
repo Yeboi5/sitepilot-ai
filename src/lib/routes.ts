@@ -1,5 +1,5 @@
 // Guests may browse "/", "/about", "/discover/*" and other public pages; these need an account.
-const PROTECTED_PREFIXES = ["/dashboard", "/investor", "/firm", "/settings", "/onboarding", "/analyse"];
+const PROTECTED_PREFIXES = ["/dashboard", "/investor", "/firm", "/settings", "/onboarding", "/analyse", "/my-property", "/verify"];
 
 export function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));

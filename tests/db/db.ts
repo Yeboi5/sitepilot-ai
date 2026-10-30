@@ -66,3 +66,21 @@ export async function ids(client: PoolClient, sql: string, params: unknown[] = [
   const { rows } = await client.query<{ id: string }>(sql, params);
   return rows.map((r) => r.id).sort();
 }
+
+/**
+ * Assert that a statement fails, without aborting the surrounding transaction (uses a savepoint),
+ * so a test can keep going after an expected denial.
+ */
+export async function expectFails(client: PoolClient, sql: string, params: unknown[], pattern: RegExp) {
+  await client.query("savepoint expect_fails");
+  let error: unknown = null;
+  try {
+    await client.query(sql, params);
+  } catch (e) {
+    error = e;
+  }
+  await client.query("rollback to savepoint expect_fails");
+  if (!error) throw new Error(`Expected failure matching ${pattern}, but the statement succeeded: ${sql}`);
+  const message = error instanceof Error ? error.message : String(error);
+  if (!pattern.test(message)) throw new Error(`Expected failure matching ${pattern}, got: ${message}`);
+}

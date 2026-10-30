@@ -7,22 +7,24 @@ import { Field, Input, Select } from "@/components/ui";
 import { FLAGS } from "@/lib/flags";
 import { STATES, STATE_INFO } from "@/lib/jurisdictions";
 
-export function PropertyForm() {
+export type PropertyDefaults = Partial<Record<"address" | "suburb" | "state" | "postcode", string>>;
+
+export function PropertyForm({ defaults = {} }: { defaults?: PropertyDefaults }) {
   const [state, action] = useActionState(createProperty, undefined);
   const fe = state?.fieldErrors;
   return (
     <form action={action} className="max-w-xl space-y-4" noValidate>
       <FormMessage state={state} />
       <Field id="address" label="Street address" errors={fe?.address}>
-        <Input {...fieldA11y("address", fe?.address)} autoComplete="address-line1" placeholder="12 Example Street" required />
+        <Input {...fieldA11y("address", fe?.address)} autoComplete="address-line1" placeholder="12 Example Street" defaultValue={defaults.address} required />
       </Field>
       <Field id="suburb" label="Suburb" errors={fe?.suburb}>
-        <Input {...fieldA11y("suburb", fe?.suburb)} autoComplete="address-level2" required />
+        <Input {...fieldA11y("suburb", fe?.suburb)} autoComplete="address-level2" defaultValue={defaults.suburb} required />
       </Field>
       <div className="grid grid-cols-2 gap-4">
         {FLAGS.nationwide ? (
           <Field id="state" label="State or territory" errors={fe?.state}>
-            <Select {...fieldA11y("state", fe?.state)} autoComplete="address-level1" defaultValue="NSW">
+            <Select {...fieldA11y("state", fe?.state)} autoComplete="address-level1" defaultValue={defaults.state ?? "NSW"}>
               {STATES.map((s) => (
                 <option key={s} value={s}>
                   {s} · {STATE_INFO[s].name}
@@ -34,7 +36,7 @@ export function PropertyForm() {
           <input type="hidden" name="state" value="NSW" />
         )}
         <Field id="postcode" label="Postcode" errors={fe?.postcode}>
-          <Input {...fieldA11y("postcode", fe?.postcode)} autoComplete="postal-code" inputMode="numeric" maxLength={4} required />
+          <Input {...fieldA11y("postcode", fe?.postcode)} autoComplete="postal-code" inputMode="numeric" maxLength={4} defaultValue={defaults.postcode} required />
         </Field>
       </div>
       <Field

@@ -68,7 +68,7 @@ async function main() {
            array(select a.attname from unnest(con.conkey) k join pg_attribute a on a.attrelid = con.conrelid and a.attnum = k)::text[] as columns,
            ref.relname as ref_table,
            array(select a.attname from unnest(con.confkey) k join pg_attribute a on a.attrelid = con.confrelid and a.attnum = k)::text[] as ref_columns,
-           exists (select 1 from pg_index i where i.indrelid = con.conrelid and i.indisunique
+           exists (select 1 from pg_index i where i.indrelid = con.conrelid and i.indisunique and i.indpred is null
                    and (i.indkey::int2[])::int2[] @> con.conkey and array_length(i.indkey::int2[], 1) = array_length(con.conkey, 1)) as is_one_to_one
     from pg_constraint con
     join pg_class rel on rel.oid = con.conrelid join pg_namespace n on n.oid = rel.relnamespace

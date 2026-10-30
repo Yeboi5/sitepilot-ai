@@ -126,8 +126,11 @@ test.describe("signed-in discovery", () => {
     // Saving in the deck goes straight to the account (survives a fresh browser context).
     await page.goto("/discover/home?state=TAS");
     const tasPick = await headline(page);
+    // Wait for the server action to land before dropping the session.
+    const synced = page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/discover/home"));
     await page.getByRole("button", { name: "Save" }).click();
     await expect(remaining(page)).toHaveText("1 to go");
+    await synced;
     await page.context().clearCookies();
     await signIn(page, ACCOUNTS.oscar);
     await page.goto("/saved");
