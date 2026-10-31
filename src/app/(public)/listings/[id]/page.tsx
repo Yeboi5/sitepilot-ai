@@ -11,6 +11,7 @@ import { analyseListing } from "@/app/(app)/analyse/actions";
 import { Badge } from "@/components/ui";
 import { FLAGS } from "@/lib/flags";
 import { formatDate } from "@/lib/format";
+import { suburbHref } from "@/lib/suburbs/load";
 import { LISTING_COLUMNS, MARKET_LABEL } from "@/lib/discovery/types";
 import { getSessionContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -59,6 +60,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       <ListingCard listing={listing} />
       <div className="flex flex-wrap items-start gap-3">
         <SaveToggle listingId={listing.id} signedIn={Boolean(ctx)} initiallySaved={saved} />
+        <Link href={suburbHref(listing.state, listing.suburb, listing.postcode)} className="inline-flex min-h-11 items-center rounded-xl border border-sand-300 bg-white px-4 text-sm font-semibold hover:bg-sand-100">
+          {listing.suburb} suburb profile
+        </Link>
         {listing.market === "for_sale" ? (
           ctx ? (
             <form action={analyseListing}>

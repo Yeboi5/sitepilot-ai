@@ -20,6 +20,7 @@ import { BarChart, LineChart, SERIES } from "./charts";
 import { NumberField, Segmented, Slider } from "./controls";
 import { ManageProperties, type PropertyOption } from "./manage-properties";
 import { QuickCompare } from "./quick-compare";
+import { SuburbLine } from "./suburb-line";
 
 const SCENARIO_LABEL: Record<Scenario, string> = { conservative: "Conservative", base: "Base", optimistic: "Optimistic" };
 const button = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold";
@@ -102,7 +103,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
     () =>
       properties.map((p) => {
         const r = evaluate(p.facts, a, overrides[p.listing.id]);
-        return { id: p.listing.id, label: p.listing.headline, p, r, result: r, score: scoreProperty(p.facts, r, weights) };
+        return { id: p.listing.id, label: p.listing.headline, p, r, result: r, score: scoreProperty(p.facts, r, weights), suburb: p.suburb };
       }),
     [properties, a, overrides, weights],
   );
@@ -417,7 +418,8 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
               {row("Development", (r) => <DevelopmentCell p={r.p} signedIn={signedIn} />)}
               {row("Open checks", (r) => (r.p.listing.risk_flags.length ? <ul className="list-disc space-y-1 pl-4 text-xs">{r.p.listing.risk_flags.map((f) => <li key={f}>{f}</li>)}</ul> : <span className="text-slate-500">None listed</span>))}
               {row("Environmental risk", () => <span className="text-xs text-slate-500">Unknown: no licensed hazard data yet</span>)}
-              {row("Price history", () => <span className="text-xs text-slate-500">Unknown: no licensed price history yet</span>)}
+              {group("Suburb market")}
+              {row("Suburb sales and growth", (r) => <SuburbLine s={r.p.suburb} compact />, "Same property type, rolling 12 months")}
 
               {group("Sources")}
               {row("Listing data", (r) => {

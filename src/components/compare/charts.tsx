@@ -82,12 +82,30 @@ export function BarChart({ title, series, values, format = formatAud }: { title:
 }
 
 /** One line per property over the holding period, with a hover crosshair and a table view. */
-export function LineChart({ title, series, data, valueLabel }: { title: string; series: Series[]; data: ({ year: number; value: number }[] | null)[]; valueLabel: string }) {
+export function LineChart({
+  title,
+  series,
+  data,
+  valueLabel,
+  xFormat,
+}: {
+  title: string;
+  series: Series[];
+  data: ({ year: number; value: number }[] | null)[];
+  valueLabel: string;
+  /** Labels for x values that aren't whole years (e.g. monthly points); also drops the $0 baseline. */
+  xFormat?: (x: number) => string;
+}) {
   const [hover, setHover] = useState<number | null>(null);
   const all = data.flatMap((d) => d ?? []);
   if (!all.length) return null;
   const years = [...new Set(all.map((p) => p.year))].sort((a, b) => a - b);
-  const t = ticks(Math.min(0, ...all.map((p) => p.value)), Math.max(...all.map((p) => p.value)));
+  const t = ticks(xFormat ? Math.min(...all.map((p) => p.value)) : Math.min(0, ...all.map((p) => p.value)), Math.max(...all.map((p) => p.value)));
+  const label = (x: number) => (xFormat ? xFormat(x) : `Yr ${x}`);
+  const fs = xFormat ? 17 : 12;
+  // About five evenly spaced x labels for monthly series; first, last and every 5th year otherwise.
+  const step = Math.max(1, Math.round((years.length - 1) / 4));
+  const showTick = (x: number, i: number) => (xFormat ? i % step === 0 || i === years.length - 1 : x === years[0] || x === years.at(-1) || x % 5 === 0);
   const [lo, hi] = [t[0]!, t.at(-1)!];
   const W = 640;
   const H = 280;
@@ -125,15 +143,15 @@ export function LineChart({ title, series, data, valueLabel }: { title: string; 
           {t.map((v) => (
             <g key={v}>
               <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} stroke="#e7e5e4" />
-              <text x={pad.l - 6} y={y(v) + 4} textAnchor="end" fontSize={12} fill="#64748b">
+              <text x={pad.l - 6} y={y(v) + 4} textAnchor="end" fontSize={fs} fill="#64748b">
                 {formatAudCompact(v)}
               </text>
             </g>
           ))}
-          {years.map((yr) =>
-            yr === years[0] || yr === lastYear || yr % 5 === 0 ? (
-              <text key={yr} x={x(yr)} y={H - 8} textAnchor="middle" fontSize={12} fill="#64748b">
-                Yr {yr}
+          {years.map((yr, i) =>
+            showTick(yr, i) ? (
+              <text key={yr} x={x(yr)} y={H - 8} textAnchor="middle" fontSize={fs} fill="#64748b">
+                {label(yr)}
               </text>
             ) : null,
           )}
@@ -151,7 +169,7 @@ export function LineChart({ title, series, data, valueLabel }: { title: string; 
           {placed.map((e) => (
             <g key={e.s.id}>
               <circle cx={W - pad.r + 8} cy={e.py - 4} r={4} fill={e.s.color} />
-              <text x={W - pad.r + 16} y={e.py} fontSize={12} fill="#0f172a">
+              <text x={W - pad.r + 16} y={e.py} fontSize={fs} fill="#0f172a">
                 {e.s.label.length > 14 ? `${e.s.label.slice(0, 13)}…` : e.s.label}
               </text>
             </g>
@@ -159,7 +177,7 @@ export function LineChart({ title, series, data, valueLabel }: { title: string; 
         </svg>
         {hover != null ? (
           <div className="pointer-events-none absolute left-2 top-2 rounded-xl border border-sand-200 bg-white/95 p-2 text-xs shadow" role="status">
-            <p className="font-semibold">Year {hover}</p>
+            <p className="font-semibold">{xFormat ? xFormat(hover) : `Year ${hover}`}</p>
             {series.map((s, i) => {
               const p = data[i]?.find((d) => d.year === hover);
               return p ? (
@@ -191,7 +209,7 @@ export function LineChart({ title, series, data, valueLabel }: { title: string; 
             <thead>
               <tr>
                 <th scope="col" className="px-2 py-1 text-left">
-                  Year
+                  {xFormat ? "Period" : "Year"}
                 </th>
                 {series.map((s) => (
                   <th key={s.id} scope="col" className="px-2 py-1 text-right">
@@ -204,7 +222,7 @@ export function LineChart({ title, series, data, valueLabel }: { title: string; 
               {years.map((yr) => (
                 <tr key={yr} className="border-t border-sand-100">
                   <th scope="row" className="px-2 py-1 text-left font-normal">
-                    {yr}
+                    {xFormat ? xFormat(yr) : yr}
                   </th>
                   {series.map((s, i) => {
                     const p = data[i]?.find((d) => d.year === yr);

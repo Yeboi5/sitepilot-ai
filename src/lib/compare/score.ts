@@ -7,7 +7,7 @@ import type { PropertyFacts, PropertyResult } from "./engine";
  * and the score reports its coverage. It is not a prediction or personal financial advice.
  * See docs/FORMULAS.md → score-1.0.0.
  */
-export const SCORE_VERSION = "score-1.0.0";
+export const SCORE_VERSION = "score-1.1.0";
 export const MIN_COVERAGE = 0.6;
 
 export const CATEGORIES = ["rental_return", "affordability", "development", "market", "risk", "completeness"] as const;
@@ -68,8 +68,8 @@ export function scoreProperty(facts: PropertyFacts, r: PropertyResult, weights: 
 
   const market =
     facts.historicalGrowthPct != null
-      ? c("market", band(facts.historicalGrowthPct / 100, BANDS.historicalGrowth.lo, BANDS.historicalGrowth.hi), `Licensed historical growth ${facts.historicalGrowthPct.toFixed(1)}% p.a.`)
-      : c("market", null, "Insufficient evidence: no licensed price history");
+      ? c("market", band(facts.historicalGrowthPct / 100, BANDS.historicalGrowth.lo, BANDS.historicalGrowth.hi), `Historical growth ${facts.historicalGrowthPct.toFixed(1)}% a year${facts.historicalGrowthBasis ? ` (${facts.historicalGrowthBasis})` : ""}`)
+      : c("market", null, "Insufficient evidence: no suburb sales history for this property type");
 
   const stress = r.rateSensitivity.find((s) => s.shiftPp === 2)?.cashFlow;
   const parts: { score: number; text: string }[] = [];

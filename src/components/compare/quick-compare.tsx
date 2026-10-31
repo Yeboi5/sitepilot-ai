@@ -13,6 +13,7 @@ import { PRIORITIES, PRIORITY_IDS, quickMatch, type Priority } from "@/lib/compa
 import type { ScoreResult } from "@/lib/compare/score";
 import { formatAud, formatRatio } from "@/lib/format";
 import { NumberField } from "./controls";
+import { SuburbLine } from "./suburb-line";
 
 type Item = { p: CompareProperty; r: PropertyResult; score: ScoreResult };
 
@@ -231,8 +232,11 @@ export function QuickCompare({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Capital growth indicators</p>
-                      <p className="mt-1 text-slate-600">Unknown: needs licensed price history and population, employment and supply data.</p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Suburb market and growth</p>
+                      <p className="mt-1">
+                        <SuburbLine s={p.suburb} />
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">Population, employment and supply indicators: not connected yet.</p>
                     </div>
                   </div>
                 </details>

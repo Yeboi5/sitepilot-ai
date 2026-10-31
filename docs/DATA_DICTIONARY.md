@@ -224,6 +224,18 @@ optional share (`share_token_hash`, `share_snapshot`, `shared_at`). Items: exact
 `listing_id` / `property_id`, `sort_order` (0–4, max 5 items), `overrides_json` (price, rent, duty,
 …). Assumptions: `assumptions_json`, `weights_json`, `engine_version`, `score_version`. All owner-only.
 
+## Suburb statistics
+
+### `suburb_sales_stats`
+Per suburb, postcode, `dwelling_type` (`house`/`unit`), optional `bedrooms`, `period_end` and
+`window_months` (12): `median_price` (null only when `sales_count` is 0), `sales_count`, `source`,
+`source_url`, `retrieved_at`, `status` (`fact_status`: verified/reported/estimated/unverified),
+`is_demo`. Public read; service-role write.
+
+### `suburb_rent_stats`
+Per suburb, postcode, dwelling type, optional bedrooms and quarter end: `median_rent_weekly`,
+`bonds_count`, plus the same provenance columns.
+
 ## Platform
 
 ### `audit_events`

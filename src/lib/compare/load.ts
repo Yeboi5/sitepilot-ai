@@ -1,6 +1,7 @@
 import "server-only";
 import { LISTING_COLUMNS } from "@/lib/discovery/types";
 import type { createClient } from "@/lib/supabase/server";
+import { dwellingFor, loadSuburbSnapshots } from "@/lib/suburbs/load";
 import { assessDevelopment, type DevelopmentStatus } from "./development";
 import { factsFor, type CompareListing, type CompareProperty, type DutyPreset, type Estimate } from "./facts";
 
@@ -42,7 +43,7 @@ export async function loadCompareProperties(supabase: Supabase, ids: string[]): 
   for (const p of [...(presets ?? [])].sort((a, b) => Number(b.status === "reviewed") - Number(a.status === "reviewed"))) {
     if (!presetFor.has(p.state)) presetFor.set(p.state, p);
   }
-  const developmentFor = await loadDevelopment(supabase, records);
+  const [developmentFor, suburbs] = await Promise.all([loadDevelopment(supabase, records), loadSuburbSnapshots(supabase, rows)]);
   const byId = new Map(rows.map((l) => [l.id, l]));
   return ids
     .map((id) => byId.get(id))
@@ -53,6 +54,7 @@ export async function loadCompareProperties(supabase: Supabase, ids: string[]): 
         l.property_record_id ? (estimateFor.get(l.property_record_id) ?? null) : null,
         presetFor.get(l.state) ?? null,
         l.property_record_id ? (developmentFor.get(l.property_record_id) ?? null) : null,
+        dwellingFor(l.property_type) ? (suburbs.get(`${l.state}/${l.suburb}/${l.postcode}/${dwellingFor(l.property_type)}`) ?? null) : null,
       ),
     );
 }

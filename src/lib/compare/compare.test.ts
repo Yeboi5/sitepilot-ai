@@ -191,7 +191,8 @@ describe("explanations and questions", async () => {
   it("names the leader and the main reasons", () => {
     const lines = explain(rows, A);
     expect(lines[0]).toMatch(/^Alpha ranks first with \d+\/100, mainly on rental return/);
-    expect(lines.at(-1)).toMatch(/excluded until there's verified planning evidence/);
+    expect(lines).toContain("Development feasibility is excluded until there's verified planning evidence and a complete scenario.");
+    expect(lines.at(-1)).toBe("Historical market indicators use suburb sales for the property's type; none yet for Alpha, Bravo.");
   });
 
   it("answers questions from the engine's numbers", () => {
@@ -261,5 +262,38 @@ describe("Quick Compare", async () => {
     expect(m.explanation.join(" ")).toMatch(/Rental return: not enough data to compare \(unknown for NoRent\)/);
     expect(m.best?.id).toBe("Cheap");
     expect(quickMatch([noRent, q("Also", { weeklyRent: null })], ["rental_return"]).best).toBeNull();
+  });
+});
+
+describe("suburb statistics in Compare", async () => {
+  const { explain, QUESTIONS } = await import("./explain");
+  const { smallSampleWarning } = await import("@/lib/suburbs/stats");
+  const snap = (suburb: string, perYear: number, fromCount: number, toCount: number) => ({
+    suburb, state: "NSW", postcode: "2259", type: "unit" as const, median: 705_100, sales12: toCount,
+    change12: { from: 550_000, to: 705_100, change: 0.282, fromCount, toCount, fromPeriod: "2025-09-30", toPeriod: "2026-09-30" },
+    growth: { years: 5, perYear, fromCount, toCount }, isDemo: false,
+  });
+  const mk = (id: string, s: ReturnType<typeof snap>) => {
+    const pf = facts({ id, label: id, historicalGrowthPct: Math.round(s.growth.perYear * 1000) / 10, historicalGrowthBasis: `${s.suburb} units, 5 years, ${s.growth.fromCount} → ${s.growth.toCount} sales` });
+    const result = evaluate(pf, A);
+    return { id, label: id, result, score: scoreProperty(pf, result, DEFAULT_WEIGHTS), suburb: s };
+  };
+
+  it("uses suburb growth in the market score, with the sales counts in the reason", () => {
+    const r = mk("Wyee unit", snap("Wyee", 0.06, 3, 4));
+    const market = r.score.components.find((c) => c.category === "market")!;
+    expect(market.score).toBe(75); // 6% on the 0–8% band
+    expect(market.reason).toBe("Historical growth 6.0% a year (Wyee units, 5 years, 3 → 4 sales)");
+  });
+
+  it("calls out small samples in explanations, and answers the suburb growth question with counts", () => {
+    const rows = [mk("Wyee unit", snap("Wyee", 0.06, 3, 4)), mk("Big suburb unit", snap("Bigtown", 0.04, 80, 95))];
+    const lines = explain(rows, A);
+    expect(lines).toContain("Wyee unit: the Wyee unit figures rest on as few as 3 sales in a period, so a few unusual sales can swing them. Treat its growth figures with caution.");
+    expect(lines.some((l) => l.startsWith("Big suburb unit: the Bigtown"))).toBe(false);
+    expect(QUESTIONS.find((q) => q.id === "suburb_growth")!.answer(rows, A)).toBe(
+      "Wyee unit: Wyee unit medians grew 6.0% a year over 5 years (3 sales then, 4 now). That's historical, not a forecast.",
+    );
+    expect(smallSampleWarning("x", snap("Bigtown", 0.04, 80, 95))).toBeNull();
   });
 });

@@ -33,6 +33,8 @@ export type PropertyFacts = {
   verifiedDevelopmentRoi: number | null;
   /** Licensed historical growth (% p.a.), if any. */
   historicalGrowthPct: number | null;
+  /** Where the growth figure came from, with its sales counts (shown in the score explanation). */
+  historicalGrowthBasis?: string | null;
   completeness: number; // 0–1 share of key fields known
 };
 

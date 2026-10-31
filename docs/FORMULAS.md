@@ -201,3 +201,24 @@ priorities had two or more known values to compare, (b) the leader has a figure 
 priority that another property has, and (c) at least 60% of the leader's key data is available.
 Otherwise the ranking is still shown but no leader is highlighted, with the message "Not enough
 verified information to rank this property reliably" and the specific reason.
+
+# Suburb statistics: `suburb-stats-1.0.0`
+
+Source: `src/lib/suburbs/stats.ts`. Each observation is the median sale price of a suburb's houses
+or units over a rolling 12-month window, with the number of sales in it.
+
+```
+12-month change   = median(latest window) ÷ median(window ending 12 months earlier) − 1
+growth per year   = (median now ÷ median N years earlier)^(1/N) − 1     for N = 1, 3, 5, 10
+gross yield       = median weekly rent × 52 ÷ median sale price
+```
+
+Figures are always calculated from the actual medians, however few sales, and always shown with
+their sales counts. Labels: 0 sales "No sales in this period"; 1–4 "a very small sample"; 5–11
+"a small sample". Compare's explanations warn when any period behind a property's suburb figures has
+fewer than 12 sales. Growth is historical, not a forecast.
+
+Compare maps property types to suburb statistics: house and duplex → houses; apartment and
+townhouse → units; land → none (land sales are a different market). The Investment Match Score's
+market component (`score-1.1.0`) uses the longest available of 5-, 3- or 1-year growth per year on
+its 0–8% band.

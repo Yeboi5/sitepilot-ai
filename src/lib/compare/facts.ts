@@ -1,5 +1,6 @@
 import type { Listing } from "@/lib/discovery/types";
 import type { Tables } from "@/lib/supabase/database.types";
+import type { SuburbSnapshot } from "@/lib/suburbs/stats";
 import type { DevelopmentStatus } from "./development";
 import { dutyBracketsSchema, dutyFromBrackets } from "./duty";
 import type { PropertyFacts } from "./engine";
@@ -18,6 +19,8 @@ export type CompareProperty = {
   duty: DutyPreset | null;
   /** The viewer's linked workspace for this property, if any (stage C6). */
   development: DevelopmentStatus | null;
+  /** The property's suburb statistics for its dwelling type, if any. */
+  suburb: SuburbSnapshot | null;
   facts: PropertyFacts;
 };
 
@@ -25,7 +28,9 @@ export type CompareProperty = {
  * Builds engine inputs from a listing, its latest estimate and the state's duty preset. Listing
  * figures win over estimates; anything missing stays null (shown as Unknown).
  */
-export function factsFor(listing: CompareListing, estimate: Estimate | null, duty: DutyPreset | null, development: DevelopmentStatus | null = null): CompareProperty {
+export function factsFor(listing: CompareListing, estimate: Estimate | null, duty: DutyPreset | null, development: DevelopmentStatus | null = null,
+  suburb: SuburbSnapshot | null = null,
+): CompareProperty {
   const forSale = listing.market === "for_sale";
   const price = forSale && listing.asking_price ? listing.asking_price : (estimate?.value_mid ?? null);
   const priceSource = forSale && listing.asking_price ? "listing" : estimate ? "estimate" : null;
@@ -41,6 +46,7 @@ export function factsFor(listing: CompareListing, estimate: Estimate | null, dut
     estimate,
     duty: brackets?.success ? duty : null,
     development,
+    suburb,
     facts: {
       id: listing.id,
       label: listing.headline,
@@ -52,7 +58,11 @@ export function factsFor(listing: CompareListing, estimate: Estimate | null, dut
       stampDuty,
       openChecks: listing.risk_flags.length,
       verifiedDevelopmentRoi: development?.roi ?? null, // see development.ts
-      historicalGrowthPct: null, // needs licensed price history
+      // Suburb median growth for this dwelling type (longest of 5 / 3 / 1 years), counts included.
+      historicalGrowthPct: suburb?.growth ? Math.round(suburb.growth.perYear * 1000) / 10 : null,
+      historicalGrowthBasis: suburb?.growth
+        ? `${suburb.suburb} ${suburb.type}s, ${suburb.growth.years} year${suburb.growth.years === 1 ? "" : "s"}, ${suburb.growth.fromCount} → ${suburb.growth.toCount} sales${suburb.isDemo ? ", DEMO" : ""}`
+        : null,
       completeness: checks.filter(Boolean).length / checks.length,
     },
   };

@@ -145,9 +145,9 @@ export async function DeckPage({ kind, searchParams }: { kind: Kind; searchParam
         <p className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-2 text-sm">
           <span className="text-slate-600">Showing</span>
           {areas.labels.map((l) => (
-            <span key={l} className="rounded-full bg-brand-50 px-3 py-1 font-semibold text-brand-700">
+            <Link key={l} href={`/suburbs?q=${encodeURIComponent(l)}`} title={`${l} suburb profile`} className="rounded-full bg-brand-50 px-3 py-1 font-semibold text-brand-700 underline-offset-2 hover:underline">
               {l}
-            </span>
+            </Link>
           ))}
           <Link href={href({ keepArea: false })} className="inline-flex min-h-11 items-center gap-1 text-slate-600 underline">
             <X aria-hidden="true" className="h-4 w-4" /> All areas

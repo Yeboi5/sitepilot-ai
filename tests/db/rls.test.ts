@@ -1343,3 +1343,34 @@ describe("Compare My Properties (v2.1)", () => {
     });
   });
 });
+
+describe("suburb statistics (suburb profiles)", () => {
+  it("everyone can read them; nobody but the service role can write", async () => {
+    await as(null, async (c) => {
+      expect((await c.query("select 1 from public.suburb_sales_stats where suburb = 'Newcastle' limit 1")).rowCount).toBe(1);
+      expect((await c.query("select 1 from public.suburb_rent_stats limit 1")).rowCount).toBe(1);
+    });
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      await expectFails(c, "update public.suburb_sales_stats set median_price = 1", [], /permission denied/);
+      await expectFails(
+        c,
+        "insert into public.suburb_rent_stats (state, suburb, postcode, dwelling_type, period_end, median_rent_weekly, bonds_count, source, status) values ('NSW', 'X', '2000', 'house', now(), 500, 1, 'me', 'verified')",
+        [],
+        /permission denied/,
+      );
+    });
+  });
+
+  it("a median requires sales, and every row is labelled DEMO until real data is loaded", async () => {
+    await inTx(async (c) => {
+      await expectFails(
+        c,
+        "insert into public.suburb_sales_stats (state, suburb, postcode, dwelling_type, period_end, median_price, sales_count, source, status) values ('NSW', 'X', '2000', 'house', now(), 500000, 0, 'test', 'estimated')",
+        [],
+        /median_needs_sales/,
+      );
+      expect((await c.query("select 1 from public.suburb_sales_stats where not is_demo")).rowCount).toBe(0);
+    });
+  });
+});

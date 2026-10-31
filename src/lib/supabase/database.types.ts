@@ -1296,6 +1296,113 @@ export type Database = {
           },
         ];
       };
+      suburb_rent_stats: {
+        Row: {
+          id: string;
+          state: string;
+          suburb: string;
+          postcode: string;
+          dwelling_type: Database["public"]["Enums"]["dwelling_type"];
+          bedrooms: number | null;
+          period_end: string;
+          median_rent_weekly: number | null;
+          bonds_count: number;
+          source: string;
+          source_url: string | null;
+          retrieved_at: string;
+          status: Database["public"]["Enums"]["fact_status"];
+          is_demo: boolean;
+        };
+        Insert: {
+          id?: string;
+          state: string;
+          suburb: string;
+          postcode: string;
+          dwelling_type: Database["public"]["Enums"]["dwelling_type"];
+          bedrooms?: number | null;
+          period_end: string;
+          median_rent_weekly?: number | null;
+          bonds_count: number;
+          source: string;
+          source_url?: string | null;
+          retrieved_at?: string;
+          status: Database["public"]["Enums"]["fact_status"];
+          is_demo?: boolean;
+        };
+        Update: {
+          id?: string;
+          state?: string;
+          suburb?: string;
+          postcode?: string;
+          dwelling_type?: Database["public"]["Enums"]["dwelling_type"];
+          bedrooms?: number | null;
+          period_end?: string;
+          median_rent_weekly?: number | null;
+          bonds_count?: number;
+          source?: string;
+          source_url?: string | null;
+          retrieved_at?: string;
+          status?: Database["public"]["Enums"]["fact_status"];
+          is_demo?: boolean;
+        };
+        Relationships: [
+        ];
+      };
+      suburb_sales_stats: {
+        Row: {
+          id: string;
+          state: string;
+          suburb: string;
+          postcode: string;
+          dwelling_type: Database["public"]["Enums"]["dwelling_type"];
+          bedrooms: number | null;
+          period_end: string;
+          window_months: number;
+          median_price: number | null;
+          sales_count: number;
+          source: string;
+          source_url: string | null;
+          retrieved_at: string;
+          status: Database["public"]["Enums"]["fact_status"];
+          is_demo: boolean;
+        };
+        Insert: {
+          id?: string;
+          state: string;
+          suburb: string;
+          postcode: string;
+          dwelling_type: Database["public"]["Enums"]["dwelling_type"];
+          bedrooms?: number | null;
+          period_end: string;
+          window_months?: number;
+          median_price?: number | null;
+          sales_count: number;
+          source: string;
+          source_url?: string | null;
+          retrieved_at?: string;
+          status: Database["public"]["Enums"]["fact_status"];
+          is_demo?: boolean;
+        };
+        Update: {
+          id?: string;
+          state?: string;
+          suburb?: string;
+          postcode?: string;
+          dwelling_type?: Database["public"]["Enums"]["dwelling_type"];
+          bedrooms?: number | null;
+          period_end?: string;
+          window_months?: number;
+          median_price?: number | null;
+          sales_count?: number;
+          source?: string;
+          source_url?: string | null;
+          retrieved_at?: string;
+          status?: Database["public"]["Enums"]["fact_status"];
+          is_demo?: boolean;
+        };
+        Relationships: [
+        ];
+      };
       swipe_events: {
         Row: {
           id: number;
@@ -1596,10 +1703,12 @@ export type Database = {
       document_classification: "unclassified" | "contract_for_sale" | "title_search" | "planning_certificate" | "survey" | "strata_report" | "building_report" | "other";
       document_scan_status: "pending" | "clean" | "infected" | "rejected";
       duty_preset_status: "needs_review" | "reviewed";
+      dwelling_type: "house" | "unit";
       enquiry_status: "open" | "replied" | "declined" | "withdrawn" | "closed";
       estimate_confidence: "low" | "medium" | "high";
       evidence_source_type: "planning_certificate" | "planning_portal" | "lep_map" | "council_record" | "title_search" | "survey" | "other" | "valuation";
       evidence_status: "unverified" | "verified" | "disputed" | "superseded";
+      fact_status: "verified" | "reported" | "estimated" | "unverified";
       finding_status: "unreviewed" | "needs_clarification" | "confirmed" | "rejected";
       listing_kind: "home" | "investment";
       listing_market: "for_sale" | "off_market";

@@ -1,6 +1,6 @@
 # Flagship Property Investment Intelligence Upgrade: audit and plan
 
-Status: **approved 2026-10-30** (all recommendations in section 6). Stage 2a ✅ (0.12.0); 2b next. Source: the "Flagship Property Investment
+Status: **approved 2026-10-30** (all recommendations in section 6). Stage 2a ✅ (0.12.0); suburb profiles steps 1–3 ✅ with DEMO figures (0.13.0); next: real NSW figures (step 4, needs network access) and 2b. Source: the "Flagship Property Investment
 Intelligence Upgrade" brief. This upgrades the existing app (0.11.0); nothing is rebuilt and no
 working feature is removed.
 
@@ -135,27 +135,28 @@ we're allowed to use, and show the source, period, sample size and status on eve
 
 ### Honesty rules that set SitePilot apart
 
-- **Minimum sample size.** A median or growth figure is shown only when it rests on enough sales
-  (proposed: 12+ in each period); otherwise "Not enough sales to report", with the count. Small
-  samples swing wildly, e.g. a suburb with 4 unit sales a year can show a huge "growth" figure.
+- **Sample size is shown, not used to hide figures** (decision 2026-10-31). Every median and
+  growth figure is calculated from the actual change and always shown, with a transparent "based on
+  N sales" note beside it. Compare's analysis calls out small samples (e.g. "28.4% unit growth rests
+  on 4 sales") when it explains rankings and scenarios.
 - **Every figure carries** its period, sample size, source and retrieval date, and labels growth
   as **historical**, never a forecast.
-- **Bedroom breakdowns** appear only where each bedroom group meets the sample rule.
+- **Bedroom breakdowns** show each group's median with its own sales count; groups with no sales say "Unavailable".
 
 ### How it plugs into the rest of SitePilot
 
 - Discover cards and listing pages: a suburb snapshot line (median, 12-month change, yield) with
   a link to the profile.
 - Compare → Capital Growth (section B) and the Investment Match Score's market component use these
-  figures when they meet the sample rule; otherwise they stay "insufficient evidence".
+  figures, and the explanation states the number of sales behind each one.
 - Area search and Search Any Address link to the profile.
 
 ### Build steps
 
 1. **Engine and schema** (approval needed): `suburb_sales_stats` (suburb, state, postcode, property
    type, bedrooms, period, median, count, source, retrieved_at, status, is_demo) and
-   `suburb_rent_stats`; pure, tested functions for rolling medians, growth, CAGR, yield and the
-   sample rule; DEMO suburb statistics for the demo towns, clearly labelled, to build the UI.
+   `suburb_rent_stats`; pure, tested functions for rolling medians, growth, CAGR, yield and sample-size
+   notes; DEMO suburb statistics for the demo towns, clearly labelled, to build the UI.
 2. **Profile page** `/suburbs/[state]/[suburb]` in the style of the reference: snapshot, growth,
    trend chart, insight tiles, bedroom table, market summary, local area; mobile-first.
 3. **Integration** into Discover, listing pages and Compare.

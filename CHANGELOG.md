@@ -2,6 +2,32 @@
 
 All notable changes are recorded here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.13.0] - 2026-10-31
+
+Suburb profiles (INTELLIGENCE_UPGRADE_PLAN.md §7).
+
+### Added
+- Migration `20261031000000_suburb_stats.sql`: `suburb_sales_stats` (rolling 12-month median sale
+  price and sales count per suburb, houses/units, optional bedrooms, monthly) and `suburb_rent_stats`
+  (quarterly median weekly rent and new bonds), each row with source, retrieval time, evidence status
+  (`fact_status`) and `is_demo`. Public read; service-role write.
+- `/suburbs` (search by suburb or postcode, browse by state) and `/suburbs/[state]/[suburb-postcode]`:
+  house and unit price guides with median sale price, past 12-month change (with the sales counts
+  either side), 1/3/5/10-year growth per year, 5-year trend chart with table view, sold in 12
+  months, median rent and gross yield, median price by bedrooms, a market summary written only from
+  the figures, other suburbs, and sources and method. Listings, days on market and buyer interest show
+  "Not available" until a listings data partner is connected.
+- Figures are never hidden for small samples: every one shows "Based on N sales", flagged when small.
+- Compare: each property gets its suburb's figures for its type (houses/duplexes → houses;
+  apartments/townhouses → units; land → none yet). Quick Compare's details and a new Advanced
+  "Suburb market" row show them with counts and a profile link; the Investment Match Score's market
+  component now uses suburb growth (`score-1.1.0`), with the counts in its reason; explanations warn
+  when a figure rests on few sales; new question "Which property's suburb has shown the strongest
+  price growth?".
+- DEMO suburb statistics for the 48 demo towns (`scripts/gen-demo-suburbs.ts`), clearly labelled
+  fictional. Links from listing pages and Discover's area chips.
+- Tests: 2 RLS tests (125 total), 9 unit tests (233 total), 5 browser tests (65 total).
+
 ## [0.12.0] - 2026-10-30
 
 Investment intelligence upgrade, stage 2a (no schema changes).

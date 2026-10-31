@@ -1,4 +1,5 @@
 import { formatAud, formatRatio } from "@/lib/format";
+import { smallSampleWarning, type SuburbSnapshot } from "@/lib/suburbs/stats";
 import type { CompareAssumptions } from "./assumptions";
 import type { Metric, PropertyResult } from "./engine";
 import { CATEGORY_LABELS, type ScoreResult } from "./score";
@@ -8,7 +9,7 @@ import { CATEGORY_LABELS, type ScoreResult } from "./score";
  * the engine's numbers; nothing here estimates anything. An AI narrator, if added later, may only
  * rephrase these facts.
  */
-export type Row = { id: string; label: string; result: PropertyResult; score: ScoreResult };
+export type Row = { id: string; label: string; result: PropertyResult; score: ScoreResult; suburb?: SuburbSnapshot | null };
 
 const val = (m: Metric) => (m.known ? m.value : null);
 
@@ -52,6 +53,17 @@ export const QUESTIONS: Question[] = [
     },
   },
   {
+    id: "suburb_growth",
+    question: "Which property's suburb has shown the strongest price growth?",
+    answer: (rows) => {
+      const b = best(rows, (r) => r.suburb?.growth?.perYear ?? null);
+      if (!b) return "None of these properties has suburb sales history for its type yet.";
+      const s = b.r.suburb!;
+      const g = s.growth!;
+      return `${b.r.label}: ${s.suburb} ${s.type} medians grew ${formatRatio(g.perYear)} a year over ${g.years} year${g.years === 1 ? "" : "s"} (${g.fromCount} sales then, ${g.toCount} now${s.isDemo ? ", DEMO figures" : ""}). That's historical, not a forecast.`;
+    },
+  },
+  {
     id: "gross_yield",
     question: "Which has the highest gross rental yield?",
     answer: (rows) => {
@@ -87,13 +99,19 @@ export function explain(rows: Row[], a: CompareAssumptions): string[] {
 
   const unscored = rows.filter((r) => r.score.score == null).map((r) => r.label);
   if (unscored.length && scored.length) out.push(`Not scored (not enough evidence): ${unscored.join(", ")}.`);
+  for (const r of rows) {
+    const w = r.suburb ? smallSampleWarning(r.label, r.suburb) : null;
+    if (w) out.push(w);
+  }
   const devMissing = rows.filter((r) => r.score.components.find((c) => c.category === "development")?.score == null).map((r) => r.label);
   out.push(
     devMissing.length === rows.length
-      ? "Development feasibility and price history are excluded until there's verified planning evidence and licensed market data."
+      ? "Development feasibility is excluded until there's verified planning evidence and a complete scenario."
       : devMissing.length
-        ? `Development feasibility is scored only where there's verified planning evidence and a complete scenario (not yet for ${devMissing.join(", ")}). Price history needs licensed market data.`
-        : "Development feasibility uses each property's scenario and verified planning evidence. Price history needs licensed market data.",
+        ? `Development feasibility is scored only where there's verified planning evidence and a complete scenario (not yet for ${devMissing.join(", ")}).`
+        : "Development feasibility uses each property's scenario and verified planning evidence.",
   );
+  const noHistory = rows.filter((r) => r.score.components.find((c) => c.category === "market")?.score == null).map((r) => r.label);
+  if (noHistory.length) out.push(`Historical market indicators use suburb sales for the property's type; none yet for ${noHistory.join(", ")}.`);
   return out;
 }
