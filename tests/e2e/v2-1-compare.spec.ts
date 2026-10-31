@@ -78,12 +78,17 @@ test("figures are transparent, editable and never guessed", async ({ page }) => 
   await expect(rowCells(page, /Price or estimate/)).toContainText("Not a price");
   await expect(rowCells(page, /Gross yield/)).toContainText("No rent estimate");
   await expect(rowCells(page, "Environmental risk")).toContainText("Unknown: no licensed hazard data");
-  // No duty preset loaded: cash required is Unknown and nothing is scored.
-  await expect(rowCells(page, /Cash required/)).toContainText("Stamp duty not set");
-  await expect(rowCells(page, "Investment Match Score")).toContainText("Not enough evidence to score");
+  // NSW general duty rates (official, awaiting review) fill in automatically:
+  // $980,000 → $11,602 + 4.5% × $593,000 = $38,287; cash = $196,000 + $38,287 + $3,000.
+  const duty = rowCells(page, /Stamp duty/);
+  await expect(duty.getByRole("cell").nth(0)).toContainText("$38,287");
+  await expect(duty.getByRole("cell").nth(0)).toContainText("NSW rates as of 1 July 2026 (needs review)");
+  await expect(rowCells(page, /Cash required/).getByRole("cell").nth(0)).toContainText("$237,287");
 
-  // Enter duty: the duplex and the off-market house now have enough evidence; land still doesn't.
+  // Your own duty figure overrides the preset. The duplex and the off-market house have enough
+  // evidence to score; the land (no rent) still doesn't.
   for (const p of [DUPLEX, LAND, OFF_MARKET]) await page.getByLabel(`Stamp duty for ${p.name}`).fill("30000");
+  await expect(duty.getByRole("cell").nth(0)).toContainText("Your figure");
   await expect(rowCells(page, /Cash required/)).toContainText("$229,000"); // 20% of $980,000 + $30,000 + $3,000
   const score = rowCells(page, "Investment Match Score");
   await expect(score.getByRole("cell").nth(0)).toContainText("/100");

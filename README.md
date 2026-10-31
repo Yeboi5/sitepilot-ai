@@ -55,9 +55,9 @@ Demo accounts, all with password `SitePilotDemo!2026`:
 Suburb profiles (`/suburbs`) use DEMO statistics for the demo towns until real NSW figures are
 loaded. Regenerate them with `npx tsx scripts/gen-demo-suburbs.ts`.
 
-Compare My Properties works on DEMO listings with DEMO estimate ranges. No stamp duty rates are
-loaded yet (`duty_presets` is empty), so enter a duty estimate per property to see cash required
-and scores; reviewed state presets will fill this automatically.
+Compare My Properties works on DEMO listings with DEMO estimate ranges. Stamp duty uses official
+general rates for NSW, VIC, QLD, WA and TAS (`supabase/reference/duty-presets.json`, marked "needs
+review"); SA, ACT and NT duty is entered per property.
 
 To load duty rates: enter each state's general transfer duty brackets in
 `supabase/reference/duty-presets.json`, copied from that state's revenue office website (the loader

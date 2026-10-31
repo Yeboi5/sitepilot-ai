@@ -165,3 +165,39 @@ describe("provenance helpers", async () => {
     expect(pricePerSqm(600_000, 200, "apartment")).toBeNull();
   });
 });
+
+describe("loaded state duty presets", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { dutyPresetFileSchema } = await import("./duty-presets");
+  const presets = dutyPresetFileSchema.parse(JSON.parse(readFileSync("supabase/reference/duty-presets.json", "utf8")));
+  const byState = Object.fromEntries(presets.map((p) => [p.state, p.brackets]));
+
+  it("are valid, official-source and awaiting review", () => {
+    expect(presets.map((p) => p.state).sort()).toEqual(["NSW", "QLD", "TAS", "VIC", "WA"]);
+    expect(presets.every((p) => p.status === "needs_review")).toBe(true);
+  });
+
+  it("each bracket's base equals duty at its threshold under the previous bracket (no transcription slips)", () => {
+    for (const p of presets) {
+      for (let i = 1; i < p.brackets.length; i++) {
+        const prev = p.brackets[i - 1]!;
+        const cur = p.brackets[i]!;
+        const atThreshold = prev.base + ((cur.from - prev.from) * prev.ratePer100) / 100;
+        // VIC's 5.5% band applies to the whole value, so its base is set from that rule instead.
+        if (p.state === "VIC" && cur.from === 960_000) expect(cur.base).toBe(960_000 * 0.055);
+        else expect(Math.abs(cur.base - atThreshold), `${p.state} at ${cur.from}`).toBeLessThan(1);
+      }
+    }
+  });
+
+  it("match the worked examples published by the revenue offices", () => {
+    // Queensland's own example: $850,000 → $17,325 + $13,950 = $31,275.
+    expect(dutyFromBrackets(byState.QLD!, 850_000)).toBe(31_275);
+    // NSW premium threshold: $3,870,000 → $194,137.
+    expect(dutyFromBrackets(byState.NSW!, 3_870_000)).toBe(194_137);
+    // Victoria: 5.5% of the whole value between $960,000 and $2m.
+    expect(dutyFromBrackets(byState.VIC!, 1_000_000)).toBe(55_000);
+    // Tasmania: $50 up to $3,000.
+    expect(dutyFromBrackets(byState.TAS!, 2_000)).toBe(50);
+  });
+});

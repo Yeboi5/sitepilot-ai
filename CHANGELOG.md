@@ -50,6 +50,19 @@ Investment intelligence upgrade, stage 2a (no schema changes).
 - Tests: 6 unit tests (224 total), 5 browser tests (60 total), including a check that the phone's
   bottom navigation never covers compare or saved controls.
 
+## [0.14.0] - 2026-10-31
+
+### Added
+- **Stamp duty rates loaded for NSW, VIC, QLD, WA and TAS** (general rates, read from each state
+  revenue office's website on 2026-10-31, all marked "needs review"): NSW 2026/27 general and
+  premium; VIC non-principal-place-of-residence (contracts from 1 July 2021); QLD general (from
+  21 September 2012); WA general rate; TAS (from 21 October 2013). Compare fills in duty, cash
+  required and scores automatically for those states; your own figure still overrides. Concessions,
+  surcharges and rounding are not modelled (see each preset's notes). SA, ACT and NT revenue sites
+  block automated access, so their duty is still entered by hand.
+- Tests: each bracket's base must equal the duty at its threshold under the previous bracket, and
+  presets must match the revenue offices' published worked examples (e.g. QLD $850,000 → $31,275).
+
 ## [Unreleased]
 
 ### Added
