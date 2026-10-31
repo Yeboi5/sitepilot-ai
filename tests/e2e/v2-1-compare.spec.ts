@@ -90,9 +90,11 @@ test("figures are transparent, editable and never guessed", async ({ page }) => 
   for (const p of [DUPLEX, LAND, OFF_MARKET]) await page.getByLabel(`Stamp duty for ${p.name}`).fill("30000");
   await expect(duty.getByRole("cell").nth(0)).toContainText("Your figure");
   await expect(rowCells(page, /Cash required/)).toContainText("$229,000"); // 20% of $980,000 + $30,000 + $3,000
-  const score = rowCells(page, "Investment Match Score");
-  await expect(score.getByRole("cell").nth(0)).toContainText("/100");
-  await expect(score.getByRole("cell").nth(1)).toContainText("Not enough evidence");
+  // Plain ratings, no score out of 100.
+  const overall = rowCells(page, /^Overall/);
+  await expect(overall.getByRole("cell").nth(0)).toContainText(/Strong|Good|Fair|Weak/);
+  await expect(overall.getByRole("cell").nth(1)).toContainText("Not enough info");
+  await expect(page.getByText("/100")).toHaveCount(0);
 
   // Changing the price updates the yield.
   await expect(rowCells(page, /Gross yield/).getByRole("cell").nth(0)).toContainText("4.3%");
@@ -100,14 +102,15 @@ test("figures are transparent, editable and never guessed", async ({ page }) => 
   await expect(rowCells(page, /Gross yield/).getByRole("cell").nth(0)).toContainText("6.0%"); // 810 × 52 ÷ 700,000
   await expect(rowCells(page, /Price or estimate/).getByRole("cell").nth(0)).toContainText("Your hypothetical figure");
 
-  // Weights change the ranking explanation.
+  // Choosing a goal (no sliders) changes the verdict, which is one plain sentence.
   const why = page.locator("section[aria-labelledby=why-heading]");
-  await expect(why).toContainText(`${DUPLEX.name} ranks first`);
-  const before = await score.getByRole("cell").nth(0).textContent();
-  await page.getByLabel("Rental return").fill("0");
-  await page.getByLabel("Risk").fill("50");
-  await expect(score.getByRole("cell").nth(0)).not.toHaveText(before!);
-  await expect(why).toContainText("under your weights");
+  const goals = page.getByRole("radiogroup", { name: "Your goal" });
+  await goals.getByRole("radio", { name: /Rental income/ }).click();
+  await expect(page.getByTestId("verdict")).toContainText(/rental income/);
+  await goals.getByRole("radio", { name: /Lower risk/ }).click();
+  await expect(page.getByTestId("verdict")).toContainText(/lower risk/);
+  await expect(rowCells(page, /^Risk/).getByRole("rowheader")).toContainText("Matters most");
+  await expect(why).toContainText("for your goal");
 
   // Questions are answered from the numbers.
   await page.getByLabel("Ask a question").selectOption({ label: "Which needs the least cash up front?" });

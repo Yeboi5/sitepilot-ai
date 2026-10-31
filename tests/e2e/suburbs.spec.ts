@@ -54,7 +54,7 @@ test("Compare uses suburb figures and warns about small samples", async ({ page 
   await expect(row.getByRole("link", { name: "Suburb profile" }).first()).toHaveAttribute("href", "/suburbs/nsw/tamworth-2340");
   const why = page.locator("section[aria-labelledby=why-heading]");
   await expect(why).toContainText(/the Tamworth unit figures rest on as few as \d sales? in a period/);
-  const market = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^Historical market indicators/ }) });
+  const market = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^Suburb growth/ }) });
   await expect(market.getByRole("cell").nth(1)).toContainText(/Historical growth -?\d+\.\d% a year \(Wollongong houses, 5 years, \d+ → \d+ sales, DEMO\)/);
 
   await page.getByLabel("Ask a question").selectOption({ label: "Which property's suburb has shown the strongest price growth?" });

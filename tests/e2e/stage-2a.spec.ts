@@ -18,7 +18,7 @@ test("Quick compare shows price per m², confidence and sources, and explains ri
   await expect(duplex).toContainText(/Medium confidence · \d+% of key data|High confidence|Low confidence/);
   await expect(duplex.getByTitle("Price: Reported by the listing (DEMO)")).toHaveText(/^Reported/);
   await expect(cards(page).filter({ hasText: OFF_MARKET.name }).getByTitle("Price: Automated estimate (DEMO)")).toHaveText(/^Estimated/);
-  await expect(duplex).toContainText("Investment Match Score");
+  await expect(duplex).not.toContainText("/100");
 
   await duplex.getByText("Why, risks and development").click();
   await expect(duplex).toContainText("Open check: Bushfire-prone area? Check state mapping");

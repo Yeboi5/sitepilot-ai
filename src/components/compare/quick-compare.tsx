@@ -108,7 +108,7 @@ export function QuickCompare({
       </section>
 
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Properties">
-        {ordered.map(({ p, r, score }) => {
+        {ordered.map(({ p, r }) => {
           const l = p.listing;
           const isBest = match.best?.id === l.id;
           const rent = r.annualRent.known ? r.annualRent.value / 52 : null;
@@ -170,9 +170,6 @@ export function QuickCompare({
                   >
                     {rent != null ? `${formatAud(rent)}/week` : <span className="text-slate-500">Unknown</span>}
                   </Line>
-                  <Line label="Investment Match Score" sub={score.score == null ? `${Math.round(score.coverage * 100)}% of the weighting has evidence` : `${Math.round(score.coverage * 100)}% of the weighting scored`}>
-                    {score.score != null ? <strong>{score.score}/100</strong> : <span className="text-slate-500">Not enough evidence</span>}
-                  </Line>
                 </dl>
 
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -225,7 +222,7 @@ export function QuickCompare({
                         {p.development?.roi != null
                           ? `Scored from your workspace scenario: ${formatRatio(p.development.roi)} return on cost (verified planning record on file).`
                           : p.development
-                            ? `Workspace linked, not scored yet: ${p.development.missing.join("; ")}.`
+                            ? `Workspace linked, not rated yet: ${p.development.missing.join("; ")}.`
                             : l.development_idea
                               ? `Idea only: ${l.development_idea}. Needs zoning confirmation and professional advice.`
                               : "Not assessed."}

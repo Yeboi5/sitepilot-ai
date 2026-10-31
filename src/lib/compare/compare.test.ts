@@ -190,7 +190,7 @@ describe("explanations and questions", async () => {
 
   it("names the leader and the main reasons", () => {
     const lines = explain(rows, A);
-    expect(lines[0]).toMatch(/^Alpha ranks first with \d+\/100, mainly on rental return/);
+    expect(lines[0]).toMatch(/^Alpha ranks ahead of Bravo for your goal, mainly on rental income/);
     expect(lines).toContain("Development feasibility is excluded until there's verified planning evidence and a complete scenario.");
     expect(lines.at(-1)).toBe("Historical market indicators use suburb sales for the property's type; none yet for Alpha, Bravo.");
   });
@@ -204,7 +204,7 @@ describe("explanations and questions", async () => {
 
   it("says when there isn't enough evidence", () => {
     const none = [mk("A", { price: null, priceSource: null }), mk("B", { price: null, priceSource: null })];
-    expect(explain(none, A)[0]).toMatch(/None of these properties has enough evidence/);
+    expect(explain(none, A)[0]).toMatch(/None of these properties has enough evidence to be ranked/);
     expect(QUESTIONS[0]!.answer(none, A)).toMatch(/enough data/);
   });
 });
@@ -295,5 +295,50 @@ describe("suburb statistics in Compare", async () => {
       "Wyee unit: Wyee unit medians grew 6.0% a year over 5 years (3 sales then, 4 now). That's historical, not a forecast.",
     );
     expect(smallSampleWarning("x", snap("Bigtown", 0.04, 80, 95))).toBeNull();
+  });
+});
+
+describe("plain-language goals, ratings and verdict", async () => {
+  const { GOALS, GOAL_IDS, goalFromWeights, rate, importance, verdict } = await import("./goals");
+  const mk = (id: string, f: Partial<PropertyFacts>, w = GOALS.rental_income.weights) => {
+    const pf = facts({ id, label: id, ...f });
+    const result = evaluate(pf, A);
+    return { id, label: id, result, score: scoreProperty(pf, result, w) };
+  };
+
+  it("every goal's weights add to 100 and map back to the goal", () => {
+    for (const g of GOAL_IDS) {
+      expect(Object.values(GOALS[g].weights).reduce((a, b) => a + b, 0)).toBe(100);
+      expect(goalFromWeights(GOALS[g].weights)).toBe(g);
+    }
+    expect(goalFromWeights(DEFAULT_WEIGHTS)).toBe("balanced"); // older saved comparisons
+  });
+
+  it("turns scores into dots and words, with risk worded as concerns", () => {
+    expect(rate(80, "rental_return")).toEqual({ dots: 4, word: "Strong" });
+    expect(rate(50, "affordability")).toEqual({ dots: 3, word: "Good" });
+    expect(rate(30, "market")).toEqual({ dots: 2, word: "Fair" });
+    expect(rate(10, "completeness")).toEqual({ dots: 1, word: "Weak" });
+    expect(rate(90, "risk").word).toBe("Few concerns");
+    expect(rate(5, "risk").word).toBe("Many concerns");
+    expect(rate(null, "development")).toEqual({ dots: 0, word: "Not enough info" });
+    expect(importance("rental_income", "rental_return")).toBe("Matters most");
+    expect(importance("rental_income", "development")).toBe("Counts a little");
+  });
+
+  it("names the property that suits the goal, with figure-backed reasons and a check", () => {
+    const rows = [mk("Strong rent", { price: 400_000, weeklyRent: 560, stampDuty: 13_000 }), mk("Weak rent", { price: 650_000, weeklyRent: 450, stampDuty: 25_000 })];
+    const v = verdict(rows, "rental_income", { "Strong rent": "confirm lease terms" });
+    expect(v.leaderId).toBe("Strong rent");
+    expect(v.text).toMatch(/^For rental income, Strong rent suits you best: stronger rent \(7\.3% gross yield\) and (better cash flow|a smaller cash shortfall) \(−?\$[\d,]+ in year 1\)\. Check: confirm lease terms\.$/);
+  });
+
+  it("says when it can't rank reliably, and calls close calls", () => {
+    const none = [mk("A", { price: null, priceSource: null }), mk("B", { price: null, priceSource: null })];
+    expect(verdict(none, "balanced").text).toMatch(/^Not enough verified information to rank these reliably for balanced/);
+    const twins = [mk("Twin A", {}), mk("Twin B", {})];
+    const v = verdict(twins, "rental_income");
+    expect(v.leaderId).toBeNull();
+    expect(v.text).toMatch(/are a close call for rental income/);
   });
 });

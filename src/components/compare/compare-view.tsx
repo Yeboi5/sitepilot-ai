@@ -13,13 +13,15 @@ import { evaluate, type Metric, type PropertyResult } from "@/lib/compare/engine
 import { explain, QUESTIONS, type Row } from "@/lib/compare/explain";
 import { DEFAULT_PRIORITIES, type Priority } from "@/lib/compare/quick";
 import type { CompareProperty } from "@/lib/compare/facts";
-import { BANDS, CATEGORIES, CATEGORY_LABELS, DEFAULT_WEIGHTS, MIN_COVERAGE, scoreProperty, type Weights } from "@/lib/compare/score";
+import { AREA_LABEL, AREAS, GOALS, goalFromWeights, importance, rate, ratingThresholds, verdict, type Goal } from "@/lib/compare/goals";
+import { BANDS, scoreProperty } from "@/lib/compare/score";
 import type { CompareState } from "@/lib/compare/state";
 import { formatAud, formatDate, formatRatio } from "@/lib/format";
 import { BarChart, LineChart, SERIES } from "./charts";
 import { NumberField, Segmented, Slider } from "./controls";
 import { ManageProperties, type PropertyOption } from "./manage-properties";
 import { QuickCompare } from "./quick-compare";
+import { Dots, GoalPicker } from "./ratings";
 import { SuburbLine } from "./suburb-line";
 
 const SCENARIO_LABEL: Record<Scenario, string> = { conservative: "Conservative", base: "Base", optimistic: "Optimistic" };
@@ -60,7 +62,9 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
   const [mode, setMode] = useState(initial.mode);
   const [priorities, setPriorities] = useState<Priority[]>(DEFAULT_PRIORITIES[initial.mode]);
   const [a, setA] = useState<CompareAssumptions>(initial.assumptions);
-  const [weights, setWeights] = useState<Weights>(initial.weights);
+  // The goal sets the scoring weights behind the scenes (no sliders, no visible score).
+  const [goal, setGoal] = useState<Goal>(goalFromWeights(initial.weights));
+  const weights = GOALS[goal].weights;
   const [overrides, setOverrides] = useState<Record<string, PropertyOverrides>>(initial.overrides);
   const [scenario, setScenario] = useState<Scenario>("base");
   const [name, setName] = useState(initial.name);
@@ -78,7 +82,7 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
       sessionStorage.removeItem(CARRY_KEY);
       const c = JSON.parse(raw) as Partial<CompareState> & { priorities?: Priority[] };
       if (c.assumptions) setA(c.assumptions);
-      if (c.weights) setWeights(c.weights);
+      if (c.weights) setGoal(goalFromWeights(c.weights));
       if (c.overrides) setOverrides(c.overrides);
       if (c.mode) setMode(c.mode);
       if (c.name) setName(c.name);
@@ -132,9 +136,11 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
     const k = rows.map((r) => ({ r, v: pick(r) })).filter((x): x is { r: (typeof rows)[number]; v: number } => x.v != null);
     return k.length ? k.reduce((x, y) => ((dir === "max" ? y.v > x.v : y.v < x.v) ? y : x)) : null;
   };
+  const checks = Object.fromEntries(rows.map((r) => [r.id, r.p.listing.risk_flags[0] ? r.p.listing.risk_flags[0].charAt(0).toLowerCase() + r.p.listing.risk_flags[0].slice(1) : undefined]));
+  const theVerdict = verdict(rows, goal, checks);
+  const leader = rows.find((r) => r.id === theVerdict.leaderId);
   const summary = investor
     ? [
-        { title: "Top Investment Match Score", b: best((r) => r.score.score, "max"), f: (v: number) => `${v}/100` },
         { title: "Best year-1 cash flow", b: best((r) => (r.r.cashFlowYear1.known ? r.r.cashFlowYear1.value : null), "max"), f: formatAud },
         { title: "Least cash up front", b: best((r) => (r.r.cashRequired.known ? r.r.cashRequired.value : null), "min"), f: formatAud },
       ]
@@ -231,6 +237,26 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
         />
       ) : (
         <>
+      {investor ? (
+        <section aria-labelledby="goal-heading" className="space-y-3 rounded-2xl border border-sand-200 bg-white p-4">
+          <h2 id="goal-heading" className="font-display text-lg font-bold">
+            What&apos;s your goal?
+          </h2>
+          <div className="print:hidden">
+            <GoalPicker goal={goal} onChange={setGoal} />
+          </div>
+          <div className={`rounded-2xl p-4 ${leader ? "bg-brand-50" : "bg-amber-50"}`} aria-live="polite">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{leader ? `Best for ${GOALS[goal].label.toLowerCase()}` : "No clear leader yet"}</p>
+            <p className="mt-1 font-semibold text-slate-900" data-testid="verdict">
+              {theVerdict.text}
+            </p>
+          </div>
+          <a href="#how-heading" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline print:hidden">
+            How we worked this out
+          </a>
+        </section>
+      ) : null}
+
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-3">
         {summary.map((s) => (
           <div key={s.title} className="rounded-2xl border border-sand-200 bg-white p-4">
@@ -280,38 +306,29 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
             <tbody>
               {investor ? (
                 <>
-                  {group("Score")}
-                  {row("Investment Match Score", (r) =>
-                    r.score.score != null ? (
-                      <>
-                        <span className="font-display text-xl font-extrabold tabular-nums">{r.score.score}</span>
-                        <span className="text-slate-500">/100</span>
-                        <span className="block text-xs text-slate-500">{Math.round(r.score.coverage * 100)}% of weight scored</span>
-                      </>
-                    ) : (
-                      <span className="text-slate-500">
-                        Not enough evidence to score
-                        <span className="block text-xs">{Math.round(r.score.coverage * 100)}% of weight has evidence (needs {MIN_COVERAGE * 100}%)</span>
-                      </span>
+                  {group(`For ${GOALS[goal].label.toLowerCase()}`)}
+                  {row("Overall", (r) => (
+                    <>
+                      <Dots rating={rate(r.score.score, "overall")} />
+                      {r.id === theVerdict.leaderId ? (
+                        <span className="mt-1 inline-flex rounded-full bg-brand-600 px-2 py-0.5 text-xs font-bold text-white">Best match</span>
+                      ) : null}
+                    </>
+                  ))}
+                  {AREAS.map((c) =>
+                    row(
+                      AREA_LABEL[c],
+                      (r) => {
+                        const comp = r.score.components.find((x) => x.category === c)!;
+                        return (
+                          <>
+                            <Dots rating={rate(comp.score, c)} />
+                            <span className="block text-xs text-slate-500">{comp.score == null ? comp.reason.replace(/^Insufficient evidence: /, "") : comp.reason}</span>
+                          </>
+                        );
+                      },
+                      importance(goal, c),
                     ),
-                  )}
-                  {CATEGORIES.map((c) =>
-                    row(CATEGORY_LABELS[c], (r) => {
-                      const comp = r.score.components.find((x) => x.category === c)!;
-                      return comp.score != null ? (
-                        <>
-                          <span className="flex items-center gap-2">
-                            <span className="h-2 w-20 overflow-hidden rounded-full bg-sand-100" aria-hidden="true">
-                              <span className="block h-full rounded-full bg-brand-600" style={{ width: `${comp.score}%` }} />
-                            </span>
-                            <span className="tabular-nums">{comp.score}</span>
-                          </span>
-                          <span className="block text-xs text-slate-500">{comp.reason}</span>
-                        </>
-                      ) : (
-                        <span className="text-xs text-slate-500">{comp.reason}</span>
-                      );
-                    }, `${weights[c]} weight`),
                   )}
                 </>
               ) : null}
@@ -531,32 +548,46 @@ export function CompareView({ properties, initial, setId, signedIn, sharedAt, in
         </section>
 
         {investor ? (
-          <section aria-labelledby="weights-heading" className="space-y-4 rounded-2xl print:hidden border border-sand-200 bg-white p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h2 id="weights-heading" className="font-display text-lg font-bold">
-                Score weights
-              </h2>
-              <button type="button" onClick={() => setWeights(DEFAULT_WEIGHTS)} className={`${button} border border-sand-300 bg-white`}>
-                <RotateCcw aria-hidden="true" className="h-4 w-4" /> Reset
-              </button>
-            </div>
-            {CATEGORIES.map((c) => (
-              <Slider key={c} label={CATEGORY_LABELS[c]} min={0} max={50} value={weights[c]} onChange={(v) => setWeights((w) => ({ ...w, [c]: v }))} format={(v) => String(v)} />
-            ))}
-            <details className="text-sm">
-              <summary className="cursor-pointer text-brand-700 underline">How the score works</summary>
-              <div className="mt-2 space-y-2 text-xs text-slate-600">
-                <p>
-                  Each category is scored 0–100 on a fixed band, then averaged using your weights. Categories without evidence are left out (never counted as zero), and
-                  no overall score is shown unless at least {MIN_COVERAGE * 100}% of the weight has evidence.
-                </p>
-                <ul className="list-disc space-y-1 pl-4">
-                  {Object.values(BANDS).map((b) => (
-                    <li key={b.label}>{b.label}</li>
-                  ))}
-                </ul>
-                <p>It isn&apos;t a prediction of capital growth or personal financial advice.</p>
-              </div>
+          <section aria-labelledby="how-heading" className="space-y-3 rounded-2xl border border-sand-200 bg-white p-4 text-sm">
+            <h2 id="how-heading" className="font-display text-lg font-bold">
+              How we worked this out
+            </h2>
+            <p className="text-slate-700">
+              Your goal decides how much each area counts. For <strong>{GOALS[goal].label.toLowerCase()}</strong>:
+            </p>
+            <ul className="space-y-1">
+              {AREAS.map((c) => (
+                <li key={c} className="flex justify-between gap-3">
+                  <span>{AREA_LABEL[c]}</span>
+                  <span className="text-slate-600">{importance(goal, c)}</span>
+                </li>
+              ))}
+            </ul>
+            <details>
+              <summary className="min-h-11 cursor-pointer content-center font-semibold text-brand-700">What Strong, Good, Fair and Weak mean</summary>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-slate-600">
+                <li>
+                  Ratings compare each property with fixed ranges, not with each other, so adding a property never changes another&apos;s rating.
+                </li>
+                <li>
+                  Rental income: Strong from {formatRatio(ratingThresholds(BANDS.grossYield.lo, BANDS.grossYield.hi).strong)} gross yield, Good from{" "}
+                  {formatRatio(ratingThresholds(BANDS.grossYield.lo, BANDS.grossYield.hi).good)}, Fair from {formatRatio(ratingThresholds(BANDS.grossYield.lo, BANDS.grossYield.hi).fair)}.
+                </li>
+                <li>
+                  Cash flow: compares year-1 cash flow with the cash you put in. Strong from{" "}
+                  {formatRatio(ratingThresholds(BANDS.cashOnCash.lo, BANDS.cashOnCash.hi).strong)}, Good from {formatRatio(ratingThresholds(BANDS.cashOnCash.lo, BANDS.cashOnCash.hi).good)}.
+                </li>
+                <li>
+                  Suburb growth: the suburb&apos;s historical median growth for the same property type. Strong from{" "}
+                  {formatRatio(ratingThresholds(BANDS.historicalGrowth.lo, BANDS.historicalGrowth.hi).strong)} a year, Good from{" "}
+                  {formatRatio(ratingThresholds(BANDS.historicalGrowth.lo, BANDS.historicalGrowth.hi).good)}. Past growth doesn&apos;t predict future growth.
+                </li>
+                <li>Risk: open checks and how cash flow holds up if interest rates rise 2%.</li>
+                <li>Development: only rated when your workspace has verified planning evidence and a complete scenario.</li>
+                <li>Data quality: how much of the key information is known.</li>
+                <li>Areas without enough information aren&apos;t rated and don&apos;t count. If too little is known, we don&apos;t name a best match.</li>
+                <li>This isn&apos;t personal financial advice or a prediction.</li>
+              </ul>
             </details>
           </section>
         ) : null}

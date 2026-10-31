@@ -50,6 +50,25 @@ Investment intelligence upgrade, stage 2a (no schema changes).
 - Tests: 6 unit tests (224 total), 5 browser tests (60 total), including a check that the phone's
   bottom navigation never covers compare or saved controls.
 
+## [0.15.0] - 2026-10-31
+
+Compare in plain language (no score out of 100, no weight sliders).
+
+### Changed
+- **"What's your goal?"** replaces the six weight sliders: Balanced, Capital growth, Rental income,
+  Lower risk or Development. Each goal sets the weighting behind the scenes (`src/lib/compare/goals.ts`).
+- **Ratings instead of numbers**: each property gets dots and a word per area (Rental income, Cash
+  flow, Suburb growth, Risk, Development, Data quality: Strong / Good / Fair / Weak, risk as
+  Few / Some / Several / Many concerns, or "Not enough info"), plus an Overall rating. No "/100".
+- **One-sentence verdict** for the chosen goal, e.g. "For rental income, Tamworth house suits you best:
+  stronger rent (4.9% gross yield) and a smaller cash shortfall (−$25,255 in year 1). Check: tenanted:
+  confirm lease terms." It names a best match only with enough evidence and a clear lead; otherwise
+  it says so, or calls a close call.
+- **"How we worked this out"** replaces "Score weights": how much each area counts for the goal, in
+  words, and what Strong / Good / Fair / Weak mean in real figures.
+- Quick Compare cards and shared reports drop the score; "Why these results?" no longer quotes
+  scores. The tested scoring engine is unchanged underneath; saved comparisons keep working.
+
 ## [0.14.0] - 2026-10-31
 
 ### Added

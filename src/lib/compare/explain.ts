@@ -2,7 +2,8 @@ import { formatAud, formatRatio } from "@/lib/format";
 import { smallSampleWarning, type SuburbSnapshot } from "@/lib/suburbs/stats";
 import type { CompareAssumptions } from "./assumptions";
 import type { Metric, PropertyResult } from "./engine";
-import { CATEGORY_LABELS, type ScoreResult } from "./score";
+import { AREA_LABEL } from "./goals";
+import type { ScoreResult } from "./score";
 
 /**
  * "Why these results?" and question templates (Blueprint v2.1). Every sentence is generated from
@@ -86,14 +87,14 @@ export function explain(rows: Row[], a: CompareAssumptions): string[] {
       })
       .filter((x): x is NonNullable<typeof x> => x != null && x.d > 0)
       .sort((x, y) => y.d - x.d);
-    const why = diffs.slice(0, 2).map((x) => CATEGORY_LABELS[x.c.category].toLowerCase());
+    const why = diffs.slice(0, 2).map((x) => AREA_LABEL[x.c.category].toLowerCase());
     out.push(
-      `${top.label} ranks first with ${top.score.score}/100${why.length ? `, mainly on ${why.join(" and ")}` : ""}, ahead of ${next.label} (${next.score.score}/100) under your weights.`,
+      `${top.label} ranks ahead of ${next.label} for your goal${why.length ? `, mainly on ${why.join(" and ")}` : ""}.`,
     );
   } else if (scored.length === 1) {
-    out.push(`Only ${scored[0]!.label} has enough evidence for a score (${scored[0]!.score.score}/100).`);
+    out.push(`Only ${scored[0]!.label} has enough evidence to be ranked.`);
   } else {
-    out.push("None of these properties has enough evidence for a score yet. Add a stamp duty figure, or rent and price, to fill the gaps.");
+    out.push("None of these properties has enough evidence to be ranked yet. Add a stamp duty figure, or rent and price, to fill the gaps.");
   }
   for (const q of QUESTIONS.slice(0, 3)) out.push(q.answer(rows, a));
 

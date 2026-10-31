@@ -77,9 +77,10 @@ test("Analyse this deal: development is scored only with verified evidence and a
   await page.goto(`/compare?ids=${DUPLEX},${LAND}&view=advanced`);
   await expect(devRow.getByRole("cell").first()).toContainText("15.9% return on cost");
   await expect(devRow.getByRole("cell").first()).toContainText("DEMO property: your own entries");
-  const devScore = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^Development feasibility/ }) });
-  await expect(devScore.getByRole("cell").first()).toContainText("64");
-  await expect(devScore.getByRole("cell").nth(1)).toContainText("Insufficient evidence");
+  // Rated, not scored: 15.9% return on cost is "Good" on the published range.
+  const devRating = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^Development (Matters most|Important|Counts a little)$/ }) });
+  await expect(devRating.getByRole("cell").first()).toContainText("Good");
+  await expect(devRating.getByRole("cell").nth(1)).toContainText("Not enough info");
 });
 
 test("Discover filters: price range, type, rooms, yield and sort", async ({ page }) => {

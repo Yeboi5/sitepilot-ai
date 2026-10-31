@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metric } from "@/lib/compare/engine";
+import { rate } from "@/lib/compare/goals";
 import type { Snapshot } from "@/lib/compare/snapshot";
 import { FLAGS } from "@/lib/flags";
 import { formatAud, formatDate, formatRatio } from "@/lib/format";
@@ -37,7 +38,7 @@ export default async function SharedComparisonPage({ params }: { params: Promise
     ["Net yield", (p) => show(p.figures.netYield, (n) => formatRatio(n))],
     ["Cash flow (year 1)", (p) => show(p.figures.cashFlowYear1)],
     [`Net return, base (${snap.assumptions.holdingYears} yrs)`, (p) => show(p.projections?.base?.netReturn)],
-    ["Investment Match Score", (p) => (p.score != null ? `${p.score}/100` : "Not enough evidence")],
+    ["Overall rating", (p) => rate(p.score, "overall").word],
   ];
 
   return (
