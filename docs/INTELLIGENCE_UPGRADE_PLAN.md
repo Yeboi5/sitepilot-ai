@@ -114,3 +114,51 @@ The 17 addresses in the brief are real properties. Proposal:
 5. AI analyst: template analyst first; Claude API narrator when you supply a key.
 6. Which data providers to pursue first (planning/hazard open data is the cheapest start).
 7. PDF: print-friendly report first; server-generated PDF later.
+
+## 7. Suburb profiles (added 2026-10-31)
+
+Requested after reviewing a portal's "Explore suburbs" screen: suburb-level demand and growth
+figures (12-month and multi-year) are core to investing, so SitePilot gets its own suburb profile.
+We don't copy any portal's figures (they're licensed, e.g. PropTrack); we compute ours from data
+we're allowed to use, and show the source, period, sample size and status on every number.
+
+### What the profile shows (per suburb, houses and units separately)
+
+| Section | Figures | Source we can use | Status |
+| --- | --- | --- | --- |
+| Median price snapshot | Median sale price (rolling 12 months), by bedrooms where the sample allows | NSW Valuer General bulk property sales (official, free, weekly); VIC Valuer-General median prices; licensed providers elsewhere | Calculated from official records |
+| Growth | Past 12-month change; 1, 3, 5 and 10-year annualised; 5-year median trend chart | Same sales records | Calculated, with sample sizes |
+| Rent | Median weekly rent and gross yield (median rent × 52 ÷ median price) | NSW Rent and Sales Report (quarterly, by postcode); VIC DFFH rental report | Reported by government |
+| Demand and supply | Sales in the last 12 months (official); listings available, days on market, buyer interest | Sales: official records. Listings, days on market, interest: only from a listings partner (Domain API, PropTrack) | Official / Not available until a partner is connected |
+| Market summary | Plain-English paragraph generated from the numbers above (never invented) | Engine | Calculated |
+| Local area | Suburb boundary map, schools, surrounding suburbs | ABS boundaries, NSW school locations (open data); map tiles from a provider allowed by our security policy | Official |
+
+### Honesty rules that set SitePilot apart
+
+- **Minimum sample size.** A median or growth figure is shown only when it rests on enough sales
+  (proposed: 12+ in each period); otherwise "Not enough sales to report", with the count. Small
+  samples swing wildly, e.g. a suburb with 4 unit sales a year can show a huge "growth" figure.
+- **Every figure carries** its period, sample size, source and retrieval date, and labels growth
+  as **historical**, never a forecast.
+- **Bedroom breakdowns** appear only where each bedroom group meets the sample rule.
+
+### How it plugs into the rest of SitePilot
+
+- Discover cards and listing pages: a suburb snapshot line (median, 12-month change, yield) with
+  a link to the profile.
+- Compare → Capital Growth (section B) and the Investment Match Score's market component use these
+  figures when they meet the sample rule; otherwise they stay "insufficient evidence".
+- Area search and Search Any Address link to the profile.
+
+### Build steps
+
+1. **Engine and schema** (approval needed): `suburb_sales_stats` (suburb, state, postcode, property
+   type, bedrooms, period, median, count, source, retrieved_at, status, is_demo) and
+   `suburb_rent_stats`; pure, tested functions for rolling medians, growth, CAGR, yield and the
+   sample rule; DEMO suburb statistics for the demo towns, clearly labelled, to build the UI.
+2. **Profile page** `/suburbs/[state]/[suburb]` in the style of the reference: snapshot, growth,
+   trend chart, insight tiles, bedroom table, market summary, local area; mobile-first.
+3. **Integration** into Discover, listing pages and Compare.
+4. **Real NSW data**: a loader for NSW Valuer General sales files and the NSW Rent and Sales
+   Report (needs those websites allowed in the network settings; licence terms checked).
+5. **Other states and demand metrics** as providers are agreed.
