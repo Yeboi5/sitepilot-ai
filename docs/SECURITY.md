@@ -64,6 +64,7 @@ threat model, the list of controls in place, and the gates that must pass before
 | Info disclosure | Share links leak private data | Frozen snapshot of suburb-level, listing-level facts and the sharer's assumptions only; no street address, notes, documents or workspace evidence; hashed token; revocable; unindexed | ✅ tested |
 | Misrepresentation | Comparison figures read as forecasts, prices or advice | Example assumptions identical for every property; estimates labelled "not a price"; Unknown instead of guesses; score bands and coverage published; disclaimers | ✅ tested |
 | Misrepresentation | Suburb statistics mistaken for real data or forecasts | DEMO banner and source line on every profile; every figure shows its period and sales count; small samples flagged; growth labelled historical | ✅ tested |
+| Misrepresentation | Government figures altered or presented as endorsed | Stored as published with DCJ's suppression; attribution, licence and modification notes on every profile; "not endorsed by the NSW Government" | ✅ tested |
 | Elevation | Self-verifying a firm | `verification_status` not client-writable | ✅ tested |
 
 ## Controls in place (Sprint 0/1)

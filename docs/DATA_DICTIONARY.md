@@ -236,6 +236,17 @@ Per suburb, postcode, `dwelling_type` (`house`/`unit`), optional `bedrooms`, `pe
 Per suburb, postcode, dwelling type, optional bedrooms and quarter end: `median_rent_weekly`,
 `bonds_count`, plus the same provenance columns.
 
+## Official area statistics
+
+### `official_area_stats`
+Published government statistics, first the NSW Rent and Sales Report (DCJ, CC BY 4.0): `dataset`
+(`nsw_dcj_sales`/`nsw_dcj_rent`), `state`, `area_type` (`postcode`/`lga`), `area_code`, `category`
+(as published), `dwelling_type` (all/house/unit/townhouse/other), `bedrooms` (as published),
+`period_start`/`period_end` (quarter), `q1`, `median`, `q3`, `mean`, `count` (null when withheld),
+`count_note` (exact / 30_or_fewer / 10_or_fewer; no median or count when 10 or fewer),
+`change_quarterly`, `change_annual` (as published), `bonds_held`, `source_url`, `licence`,
+`retrieved_at`, `status` (reported). Public read; service-role write (loader).
+
 ## Platform
 
 ### `audit_events`

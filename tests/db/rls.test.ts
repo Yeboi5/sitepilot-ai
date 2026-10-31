@@ -1374,3 +1374,26 @@ describe("suburb statistics (suburb profiles)", () => {
     });
   });
 });
+
+describe("official area statistics (NSW Rent and Sales Report)", () => {
+  it("are public to read; only the loader (service role) writes, and suppression is enforced", async () => {
+    await as(null, (c) => c.query("select 1 from public.official_area_stats limit 1"));
+    await inTx(async (c) => {
+      await actAs(c, AUTH.ivy);
+      await expectFails(
+        c,
+        "insert into public.official_area_stats (dataset, state, area_type, area_code, category, dwelling_type, period_start, period_end, median, count, count_note, source_url, licence) values ('nsw_dcj_sales', 'NSW', 'postcode', '2259', 'Non Strata', 'house', '2026-01-01', '2026-03-31', 960000, 252, 'exact', 'https://x', 'CC BY 4.0')",
+        [],
+        /permission denied/,
+      );
+      await c.query("reset role");
+      // A "10 or fewer" row can't carry a median or count (DCJ doesn't publish them).
+      await expectFails(
+        c,
+        "insert into public.official_area_stats (dataset, state, area_type, area_code, category, dwelling_type, period_start, period_end, median, count, count_note, source_url, licence) values ('nsw_dcj_sales', 'NSW', 'postcode', '2259', 'Strata', 'unit', '2026-01-01', '2026-03-31', 500000, null, '10_or_fewer', 'https://x', 'CC BY 4.0')",
+        [],
+        /official_area_stats_suppressed/,
+      );
+    });
+  });
+});

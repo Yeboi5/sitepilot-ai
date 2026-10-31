@@ -50,6 +50,32 @@ Investment intelligence upgrade, stage 2a (no schema changes).
 - Tests: 6 unit tests (224 total), 5 browser tests (60 total), including a check that the phone's
   bottom navigation never covers compare or saved controls.
 
+## [0.16.0] - 2026-10-31
+
+Real NSW figures from the NSW Rent and Sales Report (DCJ), CC BY 4.0.
+
+### Added
+- Migration `20261031010000_official_area_stats.sql`: `official_area_stats`, one row per postcode,
+  quarter, published category (Non Strata / Strata / Total; House / Flat-Unit / Townhouse) and bedrooms,
+  with DCJ's own suppression kept exactly (`count_note`: exact / 30_or_fewer / 10_or_fewer; no median
+  when 10 or fewer), published quarterly and annual changes, source URL, licence and retrieval time.
+- `scripts/load-nsw-dcj.ts` (+ `src/lib/official/dcj.ts` parser): downloads the current and previous
+  quarterly tables, parses the postcode sheets and upserts them. Loaded locally: sales June 2020 to
+  March 2026 and rents to June 2026 (about 34,000 sales rows). Older 2017–early 2020 files use a
+  different layout and are skipped for now. Run with `NODE_USE_ENV_PROXY=1` behind a proxy.
+- Suburb profiles show **official NSW figures** for the postcode when loaded (replacing DEMO
+  figures for NSW): median sale price by quarter with the published count or "30 or fewer", DCJ's
+  annual and quarterly change, 3- and 5-year growth per year calculated from published medians for the
+  same quarter, a quarterly trend chart, median weekly rent (new bonds) with bedroom breakdown,
+  gross yield, a summary written from the figures, and full attribution and modification notes.
+  Unpublished figures say "Not published by NSW DCJ (10 or fewer sales)".
+- Any NSW postcode has a profile: search a postcode on `/suburbs` (e.g. 2259 →
+  `/suburbs/nsw/postcode-2259`).
+- Compare uses official postcode figures for NSW properties (houses/duplexes → non-strata,
+  apartments/townhouses → strata) in the suburb row, the Suburb growth rating, the verdict and the
+  suburb growth question, and cautions when a quarter had 30 or fewer sales.
+- Tests: parser and profile unit tests (11), an RLS test (126 total), 2 browser tests (67 total).
+
 ## [0.15.0] - 2026-10-31
 
 Compare in plain language (no score out of 100, no weight sliders).

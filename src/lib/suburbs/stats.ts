@@ -133,6 +133,13 @@ export type SuburbSnapshot = {
   change12: Change | null;
   growth: { years: number; perYear: number; fromCount: number; toCount: number } | null; // longest of 5 / 3 / 1 years
   isDemo: boolean;
+  /** Official figures (NSW Rent and Sales Report, postcode level) rather than suburb statistics. */
+  official?: {
+    period: string; // e.g. "Jan–Mar 2026 quarter"
+    category: string; // as published, e.g. "Non Strata"
+    countText: string; // e.g. "252 sales" or "30 or fewer sales"
+    small: string | null; // a caution when a period had 30 or fewer sales
+  };
 };
 
 export function snapshotFrom(p: TypeProfile, where: { suburb: string; state: string; postcode: string }, isDemo: boolean): SuburbSnapshot {
@@ -150,6 +157,7 @@ export function snapshotFrom(p: TypeProfile, where: { suburb: string; state: str
 
 /** Plain-language caution when a suburb figure rests on few sales (shown in Compare explanations). */
 export function smallSampleWarning(label: string, s: SuburbSnapshot): string | null {
+  if (s.official) return s.official.small ? `${label}: ${s.official.small}` : null;
   const counts = [s.sales12, s.change12?.fromCount, s.growth?.fromCount].filter((n): n is number => n != null);
   const fewest = Math.min(...counts);
   if (!counts.length || fewest >= 12) return null;

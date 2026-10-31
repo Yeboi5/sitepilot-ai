@@ -13,12 +13,18 @@ export const metadata: Metadata = { title: "Suburb profiles" };
 export default async function SuburbsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   if (!FLAGS.discovery) notFound();
   const { q } = await searchParams;
-  const suburbs = await listSuburbs(await createClient());
+  const supabase = await createClient();
+  const suburbs = await listSuburbs(supabase);
   const label = (s: { suburb: string; state: string; postcode: string }) => `${s.suburb} ${s.state} ${s.postcode}`;
   if (q) {
     const needle = q.trim().toLowerCase();
     const hit = suburbs.find((s) => label(s).toLowerCase() === needle) ?? suburbs.find((s) => s.suburb.toLowerCase() === needle || s.postcode === needle);
     if (hit) redirect(suburbHref(hit.state, hit.suburb, hit.postcode));
+    // Any NSW postcode with official figures has its own profile.
+    if (/^\d{4}$/.test(needle)) {
+      const { data } = await supabase.from("official_area_stats").select("area_code").eq("area_type", "postcode").eq("area_code", needle).limit(1);
+      if (data?.length) redirect(`/suburbs/nsw/postcode-${needle}`);
+    }
   }
   const byState = new Map<string, typeof suburbs>();
   for (const s of suburbs) byState.set(s.state, [...(byState.get(s.state) ?? []), s]);
@@ -41,7 +47,10 @@ export default async function SuburbsPage({ searchParams }: { searchParams: Prom
         </button>
       </form>
       {q ? <p className="text-sm text-slate-600">No suburb profile for &ldquo;{q}&rdquo; yet. Pick one from the list below.</p> : null}
-      <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">These profiles currently use DEMO figures for the demo towns. Real NSW figures come next.</p>
+      <p className="rounded-2xl bg-leaf-50 p-3 text-sm text-leaf-900">
+        <strong>NSW:</strong> official figures for every NSW postcode from the NSW Rent and Sales Report. Search a postcode, e.g. 2259. Other states show DEMO figures for
+        the demo towns until real data is connected.
+      </p>
       {[...byState].map(([st, list]) => (
         <section key={st} aria-labelledby={`st-${st}`}>
           <h2 id={`st-${st}`} className="font-display text-lg font-bold">

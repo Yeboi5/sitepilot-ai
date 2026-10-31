@@ -52,8 +52,10 @@ Demo accounts, all with password `SitePilotDemo!2026`:
 | `nina.newbuyer@demo.sitepilot.test` | Home buyer with no workspace yet (first sign-in creates one) |
 | `vera.verifier@demo.sitepilot.test` | Homeowner-claim verifier (review queue at `/verify`) |
 
-Suburb profiles (`/suburbs`) use DEMO statistics for the demo towns until real NSW figures are
-loaded. Regenerate them with `npx tsx scripts/gen-demo-suburbs.ts`.
+Suburb profiles (`/suburbs`) show official NSW figures from the NSW Rent and Sales Report (DCJ,
+CC BY 4.0) once loaded, and DEMO statistics for the other demo towns. Load or refresh NSW figures with
+`NODE_USE_ENV_PROXY=1 DATABASE_URL=… npx tsx scripts/load-nsw-dcj.ts` (downloads are cached in
+`.cache/dcj`). Regenerate demo statistics with `npx tsx scripts/gen-demo-suburbs.ts`.
 
 Compare My Properties works on DEMO listings with DEMO estimate ranges. Stamp duty uses official
 general rates for NSW, VIC, QLD, WA and TAS (`supabase/reference/duty-presets.json`, marked "needs

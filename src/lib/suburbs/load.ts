@@ -4,6 +4,7 @@ import { buildTypeProfile, snapshotFrom, type DwellingType, type RentPoint, type
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
+import { buildOfficialProfile, officialSnapshot, type OfficialProfile, type OfficialRow } from "@/lib/official/postcode";
 import { suburbSlug } from "./links";
 
 export { suburbHref, suburbSlug } from "./links";
@@ -93,8 +94,17 @@ export async function loadSuburbSnapshots(supabase: Supabase, places: { state: s
     .is("bedrooms", null)
     .eq("window_months", 12)
     .limit(5000);
+  const officials = new Map(
+    await Promise.all(unique.filter((p) => p.state === "NSW").map(async (p) => [p.postcode, await loadOfficialPostcode(supabase, p.state, p.postcode)] as const)),
+  );
   for (const place of unique) {
     for (const type of ["house", "unit"] as const) {
+      const official = officials.get(place.postcode);
+      const fromOfficial = official ? officialSnapshot(official, type, place) : null;
+      if (fromOfficial) {
+        out.set(`${place.state}/${place.suburb}/${place.postcode}/${type}`, fromOfficial);
+        continue;
+      }
       const rows = (data ?? []).filter((r) => r.state === place.state && r.suburb === place.suburb && r.postcode === place.postcode && r.dwelling_type === type);
       if (!rows.length) continue;
       const profile = buildTypeProfile(type, rows.map((r) => ({ periodEnd: r.period_end, median: r.median_price, count: r.sales_count })), [], []);
@@ -102,4 +112,18 @@ export async function loadSuburbSnapshots(supabase: Supabase, places: { state: s
     }
   }
   return out;
+}
+
+/** Official NSW postcode figures (NSW Rent and Sales Report), or null when none are loaded. */
+export async function loadOfficialPostcode(supabase: Supabase, state: string, postcode: string): Promise<OfficialProfile | null> {
+  if (state !== "NSW" || !/^\d{4}$/.test(postcode)) return null;
+  const { data } = await supabase
+    .from("official_area_stats")
+    .select("dataset, category, dwelling_type, bedrooms, period_start, period_end, median, count, count_note, change_annual, change_quarterly, source_url, retrieved_at")
+    .eq("area_type", "postcode")
+    .eq("area_code", postcode)
+    .in("dwelling_type", ["house", "unit"])
+    .order("period_end")
+    .limit(2000);
+  return buildOfficialProfile(postcode, (data ?? []) as OfficialRow[]);
 }

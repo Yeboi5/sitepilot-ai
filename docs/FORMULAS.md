@@ -222,3 +222,12 @@ Compare maps property types to suburb statistics: house and duplex → houses; a
 townhouse → units; land → none (land sales are a different market). The Investment Match Score's
 market component (`score-1.1.0`) uses the longest available of 5-, 3- or 1-year growth per year on
 its 0–8% band.
+
+## Official NSW postcode figures (NSW Rent and Sales Report)
+
+Source: `src/lib/official/postcode.ts`. Medians, counts and the quarterly and annual changes are shown
+as DCJ publishes them (sales by settlement quarter, prices converted from $'000; rents for new bonds).
+SitePilot calculates only: growth per year over 3 and 5 years `= (median now ÷ median for the same
+quarter N years earlier)^(1/N) − 1`, using published medians only; and gross yield `= median weekly
+rent × 52 ÷ median sale price` (the rent and sales quarters can differ). Unpublished medians (10 or
+fewer sales) are never estimated; a published $0 is treated as a source error and not used.

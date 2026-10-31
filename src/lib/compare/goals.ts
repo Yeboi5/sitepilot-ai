@@ -82,9 +82,10 @@ function strength(r: Row, area: Category): string | null {
         ? `better cash flow (${formatAud(res.cashFlowYear1.value)} in year 1)`
         : `a smaller cash shortfall (${formatAud(res.cashFlowYear1.value)} in year 1)`;
     case "market":
-      return r.suburb?.growth
-        ? `stronger suburb growth (${formatRatio(r.suburb.growth.perYear)} a year over ${r.suburb.growth.years} year${r.suburb.growth.years === 1 ? "" : "s"}, ${r.suburb.growth.toCount} recent sales)`
-        : null;
+      if (!r.suburb?.growth) return null;
+      return `stronger ${r.suburb.official ? `postcode ${r.suburb.postcode}` : "suburb"} growth (${formatRatio(r.suburb.growth.perYear)} a year over ${r.suburb.growth.years} year${r.suburb.growth.years === 1 ? "" : "s"}, ${
+        r.suburb.official ? `${r.suburb.official.countText} in the latest quarter` : `${r.suburb.growth.toCount} recent sales`
+      })`;
     case "risk":
       return "fewer concerns";
     case "development":

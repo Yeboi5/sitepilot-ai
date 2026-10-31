@@ -25,7 +25,7 @@ test("Quick compare shows price per m², confidence and sources, and explains ri
   await expect(duplex).toContainText("Flood, bushfire and other hazards: Unknown");
   await expect(duplex).toContainText("Idea only: Add a bedroom: extension concept. Needs zoning confirmation");
   await expect(duplex).toContainText("Suburb market and growth");
-  await expect(duplex).toContainText(/Wollongong houses: median \$[\d,]+ \(based on \d+ sales in 12 months\)/);
+  await expect(duplex).toContainText("Postcode 2500 houses (non-strata), Jan–Mar 2026 quarter: median $1,203,000 (44 sales)");
 });
 
 test("no leader is highlighted when the evidence doesn't support one", async ({ page }) => {

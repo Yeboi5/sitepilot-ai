@@ -61,7 +61,9 @@ export function factsFor(listing: CompareListing, estimate: Estimate | null, dut
       // Suburb median growth for this dwelling type (longest of 5 / 3 / 1 years), counts included.
       historicalGrowthPct: suburb?.growth ? Math.round(suburb.growth.perYear * 1000) / 10 : null,
       historicalGrowthBasis: suburb?.growth
-        ? `${suburb.suburb} ${suburb.type}s, ${suburb.growth.years} year${suburb.growth.years === 1 ? "" : "s"}, ${suburb.growth.fromCount} → ${suburb.growth.toCount} sales${suburb.isDemo ? ", DEMO" : ""}`
+        ? suburb.official
+          ? `postcode ${suburb.postcode} ${suburb.type}s, ${suburb.growth.years} years, official NSW figures`
+          : `${suburb.suburb} ${suburb.type}s, ${suburb.growth.years} year${suburb.growth.years === 1 ? "" : "s"}, ${suburb.growth.fromCount} → ${suburb.growth.toCount} sales${suburb.isDemo ? ", DEMO" : ""}`
         : null,
       completeness: checks.filter(Boolean).length / checks.length,
     },

@@ -851,6 +851,85 @@ export type Database = {
           },
         ];
       };
+      official_area_stats: {
+        Row: {
+          id: string;
+          dataset: string;
+          state: string;
+          area_type: string;
+          area_code: string;
+          category: string;
+          dwelling_type: string;
+          bedrooms: string;
+          period_start: string;
+          period_end: string;
+          q1: number | null;
+          median: number | null;
+          q3: number | null;
+          mean: number | null;
+          count: number | null;
+          count_note: string;
+          change_quarterly: number | null;
+          change_annual: number | null;
+          bonds_held: number | null;
+          source_url: string;
+          licence: string;
+          retrieved_at: string;
+          status: Database["public"]["Enums"]["fact_status"];
+        };
+        Insert: {
+          id?: string;
+          dataset: string;
+          state: string;
+          area_type: string;
+          area_code: string;
+          category: string;
+          dwelling_type: string;
+          bedrooms?: string;
+          period_start: string;
+          period_end: string;
+          q1?: number | null;
+          median?: number | null;
+          q3?: number | null;
+          mean?: number | null;
+          count?: number | null;
+          count_note: string;
+          change_quarterly?: number | null;
+          change_annual?: number | null;
+          bonds_held?: number | null;
+          source_url: string;
+          licence: string;
+          retrieved_at?: string;
+          status?: Database["public"]["Enums"]["fact_status"];
+        };
+        Update: {
+          id?: string;
+          dataset?: string;
+          state?: string;
+          area_type?: string;
+          area_code?: string;
+          category?: string;
+          dwelling_type?: string;
+          bedrooms?: string;
+          period_start?: string;
+          period_end?: string;
+          q1?: number | null;
+          median?: number | null;
+          q3?: number | null;
+          mean?: number | null;
+          count?: number | null;
+          count_note?: string;
+          change_quarterly?: number | null;
+          change_annual?: number | null;
+          bonds_held?: number | null;
+          source_url?: string;
+          licence?: string;
+          retrieved_at?: string;
+          status?: Database["public"]["Enums"]["fact_status"];
+        };
+        Relationships: [
+        ];
+      };
       organisations: {
         Row: {
           id: string;

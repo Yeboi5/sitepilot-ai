@@ -61,6 +61,9 @@ export const QUESTIONS: Question[] = [
       if (!b) return "None of these properties has suburb sales history for its type yet.";
       const s = b.r.suburb!;
       const g = s.growth!;
+      if (s.official) {
+        return `${b.r.label}: postcode ${s.postcode} ${s.type} medians grew ${formatRatio(g.perYear)} a year over ${g.years} years (official NSW figures; ${s.official.countText} in the ${s.official.period}). That's historical, not a forecast.`;
+      }
       return `${b.r.label}: ${s.suburb} ${s.type} medians grew ${formatRatio(g.perYear)} a year over ${g.years} year${g.years === 1 ? "" : "s"} (${g.fromCount} sales then, ${g.toCount} now${s.isDemo ? ", DEMO figures" : ""}). That's historical, not a forecast.`;
     },
   },
