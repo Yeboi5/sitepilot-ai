@@ -19,6 +19,8 @@ export function isCustomerVisible(o: Offer, now = new Date()): boolean {
   return true;
 }
 
+const missingCredentials = (r: { flags: string[] }) => (r.flags.some((f) => f !== "Simulated demo offer") ? 1 : 0);
+
 function norm(value: number, min: number, max: number, higherIsBetter: boolean): number {
   if (max === min) return 1;
   const x = (value - min) / (max - min);
@@ -73,5 +75,6 @@ export function compareOffers(
         },
       };
     })
-    .sort((a, b) => b.score - a.score || a.offer.priceCents - b.offer.priceCents);
+    // Offers missing a licence or insurance the category requires never outrank compliant ones.
+    .sort((a, b) => missingCredentials(a) - missingCredentials(b) || b.score - a.score || a.offer.priceCents - b.offer.priceCents);
 }

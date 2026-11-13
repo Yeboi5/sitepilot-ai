@@ -10,7 +10,7 @@ import { canTransition, checkAutopilot, InvalidTransitionError, recommendRespons
 import { calculateFee, calculateSavings } from "@/lib/domain/savings";
 import type { ExpenseLine, PurchasingGroup } from "@/lib/domain/types";
 import { sniffMatches } from "@/lib/services/documents";
-import { rowFromDb, rowToDb } from "@/lib/store/supabase";
+import { rowFromDb, rowToDb } from "@/lib/store/supabase-mapping";
 import { MemoryStore } from "@/lib/store/memory";
 
 describe("money", () => {
@@ -143,8 +143,8 @@ describe("AI mock extraction & supabase mapping", () => {
     expect(r.lines).toHaveLength(2);
   });
   it("maps camelCase rows to snake_case columns and back", () => {
-    const db = rowToDb({ id: "1", baselineCents: 5, passwordHash: "secret", documentId: undefined });
-    expect(db).toEqual({ id: "1", baseline_cents: 5 });
+    const db = rowToDb({ id: "1", baselineCents: 5, passwordHash: "h", documentId: undefined });
+    expect(db).toEqual({ id: "1", baseline_cents: 5, password_hash: "h" });
     expect(rowFromDb({ id: "1", baseline_cents: 5, document_id: null })).toEqual({ id: "1", baselineCents: 5 });
   });
 });

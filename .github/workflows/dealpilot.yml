@@ -1,0 +1,53 @@
+name: DealPilot CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["dealpilot/**", ".github/workflows/dealpilot.yml"]
+  pull_request:
+    paths: ["dealpilot/**", ".github/workflows/dealpilot.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dealpilot
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      # Build/test placeholders only. No real secrets are needed.
+      SESSION_SECRET: ci-only-session-secret-not-used-anywhere-else
+      AI_PROVIDER: mock
+      DATA_DRIVER: memory
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dealpilot/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Schema, constraints and RLS
+        run: npm run test:db
+      - run: npm run build
+      - name: End-to-end demo journeys
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+          (npm start -- -p 3100 &)
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3100/ && break; sleep 1; done
+          BASE_URL=http://localhost:3100 npm run test:e2e

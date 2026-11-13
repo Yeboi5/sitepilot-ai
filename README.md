@@ -1,5 +1,9 @@
 # SitePilot AI
 
+> This repository also contains **DealPilot**, a separate universal AI savings & negotiation
+> platform prototype, in [`dealpilot/`](dealpilot/README.md). It has its own package and does not
+> affect SitePilot.
+
 A two-sided Australian property feasibility and conveyancing collaboration platform. The initial
 market is NSW. Investors research properties, keep a sourced evidence register and (soon) model
 development scenarios. Licensed conveyancers accept client matters and verify AI-flagged issues

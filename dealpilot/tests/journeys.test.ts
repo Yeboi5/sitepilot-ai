@@ -47,6 +47,8 @@ describe("Journey 1 — $5,500 fencing quote receives competing bids", () => {
     const budget = view.comparison.find((r) => r.offer.id === IDS.offBudget)!;
     expect(budget.flags).toEqual(expect.arrayContaining(["No licence number provided", "Insurance not confirmed"]));
     expect(budget.best.price).toBe(true);
+    // Cheapest, but unlicensed and uninsured: ranked below compliant offers.
+    expect(view.comparison.at(-1)!.offer.id).toBe(IDS.offBudget);
   });
 
   it("other customers cannot see the request", async () => {
