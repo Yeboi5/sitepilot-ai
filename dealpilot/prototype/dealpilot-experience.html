@@ -225,6 +225,53 @@ td.no { color: var(--danger); font-weight: 700 } td.yes { color: var(--brand-str
 .toast { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 10px 16px; font-weight: 600; font-size: .9rem; box-shadow: var(--shadow); animation: up .25s both; max-width: 100% }
 .toast.bad { background: var(--danger); color: #fff }
 @media (min-width: 960px) { #toasts { bottom: 28px } }
+/* ── Character pass: carry the welcome page's jade banner, docket and warmth through every screen ── */
+body { background: radial-gradient(900px 420px at 50% -160px, var(--brand-soft), transparent 70%), var(--bg); background-repeat: no-repeat }
+.main > div:has(> h1), .main > .row:has(> div > h1) {
+  background: radial-gradient(260px 160px at 100% 0%, rgba(255,255,255,.16), transparent 70%), linear-gradient(150deg, var(--hero-a), var(--hero-b));
+  color: #fff; border-radius: 26px; padding: 22px 20px; position: relative; overflow: hidden; box-shadow: 0 14px 30px rgba(8,60,50,.22) }
+.main > div:has(> h1)::after, .main > .row:has(> div > h1)::after { content: ""; position: absolute; right: -46px; bottom: -70px; width: 170px; height: 170px; border-radius: 50%; border: 2px dashed rgba(255,255,255,.22); pointer-events: none }
+.main > div:has(> h1) h1, .main > .row:has(> div > h1) h1 { color: #fff }
+.main > div:has(> h1) .muted, .main > .row:has(> div > h1) .muted { color: rgba(255,255,255,.82) }
+.main > .row:has(> div > h1) > .tag, .main > .row:has(> div > h1) > .stamp { position: relative; z-index: 1 }
+.card { border-color: transparent; box-shadow: var(--shadow); border-radius: 22px; padding: 18px }
+.card h2 { display: flex; align-items: center; gap: 8px }
+.card > h2:first-child::before, .card > .row:first-child > h2::before { content: ""; width: 6px; height: 18px; border-radius: 3px; background: linear-gradient(var(--sun), #FF8A3D); flex: none }
+.stat { border-color: transparent; box-shadow: var(--shadow); border-radius: 20px; position: relative; overflow: hidden }
+.grid4 > .stat:nth-child(2) { background: var(--sun-soft) } .grid4 > .stat:nth-child(2) .eyebrow { color: var(--sun-ink) }
+.grid4 > .stat:nth-child(3) { background: var(--info-soft) } .grid4 > .stat:nth-child(3) .eyebrow { color: var(--info) }
+.stat.big { background: linear-gradient(150deg, var(--hero-a), var(--hero-b)); color: #fff }
+.stat.big .small { border-top: 2px dashed rgba(255,255,255,.3); margin-top: 8px; padding-top: 8px }
+.btn { border-radius: 999px }
+.btn.primary { background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 86%, #fff), var(--brand)); box-shadow: 0 8px 18px color-mix(in srgb, var(--brand) 32%, transparent) }
+.btn.primary:hover { background: var(--brand-strong) }
+.btn.sm { border-radius: 999px }
+.badge-ic { border-radius: 14px; background: linear-gradient(145deg, var(--brand-soft), color-mix(in srgb, var(--brand-soft) 60%, var(--surface))) }
+.catbtn { border-color: transparent; box-shadow: var(--shadow); border-radius: 20px; transition: transform .15s ease, box-shadow .15s ease }
+.catbtn:hover { transform: translateY(-2px) }
+.catbtn > svg.ic { width: 40px; height: 40px; padding: 10px; border-radius: 13px; background: var(--brand-soft); color: var(--brand-strong) }
+.catbtn:nth-child(3n+2) > svg.ic { background: var(--sun-soft); color: var(--sun-ink) }
+.catbtn:nth-child(3n) > svg.ic { background: var(--info-soft); color: var(--info) }
+.offer { border-radius: 24px; box-shadow: var(--shadow); padding: 18px }
+.offer.top { border-width: 2px; background: linear-gradient(180deg, var(--brand-soft), var(--surface) 110px) }
+.offer .price { font-size: 1.8rem }
+.offer .checks { border-top: 2px dashed var(--line); padding-top: 12px }
+.price.save { background: linear-gradient(transparent 62%, color-mix(in srgb, var(--sun) 35%, transparent) 62%); padding: 0 2px }
+.receipt { box-shadow: var(--shadow); border-color: transparent }
+.tier { border-radius: 18px } .tier.on { box-shadow: var(--shadow); transform: translateY(-2px) }
+.drop { border-radius: 24px; background: linear-gradient(180deg, var(--brand-soft), var(--surface)); padding: 32px 16px }
+.drop > svg.ic { width: 52px; height: 52px; padding: 13px; border-radius: 18px; background: var(--surface); color: var(--brand); box-shadow: var(--shadow) }
+.steps li { border-color: transparent; box-shadow: var(--shadow); border-radius: 20px }
+.steps li::before { background: linear-gradient(145deg, var(--sun), #FF8A3D); color: #3A2100 }
+.msg { box-shadow: 0 1px 2px rgba(15,36,31,.06) }
+.pill-tabs button { border-color: transparent; box-shadow: var(--shadow) }
+.pill-tabs button[aria-selected="true"] { background: linear-gradient(150deg, var(--hero-a), var(--hero-b)); color: #fff }
+.demo-strip { background: none; color: var(--muted) }
+.tabs { left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); border: 1px solid var(--line); border-radius: 24px; padding: 6px 8px; box-shadow: 0 12px 30px rgba(8,30,25,.18) }
+.tabs button[aria-current="page"] { background: var(--brand-soft); color: var(--brand-strong) }
+.tabs .fab span.dot { background: linear-gradient(135deg, #FFC04D, #FF8A3D); color: #3A2100; border-radius: 50%; width: 50px; height: 50px; margin-top: -26px; border: 4px solid var(--surface) }
+.tabs .fab b { color: var(--ink) }
+@media (min-width: 960px) { .side button[aria-current="page"] { background: linear-gradient(150deg, var(--hero-a), var(--hero-b)); color: #fff } .side { background: var(--surface); border-radius: 22px; padding: 12px; box-shadow: var(--shadow); margin-top: 24px } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important } }
 </style>
 <div id="app"></div>
