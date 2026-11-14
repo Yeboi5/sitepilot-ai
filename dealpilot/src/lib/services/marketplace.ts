@@ -11,7 +11,8 @@ import {
   businessMatchesRequest, canViewOffer, canViewRequest, ForbiddenError, NotFoundError, requireRole, ValidationError,
 } from "../domain/permissions";
 import type { Actor, Business, Offer, PurchaseRequest, Recurrence } from "../domain/types";
-import { audit, newId, notify, type Ctx } from "./context";
+import { aiFor, audit, newId, notify, type Ctx } from "./context";
+import { enforceRateLimit } from "./rate-limit";
 
 // ─── Customer requests ───────────────────────────────────────────────────────
 
@@ -182,9 +183,11 @@ function validateOffer(i: OfferInput) {
 export async function draftBidWithAI(ctx: Ctx, actor: Actor, requestId: string) {
   const { business, category } = await getRequestForBusiness(ctx, actor, requestId);
   const req = (await ctx.store.get("requests", requestId))!;
-  const draft = await ctx.ai.draftBid({ request: req, business, category });
-  await audit(ctx, actor, "offer.ai_drafted", "request", requestId, { provider: ctx.ai.name });
-  return { ...draft, provider: ctx.ai.name, simulated: ctx.ai.simulated };
+  await enforceRateLimit(ctx, "aiCall", `user:${actor.userId}`);
+  const ai = await aiFor(ctx, actor.userId);
+  const draft = await ai.draftBid({ request: req, business, category });
+  await audit(ctx, actor, "offer.ai_drafted", "request", requestId, { provider: ai.name });
+  return { ...draft, provider: ai.name, simulated: ai.simulated };
 }
 
 /** A real business user submits (and thereby approves) an offer. */

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { parseMoney } from "@/lib/domain/money";
 import { InvalidTransitionError } from "@/lib/domain/negotiation";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/domain/permissions";
+import { errorFields, log } from "@/lib/log";
 
 export function str(fd: FormData, name: string): string {
   const v = fd.get(name);
@@ -40,7 +41,7 @@ export function withParam(path: string, key: string, value: string) {
 
 function userMessage(e: unknown): string {
   if (e instanceof ValidationError || e instanceof ForbiddenError || e instanceof NotFoundError || e instanceof InvalidTransitionError) return e.message;
-  console.error("[action] unexpected error", e);
+  log("error", "action.unexpected_error", errorFields(e));
   return "Something went wrong. Please try again.";
 }
 

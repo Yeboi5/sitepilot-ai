@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { MockAIProvider } from "../ai/mock";
 import type { AIProvider } from "../ai/types";
 import type { EmailProvider } from "../integrations/notifications";
 import type { Scanner } from "../integrations/scanner";
@@ -52,4 +53,16 @@ export async function notify(ctx: Ctx, userId: string, a: Omit<Alert, "id" | "us
   } catch (e) {
     await log("failed", e instanceof Error ? e.message.slice(0, 300) : "send failed");
   }
+}
+
+const offline: AIProvider = new MockAIProvider();
+
+/**
+ * The AI provider to use for this user's data: the configured provider when it's the offline
+ * mock or the user consented to AI processing; otherwise the offline drafter.
+ */
+export async function aiFor(ctx: Ctx, userId: string): Promise<AIProvider> {
+  if (ctx.ai.simulated) return ctx.ai;
+  const u = await ctx.store.get("users", userId);
+  return u?.aiProcessingConsent ? ctx.ai : offline;
 }

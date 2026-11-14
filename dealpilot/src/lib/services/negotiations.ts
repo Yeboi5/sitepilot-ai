@@ -6,7 +6,8 @@ import {
 import { canViewNegotiation, ForbiddenError, NotFoundError, requireRole, ValidationError } from "../domain/permissions";
 import type { Actor, Negotiation, NegotiationMessage, PermissionMode, Recurrence } from "../domain/types";
 import { upd } from "../store/types";
-import { audit, newId, notify, type Ctx } from "./context";
+import { aiFor, audit, newId, notify, type Ctx } from "./context";
+import { enforceRateLimit } from "./rate-limit";
 import { applyNegotiation, msg, per } from "./negotiation-store";
 import { proposeFinalTerms } from "./transactions";
 
@@ -113,7 +114,8 @@ export async function prepareNextAction(ctx: Ctx, actor: Actor, id: string): Pro
   }
 
   const intent = rec.action === "accept" ? "accept" : opening ? "opening" : "counter";
-  const body = await ctx.ai.draftNegotiationMessage({ negotiation: n, category, intent, priceCents: rec.priceCents, customerName: user.name.split(" ")[0] });
+  await enforceRateLimit(ctx, "aiCall", `user:${actor.userId}`);
+  const body = await (await aiFor(ctx, actor.userId)).draftNegotiationMessage({ negotiation: n, category, intent, priceCents: rec.priceCents, customerName: user.name.split(" ")[0] });
 
   if (n.mode === "advisory") {
     const updated = await apply(ctx, n, null, {}, [msg(ctx, { from: "ai", kind: "note", amountCents: rec.priceCents, body: `Recommendation: ${rec.action} at ${formatMoney(rec.priceCents)}. ${rec.reason}\n\nSuggested wording you can send yourself:\n${body}` })]);
@@ -285,8 +287,10 @@ export async function draftBusinessCounter(ctx: Ctx, actor: Actor, id: string, m
   const n = await load(ctx, actor, id);
   const b = (await ctx.store.get("businesses", n.businessId!))!;
   const lastAsk = [...n.messages].reverse().find((m) => m.kind === "sent" && m.amountCents !== undefined)?.amountCents ?? n.currentOfferCents;
-  const draft = await ctx.ai.draftBusinessCounter({ negotiation: redactForBusiness(n), business: b, requestedCents: lastAsk, minimumCents });
-  await audit(ctx, actor, "negotiation.business_ai_draft", "negotiation", n.id, { provider: ctx.ai.name });
+  await enforceRateLimit(ctx, "aiCall", `user:${actor.userId}`);
+  const ai = await aiFor(ctx, actor.userId);
+  const draft = await ai.draftBusinessCounter({ negotiation: redactForBusiness(n), business: b, requestedCents: lastAsk, minimumCents });
+  await audit(ctx, actor, "negotiation.business_ai_draft", "negotiation", n.id, { provider: ai.name });
   return { ...draft, lastAsk };
 }
 

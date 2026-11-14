@@ -43,6 +43,7 @@ export interface Store {
   /** Private document blobs. */
   putBlob(key: string, data: Uint8Array, mimeType: string): Promise<void>;
   getBlob(key: string): Promise<{ data: Uint8Array; mimeType: string } | undefined>;
+  deleteBlob(key: string): Promise<void>;
   /**
    * All-or-nothing write. Guards lock their rows and must all hold, otherwise nothing is written
    * and false is returned. Constraint violations throw and roll everything back.

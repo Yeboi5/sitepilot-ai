@@ -82,6 +82,11 @@ export async function ensureBusinessOnboarded(ctx: Ctx, user: User, meta: Record
   return (await ctx.store.get("users", user.id)) ?? user;
 }
 
+export async function setAiConsent(ctx: Ctx, actor: Actor, consent: boolean) {
+  await ctx.store.update("users", actor.userId, { aiProcessingConsent: consent });
+  await audit(ctx, actor, consent ? "privacy.ai_consent_given" : "privacy.ai_consent_withdrawn", "user", actor.userId);
+}
+
 export async function updateSettings(ctx: Ctx, actor: Actor, input: { permissionMode: PermissionMode; autopilotLimitCents: Cents; region: string }) {
   requireRole(actor, "customer");
   if (!["advisory", "approval", "autopilot"].includes(input.permissionMode)) throw new ValidationError("Invalid mode");

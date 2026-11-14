@@ -66,6 +66,17 @@ export class SupabaseStore implements Store {
     if (error) throw new Error(error.message);
   }
 
+  async deleteBlob(key: string) {
+    const { error } = await this.db.storage.from("documents").remove([key]);
+    if (error) throw new Error(error.message);
+  }
+
+  /** Blocks sign-in for a deleted account (the auth identity is kept so financial records stay linked). */
+  async disableAuthUser(userId: string, anonymisedEmail: string) {
+    const { error } = await this.db.auth.admin.updateUserById(userId, { email: anonymisedEmail, ban_duration: "876000h", user_metadata: {} });
+    if (error) throw new Error(error.message);
+  }
+
   async getBlob(key: string) {
     const { data, error } = await this.db.storage.from("documents").download(key);
     if (error || !data) return undefined;

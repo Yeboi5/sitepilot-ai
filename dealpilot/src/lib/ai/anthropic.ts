@@ -4,6 +4,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { formatMoney } from "../domain/money";
 import type { DocumentAnalysis } from "../domain/types";
+import { errorFields, log } from "../log";
 import { MockAIProvider } from "./mock";
 import type { AIProvider, AnalyseDocumentInput, DraftBidInput, DraftCounterInput, DraftMessageInput } from "./types";
 
@@ -55,8 +56,8 @@ export class AnthropicAIProvider implements AIProvider {
       if (res.stop_reason === "refusal" || res.stop_reason === "max_tokens") return null;
       return (res.parsed_output as z.infer<T> | null) ?? null;
     } catch (err) {
-      if (err instanceof Anthropic.APIError) console.error(`[ai] Anthropic API error ${err.status}`);
-      else console.error("[ai] Anthropic call failed");
+      // Never log prompts or document content.
+      log("warn", "ai.call_failed", err instanceof Anthropic.APIError ? { status: err.status } : errorFields(err));
       return null;
     }
   }

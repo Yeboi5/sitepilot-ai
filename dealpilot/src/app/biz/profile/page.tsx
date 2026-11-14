@@ -4,13 +4,15 @@ import { CATEGORIES } from "@/lib/domain/categories";
 import { flash, type SearchParams } from "@/lib/page";
 import { appCtx } from "@/lib/services/app-context";
 import { myBusiness } from "@/lib/services/marketplace";
+import { PrivacyCard } from "@/components/privacy-card";
+import { aiProviderName } from "@/lib/config";
 import { updateProfileAction } from "../../actions/business";
 
 export const metadata = { title: "Business profile" };
 
 export default async function Profile({ searchParams }: { searchParams: SearchParams }) {
   const f = await flash(searchParams);
-  const { actor } = await requireUser("business");
+  const { actor, user } = await requireUser("business");
   const b = await myBusiness(await appCtx(), actor);
   return (
     <>
@@ -32,6 +34,7 @@ export default async function Profile({ searchParams }: { searchParams: SearchPa
           <div><button className="btn-primary" type="submit">Save profile</button></div>
         </form>
       </Card>
+      <div className="mt-4"><PrivacyCard user={user} aiProvider={aiProviderName()} /></div>
       <p className="mt-3 text-xs text-slate-500">Production will verify ABNs, licences and insurance certificates against official registers before showing them as verified.</p>
     </>
   );

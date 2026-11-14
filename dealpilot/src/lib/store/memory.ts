@@ -112,6 +112,10 @@ export class MemoryStore implements Store {
     this.blobs.set(key, { data: new Uint8Array(data), mimeType });
   }
 
+  async deleteBlob(key: string) {
+    this.blobs.delete(key);
+  }
+
   async getBlob(key: string) {
     const b = this.blobs.get(key);
     return b ? { data: new Uint8Array(b.data), mimeType: b.mimeType } : undefined;

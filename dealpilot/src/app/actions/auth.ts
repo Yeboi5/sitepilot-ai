@@ -129,3 +129,26 @@ export async function verifyMfaAction(fd: FormData) {
     return home(state.user.role);
   }, (dest) => dest, back, "Two-step verification confirmed");
 }
+
+// ─── Privacy (any role) ─────────────────────────────────────────────────────
+
+export async function setAiConsentAction(fd: FormData) {
+  const { actor, user } = await requireUser();
+  const back = user.role === "business" ? "/biz/profile" : "/app/settings";
+  const { setAiConsent } = await import("@/lib/services/accounts");
+  await act(async () => setAiConsent(await appCtx(), actor, fd.get("consent") === "on"), () => back, back, "Privacy settings saved");
+}
+
+export async function deleteAccountAction(fd: FormData) {
+  const { actor, user } = await requireUser();
+  const back = user.role === "business" ? "/biz/profile" : "/app/settings";
+  const { deleteMyAccount } = await import("@/lib/services/privacy");
+  await act(async () => {
+    const ctx = await appCtx();
+    const disable = authDriver() === "supabase"
+      ? async (id: string, email: string) => { const { SupabaseStore } = await import("@/lib/store/supabase"); await new SupabaseStore().disableAuthUser(id, email); }
+      : undefined;
+    await deleteMyAccount(ctx, actor, str(fd, "confirmEmail"), disable);
+    await destroySession();
+  }, () => "/?notice=Your%20account%20was%20deleted", back);
+}

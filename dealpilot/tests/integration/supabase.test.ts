@@ -216,3 +216,18 @@ describe("Business verification persisted in Supabase", () => {
     expect((await asBen.from("business_credentials").select("id").eq("business_id", actor.businessId!)).data).toHaveLength(0);
   });
 });
+
+describe("Account deletion with Supabase Auth", () => {
+  it("anonymises the profile and blocks sign-in at the Auth layer", async () => {
+    const { deleteMyAccount } = await import("@/lib/services/privacy");
+    const { SupabaseStore } = await import("@/lib/store/supabase");
+    const ctx = supabaseCtx();
+    const email = uniqueEmail("leaver");
+    const { data } = await adminClient().auth.admin.createUser({ email, password: "a-strong-passphrase", email_confirm: true, user_metadata: { name: "Leaver" } });
+    const store = new SupabaseStore(env().url, env().service);
+    await deleteMyAccount(ctx, { userId: data.user!.id, role: "customer" }, email, (id, anon) => store.disableAuthUser(id, anon));
+    expect((await ctx.store.get("users", data.user!.id))?.name).toBe("Deleted user");
+    const attempt = await anonClient().auth.signInWithPassword({ email, password: "a-strong-passphrase" });
+    expect(attempt.error).not.toBeNull();
+  });
+});

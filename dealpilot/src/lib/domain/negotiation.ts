@@ -68,7 +68,7 @@ export const STATE_LABELS: Record<NegotiationState, string> = {
 export const MODE_LABELS: Record<PermissionMode, { label: string; description: string }> = {
   advisory: { label: "Advisory", description: "AI recommends actions only. You contact providers yourself." },
   approval: { label: "Approval", description: "AI prepares every message and decision; nothing is sent or accepted without your explicit confirmation." },
-  autopilot: { label: "Limited Autopilot", description: "AI may send and accept within your spending limit and target price. Everything is audit-logged. Future feature — simulated counterparties only in this prototype." },
+  autopilot: { label: "Limited Autopilot", description: "AI may send counteroffers and propose acceptance within your spending limit and target price. It never transfers money, signs contracts or approves final terms for you. Everything is audit-logged. Future feature — simulated counterparties only." },
 };
 
 // ─── Policy ──────────────────────────────────────────────────────────────────

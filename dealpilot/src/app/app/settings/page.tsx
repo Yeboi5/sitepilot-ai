@@ -4,6 +4,8 @@ import { MODE_LABELS } from "@/lib/domain/negotiation";
 import { flash, type SearchParams } from "@/lib/page";
 import { listMyAudit } from "@/lib/services/accounts";
 import { appCtx } from "@/lib/services/app-context";
+import { PrivacyCard } from "@/components/privacy-card";
+import { aiProviderName } from "@/lib/config";
 import { updateSettingsAction } from "../../actions/customer";
 
 export const metadata = { title: "AI permissions" };
@@ -33,6 +35,7 @@ export default async function Settings({ searchParams }: { searchParams: SearchP
             <button className="btn-primary" type="submit">Save</button>
           </form>
         </Card>
+        <PrivacyCard user={user} aiProvider={aiProviderName()} />
         <Card title="Your activity log">
           <ul className="max-h-[480px] space-y-1 overflow-auto text-sm">
             {log.map((a) => <li key={a.id} className="flex justify-between gap-2 border-b border-slate-100 py-1"><span className="font-mono text-xs">{a.action}</span><span className="text-xs text-slate-500">{relTime(a.at)}</span></li>)}
