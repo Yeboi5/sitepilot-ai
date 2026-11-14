@@ -3,7 +3,8 @@
 import { createRequire } from "node:module";
 
 // Uses a globally installed Playwright (CommonJS) so the app needs no browser dependency.
-const { chromium } = createRequire(import.meta.url)("playwright");
+const require = createRequire(import.meta.url);
+const { chromium } = require("playwright");
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const SHOTS = process.env.SHOTS_DIR;
@@ -21,6 +22,7 @@ async function step(name, fn) {
 async function signIn(page, email) {
   await page.goto(`${BASE}/sign-in`);
   await page.locator(`form:has(input[value="${email}"]) button`).click();
+  await page.waitForURL((u) => !u.pathname.startsWith("/sign-in"), { timeout: 15000 });
   await page.waitForLoadState("networkidle");
 }
 async function expectText(page, text) {
@@ -30,6 +32,31 @@ async function noError(page) {
   const err = await page.locator('[data-flash="error"]').count();
   if (err) throw new Error(`Error banner: ${await page.locator('[data-flash="error"]').first().innerText()}`);
 }
+function totp(secret, now = Date.now()) {
+  const { createHmac } = require("node:crypto");
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const ch of secret.replace(/=+$/, "").toUpperCase()) bits += alphabet.indexOf(ch).toString(2).padStart(5, "0");
+  const key = Buffer.from(bits.match(/.{8}/g).map((b) => parseInt(b, 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(now / 1000 / 30)));
+  const h = createHmac("sha1", key).update(counter).digest();
+  const o = h[h.length - 1] & 0xf;
+  return (((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000) + "").padStart(6, "0");
+}
+
+/** Supabase driver: admins must enrol MFA. Drive the real enrolment UI with a computed TOTP code. */
+async function completeMfaIfRequired(page) {
+  if (!page.url().includes("/mfa/setup")) return;
+  await page.getByRole("button", { name: "Set up authenticator app" }).click();
+  await page.locator("summary", { hasText: "Can't scan" }).click();
+  const secret = (await page.locator("details code").innerText()).trim();
+  await page.fill("#code", totp(secret));
+  await page.getByRole("button", { name: "Turn on two-step verification" }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith("/mfa"), { timeout: 15000 });
+  await noError(page);
+}
+
 async function approveTerms(page) {
   await expectText(page, "Final terms");
   await page.locator('form:has(button:text("Approve final terms")) input[name="confirm"]').check();
@@ -110,10 +137,10 @@ await step("J3: simulated price drop → adjustment alert → claim", async () =
 await step("J4: join group → tier unlocks → simulate growth → take up", async () => {
   await page.goto(`${BASE}/app/groups/${IDS.grpSolar}`);
   await page.getByRole("button", { name: "Join group (free)" }).click();
-  await page.waitForLoadState("networkidle"); await noError(page);
+  await expectText(page, "You joined the group"); await noError(page);
   await expectText(page, "Unlocked");
   await page.getByRole("button", { name: "Simulate 5 neighbours joining" }).click();
-  await page.waitForLoadState("networkidle"); await noError(page);
+  await expectText(page, "Simulated members added"); await noError(page);
   await page.locator('form:has(button:text("Take up deal")) input[name="confirm"]').check();
   await page.getByRole("button", { name: "Take up deal" }).click();
   await page.waitForURL(/\/app\/savings/); await noError(page);
@@ -196,7 +223,34 @@ await step("access control: customer can't open business portal or others' docum
 
 await ctx.clearCookies();
 await signIn(page, "admin@demo.dealpilot.test");
-await step("admin sees audit log and ledger", async () => { await expectText(page, "Audit log"); await expectText(page, "transaction.verified"); });
+await step("admin (with MFA where required) sees audit log, ledger and verification queue", async () => {
+  await page.goto(`${BASE}/admin`);
+  await page.waitForLoadState("networkidle");
+  await completeMfaIfRequired(page);
+  if (!page.url().endsWith("/admin")) await page.goto(`${BASE}/admin`);
+  await expectText(page, "Audit log"); await expectText(page, "transaction.verified");
+  await page.goto(`${BASE}/admin/businesses`);
+  await expectText(page, "Ben's Fencing & Gates");
+});
+
+await ctx.clearCookies();
+await signIn(page, "ben@demo.dealpilot.test");
+await step("business sees its verification status and credentials", async () => {
+  await page.goto(`${BASE}/biz/verification`);
+  await expectText(page, "Verified by DealPilot");
+  await expectText(page, "expires within 30 days");
+});
+
+await ctx.clearCookies();
+await signIn(page, "alex@demo.dealpilot.test");
+await step("privacy controls and energy comparison form render", async () => {
+  await page.goto(`${BASE}/app/settings`);
+  await expectText(page, "Download my data");
+  const res = await page.request.get(`${BASE}/api/account/export`);
+  if (res.status() !== 200 || !(await res.text()).includes("alex@demo.dealpilot.test")) throw new Error(`export failed: ${res.status()}`);
+  await page.goto(`${BASE}/app/energy`);
+  await expectText(page, "Live government data");
+});
 
 await browser.close();
 console.log(failures ? `\n${failures} failure(s)` : "\nAll journeys passed");

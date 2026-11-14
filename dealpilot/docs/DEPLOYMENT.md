@@ -1,42 +1,41 @@
 # Deployment
 
-## Demo deployment (memory driver)
+> Nothing has been deployed. Do not deploy publicly, enable payments, or contact real businesses
+> without explicit approval.
 
-Any Node host works. The in-memory store lives in one server process, so use a **single long-running
-instance** (e.g. a container, Railway, Fly.io, Render). On serverless platforms each instance has its
-own copy of the demo data, which resets on cold starts.
+## Staging (recommended next step)
 
-```bash
-cd dealpilot
-npm ci && npm run build
-SESSION_SECRET="$(openssl rand -base64 48)" npm start   # port 3000
-```
+1. **Supabase project** (Sydney region). Settings to apply in the dashboard:
+   - Auth → Email: confirm email ON; minimum password length 10; custom SMTP (your email provider).
+   - Auth → MFA: TOTP enrol + verify ON.
+   - Auth → URL configuration: Site URL = staging URL; redirect allow-list includes `<staging>/auth/confirm`.
+   - Database → Backups: enable Point-in-Time Recovery before real data.
+2. Apply migrations: `npx supabase link --project-ref <ref>` then `npx supabase db push`.
+3. Demo staging only: regenerate and load the seed (`npm run db:seed`, then run `supabase/seed.sql`
+   in the SQL editor). Never load it into production.
+4. Promote an administrator: `update profiles set role = 'admin' where email = '…';` (they must enrol MFA).
+5. Host the app (Vercel or any Node host) with root directory `dealpilot` and these variables:
 
-## Production (Vercel + Supabase)
-
-1. **Supabase project** (Sydney region for Australian data residency).
-   - Run `supabase/migrations/*.sql` in order (SQL editor, or `supabase db push`).
-   - Confirm the private `documents` bucket exists and has an 8 MB limit.
-   - Don't load `seed.sql` into production.
-2. **Vercel project** with root directory `dealpilot`. Environment variables:
-
-   | Variable | Value |
+   | Variable | Staging value |
    | --- | --- |
    | `DATA_DRIVER` | `supabase` |
-   | `SESSION_SECRET` | 48+ random bytes, base64 |
-   | `NEXT_PUBLIC_SUPABASE_URL` | project URL |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key |
+   | `DEMO_MODE` | `true` for a demo project, otherwise unset |
+   | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | project values |
    | `SUPABASE_SERVICE_ROLE_KEY` | service-role key (**server only**) |
-   | `AI_PROVIDER` / `ANTHROPIC_API_KEY` / `AI_MODEL` | `anthropic`, key, `claude-opus-5-5` |
-   | `SUCCESS_FEE_CENTS` / `FEE_CURRENCY` | `150` / `AUD` |
+   | `NEXT_PUBLIC_APP_URL` | staging URL |
+   | `MFA_REQUIRED_ROLES` | `admin` (add `business` if desired) |
+   | `CLAMD_HOST`, `CLAMD_PORT` | ClamAV service (uploads are refused in production without it) |
+   | `SMTP_URL`, `EMAIL_FROM` | email provider |
+   | `ABR_GUID` | ABN Lookup GUID |
+   | `AI_PROVIDER`, `ANTHROPIC_API_KEY` | optional |
+   | `PAYMENTS_PROVIDER` | `none` |
 
-3. Set the server-action body limit to the upload limit (already 10 MB in `next.config.mjs`).
-4. Smoke test with `BASE_URL=https://… npm run test:e2e` against a **staging** project seeded with
-   `seed.sql`. Never run it against production.
+6. ClamAV: run `clamav/clamav:stable` as a private service (not internet-exposed), with
+   freshclam able to reach `database.clamav.net` for signature updates.
+7. Smoke test: `GET /api/health` should report `database: ok` and `antivirus: clamav`; then run
+   `BASE_URL=<staging> npm run test:e2e` against a **demo** staging project.
 
-## Before real customers use it
+## Production gates
 
-The prototype is not production-ready until the "Production gates" in [ROADMAP.md](ROADMAP.md) are
-done. In particular: real payments, business verification, Supabase Auth with email verification
-and MFA, rate limiting, malware scanning of uploads, monitoring, and legal review of fee disclosure
-and the AI-negotiation terms.
+Production must not take real customers until the items in [HANDOFF.md](HANDOFF.md) "Before public
+launch" and [LEGAL_REVIEW.md](LEGAL_REVIEW.md) are complete.

@@ -1,109 +1,92 @@
 # DealPilot
 
 **Never overpay again.** A universal AI savings and negotiation platform: price discovery, AI-assisted
-negotiation, competitive bidding, group buying, price monitoring and a "Money Guardian", with a
-customer portal and a business portal in one mobile-first Next.js app.
+negotiation, competitive bidding by verified businesses, group buying, price monitoring and a
+"Money Guardian", with customer, business and admin portals in one mobile-first Next.js app.
 
-> **Prototype.** All people, businesses, offers and savings in the demo are fictional and labelled.
-> Every screen distinguishes **Live**, **Simulated** and **Future integration** features — see
-> `/roadmap` in the app or [docs/ROADMAP.md](docs/ROADMAP.md). No real payments are taken.
+> **Status: Phase 2 — real-world foundation.** Real persistence, Supabase Auth with email verification and
+> MFA, atomic deal/verification/ledger writes, business verification, and one live government data
+> integration. Tested end to end against a local Supabase stack; **not yet deployed or connected to a
+> hosted project.** Demo data is fictional and every simulated item is labelled. No real charges are
+> taken. See [docs/HANDOFF.md](docs/HANDOFF.md).
 
-## Quick start (no accounts or keys needed)
+## Two ways to run it
 
-Requires Node 20.18+.
+### 1. In-memory demo (no setup)
 
 ```bash
 cd dealpilot
 npm install
-cp .env.example .env.local   # defaults: in-memory data, offline AI, $1.50 fee
-npm run dev                  # http://localhost:3000
+cp .env.example .env.local      # DATA_DRIVER=memory
+npm run dev                     # http://localhost:3000 → /sign-in → click a demo account
 ```
 
-Open `/sign-in` and click a demo account, then follow `/journeys`.
+### 2. Real persistence with a local Supabase stack (needs Docker)
 
-| Demo account | Role | Used in |
+```bash
+npm run supabase:start          # Postgres, Auth, Storage, Mailpit (emails) — applies migrations + demo seed
+npx supabase status -o env      # copy API_URL, ANON_KEY, SERVICE_ROLE_KEY into .env.local:
+#   DATA_DRIVER=supabase  DEMO_MODE=true  NEXT_PUBLIC_SUPABASE_URL=…  NEXT_PUBLIC_SUPABASE_ANON_KEY=…
+#   SUPABASE_SERVICE_ROLE_KEY=…  NEXT_PUBLIC_APP_URL=http://localhost:3000  SMTP_URL=smtp://127.0.0.1:54325
+npm run dev
+```
+
+Sign-up confirmation emails and notifications appear in Mailpit at http://127.0.0.1:54324. The admin
+demo account must enrol an authenticator app on first sign-in (MFA is mandatory for admins).
+Reset the database any time with `npx supabase db reset`.
+
+Optional services: ClamAV (`docker run -d -p 3310:3310 clamav/clamav:stable`, then `CLAMD_HOST=127.0.0.1`),
+an ABN Lookup GUID (`ABR_GUID`), and `AI_PROVIDER=anthropic` with `ANTHROPIC_API_KEY`.
+
+## Demo accounts (fictional)
+
+| Account | Role | Used in |
 | --- | --- | --- |
 | `alex@demo.dealpilot.test` | Customer | Journeys 1, 2, 3, 4, 6 |
 | `priya@demo.dealpilot.test` | Customer | Purchasing-group member |
-| `ben@demo.dealpilot.test` | Business — Ben's Fencing & Gates | Journeys 5, 6 |
+| `ben@demo.dealpilot.test` | Business — Ben's Fencing & Gates (verified demo business) | Journeys 5, 6 |
 | `erin@demo.dealpilot.test` | Business — Bright Energy Co-op | Bulk offers |
-| `admin@demo.dealpilot.test` | Admin | Audit log, ledger, demo reset |
+| `admin@demo.dealpilot.test` | Admin | Audit, ledger, business verification |
 
-Password for all: `DealPilotDemo!2026`. The in-memory store resets when the server restarts, or from
-the admin page.
+Password for all: `DealPilotDemo!2026`. One-click demo sign-in is available only with the memory
+driver or `DEMO_MODE=true`.
 
-### The six demonstration journeys
+## The real workflow
 
-1. **$5,500 fencing quote → competing bids.** Analysed quote, three offers compared on price, scope,
-   materials, warranty, licence/insurance, completion time and *verified* reviews only.
-2. **$120/month internet bill.** Approval mode: approve the AI's opening ask, the simulated provider
-   counters at $102, AI recommends $93, approve, agree, verify → $324/yr saved.
-3. **Retail price drop.** "Simulate feed update" drops the headphones from $449 to $399 inside the
-   30-day adjustment window → alert → claim → verify.
-4. **Group offer.** Joining the Sydney solar bulk-buy unlocks the 5-member tier ($6,600); simulated
-   neighbours unlock the 10-member tier ($6,100).
-5. **Business counteroffer.** Ben sees the request (customer identity hidden), drafts a counter with
-   AI, approves and sends it.
-6. **Approve & verify.** Alex counters, Ben accepts, Alex confirms the final invoice → verified
-   saving, $1.50 success fee recorded (simulated) in the append-only ledger.
+1. Customer uploads a quote or bill → malware scan → private storage → AI extraction (external AI only
+   with consent).
+2. Customer **reviews and corrects** the extracted details; only confirmed values are used.
+3. Customer creates a purchase request; matching **verified** businesses are notified.
+4. Businesses submit genuine offers (AI may draft; a person must approve).
+5. Customer compares offers on price, scope, materials, warranty, **verified** licence/insurance,
+   completion time and reviews from verified jobs, then negotiates.
+6. **Both parties explicitly approve the final terms.** AI never approves, signs or pays.
+7. Customer confirms the final invoiced amount; savings are recalculated from it.
+8. A AUD $1.50 fee is **assessed** once per completed, verified, qualifying saving, capped at the
+   saving. Payments are disabled, so nothing is charged.
 
 ## Configuration
 
-All settings are in [.env.example](.env.example). Anything without `NEXT_PUBLIC_` stays on the server.
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `DATA_DRIVER` | `memory` | `memory` (seeded demo) or `supabase` |
-| `SESSION_SECRET` | dev value | HMAC key for session cookies. **Required (32+ chars) in production** |
-| `AI_PROVIDER` | `mock` | `mock` (offline, deterministic) or `anthropic` |
-| `ANTHROPIC_API_KEY` | — | Server-only. Read only in `src/lib/ai/anthropic.ts` |
-| `AI_MODEL` | `claude-opus-5-5` | Model for the Anthropic provider |
-| `SUCCESS_FEE_CENTS` | `150` | Fee per verified, completed saving |
-| `FEE_CURRENCY` | `AUD` | Ledger currency |
-| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | — | Supabase driver |
-
-### AI integration
-
-`src/lib/ai/types.ts` defines the provider interface (document analysis, negotiation messages, bid
-drafts, business counters). Two implementations:
-
-- **Mock** — offline, free, deterministic; reads text files and uses simulated benchmark ranges.
-- **Anthropic** — Claude via `@anthropic-ai/sdk`, structured outputs validated with zod, reads PDFs
-  and images, with server-side refusal fallbacks enabled (`fallbacks: "default"`). Any error or
-  refusal falls back to the mock so the app keeps working, and the analysis is labelled with the
-  provider that produced it.
-
-Money decisions — targets, accept/counter/escalate, autopilot limits — are deterministic domain code.
-The AI only extracts facts and writes wording, and it can never change a price.
-
-### Supabase
-
-```bash
-npx supabase start                       # or use a hosted project
-psql "$DATABASE_URL" -f supabase/migrations/20261113000000_dealpilot_core.sql
-npm run db:seed && psql "$DATABASE_URL" -f supabase/seed.sql   # optional demo data
-```
-
-Then set `DATA_DRIVER=supabase`, `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Demo
-document files aren't in `seed.sql`; upload your own. The Supabase driver is implemented and the
-schema is tested, but the full app has not yet been run end-to-end against a hosted project — see
-the roadmap.
+See [.env.example](.env.example). Key settings: `DATA_DRIVER`, `DEMO_MODE`, `MFA_REQUIRED_ROLES`,
+`MARKET` (AU/NZ/GB), `SUCCESS_FEE_CENTS`, `PAYMENTS_PROVIDER` (stays `none`), `AI_PROVIDER`,
+`CLAMD_HOST`, `SMTP_URL`, `ABR_GUID`, `CDR_ENERGY_BRANDS`.
 
 ## Tests
 
-| Command | What it covers |
-| --- | --- |
-| `npm test` | 36 unit + workflow tests: money, fees, savings, state machine, autopilot guard, sessions, uploads, guardian, and all six journeys through the service layer, including permission checks |
-| `npm run test:db` | Applies the migrations and seed to plain PostgreSQL (`TEST_DATABASE_URL`) and checks 24 rules: savings/fee constraints, append-only ledger and audit, idempotent fees, human-approved offers, RLS isolation, private storage |
-| `npm run test:e2e` | Drives all six journeys in a phone-sized Chromium against a running server (`BASE_URL`). Needs Playwright installed |
-| `npm run check` | typecheck + unit tests + production build |
+| Command | Covers | Needs |
+| --- | --- | --- |
+| `npm test` | 68 unit/workflow tests: domain rules, all six journeys, dual approval, concurrency (simultaneous verifications, verify-vs-cancel races, stale writes, rollback), verification gating, reviews, uploads/malware, AI consent, energy costing, notifications, payments disabled, privacy | nothing |
+| `npm run test:integration` | 20 tests against **real services**: Supabase Auth sign-up + email confirmation (Mailpit), role escalation, TOTP MFA, RLS with real user tokens, persistence, concurrent verification, DB-level guards, Storage privacy, rate limits, business verification, account deletion, SMTP delivery, ClamAV (if running), Energy Made Easy (with `LIVE_NETWORK=1`) | local Supabase stack |
+| `npm run test:db` | 24 schema/RLS checks on plain PostgreSQL (fast, no Docker) | PostgreSQL |
+| `npm run test:e2e` | Browser walk-through of all six journeys plus verification, MFA, privacy and energy pages at phone size; run against either driver (`BASE_URL`) | running app, Playwright |
 
-CI: [.github/workflows/dealpilot.yml](../.github/workflows/dealpilot.yml).
+## Documentation
 
-## More
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): modules, data model, security
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): Vercel + Supabase
-- [docs/ROADMAP.md](docs/ROADMAP.md): prototype vs production integrations
+- [docs/HANDOFF.md](docs/HANDOFF.md): status, test results, open issues, credentials needed, next stage
+- [docs/PHASE2_AUDIT.md](docs/PHASE2_AUDIT.md): pre-Phase-2 audit
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): modules, data model, integrity model
+- [docs/SECURITY.md](docs/SECURITY.md): controls, monitoring, backups, incidents
+- [docs/LEGAL_REVIEW.md](docs/LEGAL_REVIEW.md): items for specialist review before launch
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) · [docs/ROADMAP.md](docs/ROADMAP.md)
 
 DealPilot provides general information only, not financial, legal or insurance advice.

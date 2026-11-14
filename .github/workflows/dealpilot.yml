@@ -29,6 +29,7 @@ jobs:
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
       # Build/test placeholders only. No real secrets are needed.
       SESSION_SECRET: ci-only-session-secret-not-used-anywhere-else
+      UPLOAD_ANTIVIRUS_REQUIRED: "false"
       AI_PROVIDER: mock
       DATA_DRIVER: memory
     steps:
@@ -51,3 +52,38 @@ jobs:
           (npm start -- -p 3100 &)
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3100/ && break; sleep 1; done
           BASE_URL=http://localhost:3100 npm run test:e2e
+
+  integration:
+    # Real-service tests: local Supabase stack (Postgres, Auth, Storage, Mailpit) + ClamAV.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dealpilot
+    services:
+      clamav:
+        image: clamav/clamav:stable
+        ports: ["3310:3310"]
+    env:
+      CLAMD_HOST: 127.0.0.1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dealpilot/package-lock.json
+      - run: npm ci
+      - run: npm run supabase:start
+      - name: Wait for ClamAV
+        run: for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/3310) 2>/dev/null && break; sleep 5; done
+      - run: npm run test:integration
+      - name: Browser journeys on the Supabase driver
+        run: |
+          eval "$(npx supabase status -o env | grep -E '^(ANON_KEY|API_URL|SERVICE_ROLE_KEY)=')"
+          npx supabase db reset
+          export DATA_DRIVER=supabase DEMO_MODE=true NEXT_PUBLIC_SUPABASE_URL=$API_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY NEXT_PUBLIC_APP_URL=http://localhost:3200
+          npm run build
+          (npm start -- -p 3200 &)
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3200/ && break; sleep 1; done
+          npm install --no-save playwright && npx playwright install --with-deps chromium
+          BASE_URL=http://localhost:3200 npm run test:e2e

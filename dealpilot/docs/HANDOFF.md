@@ -1,174 +1,154 @@
-# DealPilot: build status handoff
+# DealPilot: Phase 2 handoff ("Real-World Foundation")
 
-*Written for a planning assistant (e.g. ChatGPT) helping shape the project. It describes what has
-actually been built from the original "DealPilot — Universal AI Savings & Negotiation Platform"
-prompt, what was decided along the way, and what is still open.*
+*For the product owner and any planning assistant (e.g. ChatGPT). Describes what Phase 2 delivered,
+how it was tested, what is still open, which credentials are needed, and the recommended next stage.*
 
-## 1. Where the code lives
+- Code: repository `yeboi5/sitepilot-ai`, branch `claude/dealpilot-platform-oe3fya`, folder `dealpilot/`.
+- Audit done before coding: [PHASE2_AUDIT.md](PHASE2_AUDIT.md).
+- Nothing was deployed, no real charges were enabled, and no external business was contacted.
 
-- Repository: `yeboi5/sitepilot-ai`, branch `claude/dealpilot-platform-oe3fya`.
-- The repo already contained a different product (**SitePilot AI**, an Australian property app).
-  DealPilot was built as a **separate, self-contained app in the `dealpilot/` folder** with its own
-  `package.json`, so SitePilot was not touched. Moving DealPilot to its own repository later is easy.
-- Run locally with no accounts or keys:
-  `cd dealpilot && npm install && cp .env.example .env.local && npm run dev`, then open `/sign-in`
-  and click a demo account. `/journeys` walks through the six demo journeys; `/roadmap` lists what
-  is live, simulated or future.
+## 1. Summary
 
-## 2. Status in one paragraph
+DealPilot now has a real data foundation: Supabase persistence and Auth (email verification, MFA),
+all-or-nothing and concurrency-safe deal, verification and ledger writes, both-party approval of final
+terms, a qualifying-fee model, business verification, verified-job reviews, malware scanning, rate
+limiting, privacy controls, and one live, compliant data integration (Energy Made Easy).
+All modules from Phase 1 are preserved, and all six demo journeys still pass on both the in-memory
+demo and real Supabase persistence.
 
-A complete, navigable, mobile-first prototype of both portals (customer and business) plus an
-admin page. All six required demo journeys work end to end and are covered by automated tests
-(36 unit/workflow tests, 24 database integrity and access-control checks, and a browser
-walk-through of all six journeys at phone size). It runs on seeded, clearly labelled fictional
-data held in memory. The production database schema for Supabase exists and is tested, but the
-full app has not yet been run against a real Supabase project. No real payments are taken and no
-real companies are contacted.
+**Testing caveat:** every Supabase feature was tested against a **local Supabase stack** (the same
+Postgres, Auth, REST and Storage services a hosted project runs), not a hosted staging project, because
+no staging credentials were provided. Nothing should be called production-ready until the suites below
+pass against hosted staging.
 
-## 3. Technology (as requested)
+## 2. Product decisions implemented
 
-Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres schema, row-level
-security, private storage) · zod · Vitest · Playwright · Anthropic Claude SDK (optional).
-Architecture is a **modular monolith** with four layers:
+| Decision | How it's implemented |
+| --- | --- |
+| Free customer registration | Unchanged; sign-up is free |
+| $1.50 once per completed, verified, qualifying saving, capped | `assessFee()`: verified + saving > 0 + real counterparty → `min($1.50, saving)`; one `fee_assessed` ledger entry per transaction (unique key); simulated deals never qualify |
+| Recurring savings monthly + projected annual; realised vs projected | Dashboard and savings page show Realised (verified), Recurring/month, Projected 12 months, Pending — separately |
+| Businesses free during launch | No business fees; transactions page says so |
+| No deposits or binding group commitments | Group take-up records a deal only; nothing is collected |
+| Australia first, configurable markets | `MARKET` (AU/NZ/GB): currency, tax rate, regulator and privacy regime; currency and jurisdiction stored on transactions |
+| AI never moves money, signs, or exceeds permission | AI drafts only; Autopilot can propose but never approves final terms; payments disabled; AI only sees user data with consent |
+| Commissions disclosed and never affect rankings | Ranking inputs have no payment fields (documented in code); legal review item |
 
-| Layer | Folder | Responsibility |
+## 3. Completed work by stage
+
+1. **Data foundation.**
+   - Phase 2 migration.
+   - Profiles are created from Supabase Auth by a trigger; nobody can sign up as an admin.
+   - Supabase Auth with httpOnly SSR cookies, email confirmation, and TOTP MFA (mandatory for admins).
+   - `Store.atomic` / `apply_batch()`: row-locked, guarded, all-or-nothing writes.
+   - Optimistic concurrency on negotiations.
+   - Postgres-backed rate limiter.
+   - Demo seed with real Auth users.
+2. **Workflow corrections.**
+   - Customers review and correct AI extraction; only confirmed values are used.
+   - Both parties must approve the final terms (with recorded exemptions for simulated counterparties, retailer adjustments and pre-approved group offers).
+   - Realised vs projected savings.
+   - The comparison shows *verified* credentials, never self-declared ones.
+3. **Business verification.**
+   - ABN checksum and an ABN Lookup client; manual confirmation by an administrator when ABN Lookup isn't configured.
+   - Licence and insurance with evidence and expiry; an administrator must review them.
+   - Admin verify/reject/suspend, with blockers.
+   - Only verified businesses with current credentials can submit offers or agree deals, enforced in the service and by a database trigger.
+   - Reviews only from verified, real jobs, also enforced in the database.
+4. **Integrations.**
+   - **Live: Energy Made Easy (AER) Consumer Data Right plan data.** Single-rate tariffs are costed for a postcode and usage, labelled as estimates including GST, with eligibility, discounts and controlled load flagged.
+   - SMTP email notifications.
+   - Pricing-source registry.
+   - Payment interface (disabled).
+   - Market configuration.
+5. **Security and reliability.**
+   - Malware scanning before storage: ClamAV, failing closed in production.
+   - AI consent for both documents and drafting.
+   - Rate limits on sign-in, sign-up, MFA, uploads, AI calls, pricing lookups and exports.
+   - Data export and account deletion (anonymised; financial records retained).
+   - `/api/health`, structured JSON logs, CSP/HSTS and other security headers.
+   - [SECURITY.md](SECURITY.md) (controls, monitoring, backups, incidents) and [LEGAL_REVIEW.md](LEGAL_REVIEW.md).
+6. **Regression.** Both drivers, all suites. CI now has an integration job with Supabase and ClamAV.
+
+## 4. Test results (final run)
+
+| Suite | Result | Against |
 | --- | --- | --- |
-| Pages & forms | `src/app/` | UI and server actions; parses forms only |
-| Services | `src/lib/services/` | Permissions, state changes, ledger, audit log, notifications |
-| Domain rules | `src/lib/domain/` | Pure logic: money, categories, savings, negotiation, offers, groups, monitoring, guardian |
-| Adapters | `src/lib/store/`, `ai/`, `auth/` | Data storage (memory or Supabase), AI (mock or Claude), sessions |
+| Type check | Pass | — |
+| Unit/workflow (`npm test`) | **68/68** | In-memory store |
+| Schema/RLS on plain Postgres (`npm run test:db`) | **24/24** | PostgreSQL 16 with Supabase shim |
+| Integration (`npm run test:integration`) | **20/20** | Local Supabase stack (Auth, Postgres 17, Storage, Mailpit), real ClamAV daemon, live Energy Made Easy API |
+| Browser journeys (`npm run test:e2e`) — memory driver | **14/14** | Production build |
+| Browser journeys — Supabase driver | **14/14** | Production build on local Supabase, incl. admin MFA enrolment through the UI |
 
-## 4. What was built, mapped to the original prompt
+Covered explicitly:
+- **Persistence:** read-back from a fresh connection.
+- **Permissions:** cross-user RLS with real user tokens, anonymous access, role escalation, business redaction, suspended businesses.
+- **Negotiation approval:** both parties required; Autopilot can't approve.
+- **Fee calculation:** qualifying vs simulated, capped, waived, assessed only.
+- **Concurrency:** three simultaneous verifications produce one fee; verify-vs-cancel races; stale writes are rejected.
+- **Duplicate transactions:** unique ledger keys; rollback of failed batches.
+- **Failed integrations:** energy source down, scanner down (uploads fail closed), SMTP failure (logged, non-fatal), ABN Lookup not configured.
 
-| Prompt section | Built | Notes |
+CI workflows were updated but **have not run on GitHub yet** (this environment can't trigger them).
+
+### Bugs found by testing against real services
+- The EICAR malware test string in the built-in scanner was wrong. Only the real ClamAV test exposed it; fixed.
+- `@supabase/ssr` sets the auth cookie readable by scripts by default; now forced `httpOnly`.
+
+## 5. Unresolved issues and limitations
+
+1. **No hosted staging yet**, so everything Supabase-related is verified locally only.
+2. **ABN Lookup** needs a GUID; until then an administrator confirms ABNs manually on abr.business.gov.au.
+3. **Licence registers** are not checked automatically (no single national API); administrators review evidence.
+4. **Energy estimates** cost single-rate tariffs only. About two-thirds of plans (time-of-use, demand, seasonal) are shown as "not costed".
+   - GST treatment assumes CDR prices are GST-exclusive. **Please confirm** (`CDR_PRICES_INCLUDE_GST`).
+   - Conditional discounts, solar feed-in and controlled load are excluded.
+5. **Negotiation with external providers** (telcos, insurers) remains simulated until authorised integrations exist; it is labelled throughout.
+6. **CSP** still allows inline scripts (Next.js); a nonce-based CSP is a follow-up.
+7. The Supabase driver's `list()` reads at most 1,000 rows and some filtering happens in the app. Fine for staging; needs paging and indexes for scale.
+8. The rate limiter keys on `x-forwarded-for`, so it depends on the host setting it correctly.
+9. Account deletion is a sequence of idempotent steps, not one transaction. A retry completes it.
+10. Demo staging requires `MFA_REQUIRED_ROLES` admins to enrol an authenticator; this is intentional.
+
+## 6. Credentials and accounts required
+
+| Needed for | What to provide | Where it goes |
 | --- | --- | --- |
-| 1. Consumer portal | Yes | Dashboard, documents + AI analysis, requests & bid comparison, negotiation centre, group buying, price monitor, Money Guardian, savings & ledger, AI permission settings |
-| 1. Business portal | Yes | Registration/profile (categories, regions, licence, insurance, ABN), matching requests, AI-drafted bids, negotiation inbox, bulk group offers, acquisition dashboard, transactions |
-| 2. Universal categories | Yes | 10 categories in one registry (`domain/categories.ts`): trades, energy, telco, insurance, vehicle, retail, subscriptions, cleaning, moving, custom. Each defines its own fields, comparison weights, licence/insurance requirements and negotiation levers. Nothing is fencing-specific |
-| 3. AI negotiation + 3 modes | Yes | Shared state machine for every category. Advisory, Approval and Limited Autopilot all implemented (Autopilot restricted to simulated counterparties) |
-| 4. Competitive bidding | Yes | Compares total price, scope, materials, warranty, licence/insurance, completion time, and reviews only when verified. AI-drafted bids stay private until a person at the business approves them |
-| 5. Collective bargaining | Yes | Groups with eligibility, region limits, tiered volume pricing, expiry, savings per member; businesses publish tiers; members take up the deal |
-| 6. Price monitoring | Yes | Retail drops, price-adjustment windows, target prices, bill increases, subscription renewals, contract expiry. Data only from manual entry, approved APIs or a labelled simulated feed. No scraping |
-| 7. Money Guardian | Yes | CSV/manual statements → duplicate charges, subscriptions, price increases. Never asks for bank passwords or moves money |
-| 8. Revenue model | Yes (simulated) | Configurable fee, default AUD $1.50 per verified, completed saving. No fee if unsuccessful. Recorded in a ledger, never actually charged |
-| 9. Technical requirements | Yes | Auth, roles, schema, private document storage, AI abstraction, category config, state machine, offers, ledger, savings maths, audit log, responsive dashboards. AI keys server-side only |
-| 10. Six demo journeys | Yes | See section 6 |
-| 12. Deliverables | Yes | Source, migrations, seeded demo accounts, AI config, `.env.example`, setup/deployment docs, tests, roadmap, CI workflow |
+| **Staging (blocking)** | Supabase project URL, anon/publishable key, service-role key | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
+| App hosting | Vercel (or other Node host) project | — |
+| Email | Transactional email provider with SMTP (Postmark, SES, Resend…) and a sending domain | `SMTP_URL`, `EMAIL_FROM`; also Supabase Auth custom SMTP |
+| Malware scanning | A private ClamAV service | `CLAMD_HOST`, `CLAMD_PORT` |
+| ABN checks | ABN Lookup web services GUID (free) | `ABR_GUID` |
+| AI (optional) | Anthropic API key | `ANTHROPIC_API_KEY`, `AI_PROVIDER=anthropic` |
+| Later, with approval only | Stripe account (test mode first) | not wired yet |
 
-## 5. Key product and engineering decisions made during the build
+No secrets are stored in the repository.
 
-These were decided independently because the prompt allowed it. Please review them.
+## 7. Before public launch
 
-1. **Money decisions are rule-based, not AI.** Targets, when to accept, counter or escalate, and
-   autopilot limits are fixed code. The AI only reads documents and writes message wording; it can
-   never change a price.
-2. **Savings count only after the customer confirms the final invoice.** An agreed deal sits as
-   "pending verification". On confirmation, the saving is recalculated from the *invoiced* amount
-   (so a higher invoice lowers the saving), and only then is the fee calculated.
-3. **The fee is capped at the amount saved.** A $1 saving costs $1, not $1.50. One fee per
-   verified transaction, even if the saving is recurring.
-4. **Recurring savings are shown as 12-month totals** (e.g. $27/month → $324/year).
-5. **Businesses never see** the customer's target price, the AI's notes, competing bid prices, or
-   the customer's identity before acceptance (sealed bidding).
-6. **Offers missing a required licence or insurance never rank above compliant offers**, even when
-   cheaper.
-7. **Limited Autopilot** only acts when: the customer chose it, a spending limit is set, the amount
-   is within it, any acceptance is at or below target, and the counterparty is simulated. Otherwise
-   it falls back to asking for approval. Every autonomous action is audit-logged.
-8. **Human approval is required** for every business offer and every customer message in Approval
-   mode (an explicit "I approve" tick box).
-9. **Sign-in uses the app's own secure session cookies** (scrypt passwords, signed httpOnly
-   cookies), the same for both data modes. Supabase Auth is a roadmap item.
-10. **The ledger and audit log are append-only**, and each fee has a unique key so it can't be
-    recorded twice. These rules are enforced in code and again by database constraints.
+- All suites passing against hosted staging; restore drill completed (see SECURITY.md).
+- Legal review items 1–19 in LEGAL_REVIEW.md, especially fee disclosure, savings claims, AI-agent
+  authority, privacy policy and overseas disclosure, and energy comparison rules.
+- Real email provider, ClamAV with signature updates, monitoring alerts on `/api/health` and logs.
+- Administrator MFA enforced; admin accounts created only via SQL.
+- Real businesses verified through the admin workflow; demo data never loaded into production.
 
-## 6. The six demo journeys (all passing)
+## 8. Recommended next stage — "Phase 3: staging and closed pilot"
 
-| # | Journey | Demo account | What happens |
-| --- | --- | --- | --- |
-| 1 | $5,500 fencing quote → competing bids | Alex (customer) | Quote analysed (line items, risks, fair-price range); 3 offers compared: $4,400 (no licence, no insurance), $4,950, $5,100 (registered demo business, 7-year warranty) |
-| 2 | $120/month internet bill | Alex | Approve AI's ask of $84 → simulated provider counters $102 → AI recommends $93 → approve → agreed → verify: $27/month, $324/year saved |
-| 3 | Retail price drop | Alex | Headphones bought at $449 drop to $399 within a 30-day adjustment window → alert → claim → verify $50 saving |
-| 4 | Group buying | Alex | Joining the Sydney solar bulk-buy unlocks the 5-member tier ($6,600 vs $7,500); more members unlock $6,100 |
-| 5 | Business counteroffer | Ben (business) | Sees the request without customer identity; AI drafts a counter; Ben approves and sends |
-| 6 | Approve deal & verify savings | Alex + Ben | Alex counters, Ben accepts, Alex confirms the invoice → verified saving, $1.50 fee recorded (simulated) |
+1. Provide staging credentials. Then: run migrations, run `test:integration` and `test:e2e` against
+   staging, connect email and ClamAV, add the ABR GUID.
+2. Complete the legal review and publish terms, privacy policy and fee disclosure.
+3. Closed pilot: one category and region (e.g. fencing in Sydney), a handful of real verified
+   businesses, customers you invite. Fees stay assessed-only.
+4. Improve energy costing (time-of-use, seasonal, solar) and add a "switch" hand-off.
+5. Hardening: nonce-based CSP, dependency scanning, error tracking, Supabase log alerts.
+6. Only after pilot results and approval: payments (Stripe), then provider integrations.
 
-Demo password for all accounts: `DealPilotDemo!2026`. Accounts: `alex@`, `priya@`, `ben@`,
-`erin@`, `admin@demo.dealpilot.test`.
+## 9. Decisions still needed from the product owner
 
-## 7. Live vs simulated vs future
-
-| Area | Live (works on real platform data) | Simulated (demo only, labelled) | Future (designed, not connected) |
-| --- | --- | --- | --- |
-| Accounts | Sign-up/in, sessions, customer/business/admin roles | — | Supabase Auth, email verification, MFA |
-| Documents | Private upload, file checks, AI analysis | Fair-price benchmark ranges | Licensed price datasets |
-| Marketplace | Requests, business offers, AI bids with approval, comparison | Fictional bidders | ABN/licence/insurance verification, verified reviews |
-| Negotiation | State machine, Advisory/Approval modes, on-platform business negotiation | Replies from external providers (telcos, energy, insurers) | Authorised provider integrations; Autopilot with real providers |
-| Group buying | Groups, tiers, volume offers, take-up | Seeded groups, placeholder members | Matching, committed/escrowed group purchases |
-| Monitoring | Manual tracking and alert rules | Automatic price feed | Approved retailer/affiliate APIs |
-| Money Guardian | CSV/manual analysis | — | Read-only bank data via Consumer Data Right |
-| Revenue | Savings maths, verification, ledger | The $1.50 charge | Stripe payments, provider commissions, enterprise partnerships |
-
-## 8. Data model (Supabase / Postgres)
-
-Tables: `categories`, `profiles`, `businesses`, `documents`, `purchase_requests`, `offers`,
-`negotiations` (message thread stored as JSON), `purchasing_groups` (tiered offers as JSON),
-`price_watches` (price history as JSON), `alerts`, `expense_lines`, `transactions`,
-`ledger_entries`, `audit_logs`.
-
-Database-enforced rules include: savings must equal `max(before − after, 0)` and be correctly
-annualised; fees only on verified transactions and never above the saving; real business offers
-need an approving user; ledger and audit are append-only; price data sources limited to manual,
-approved API or simulated. Row-level security lets signed-in users read only their own rows,
-hides password hashes, and keeps negotiations and group member lists server-only.
-
-## 9. Known gaps (honest list)
-
-- Full app not yet run against a real Supabase project (schema and driver exist and are tested
-  in isolation).
-- In-memory demo data resets on server restart; serverless hosting would give each instance its
-  own copy.
-- Some multi-step writes (deal agreed → transaction → ledger) aren't wrapped in a single database
-  transaction yet.
-- No real payments, email/SMS notifications, rate limiting, upload malware scanning, or business
-  verification.
-- The offline AI only reads text files; PDFs and images need the Claude provider and an API key.
-- No legal review yet of fee disclosure, consumer-law savings claims, or AI-agent terms.
-
-## 10. Decisions needed from the product owner
-
-1. Keep DealPilot in this repository, or move it to its own?
-2. Fee model: is "one $1.50 fee per verified deal, capped at the saving" right? Should recurring
-   savings (e.g. a monthly bill) earn a fee once, yearly, or per period?
-3. Should savings on recurring bills be reported as 12-month totals (current) or per period?
-4. Authentication: switch to Supabase Auth (email verification, MFA, social login) next?
-5. Which real integrations first: payments (Stripe), energy plan data, telco partners, retailer
-   price APIs, or Consumer Data Right banking?
-6. Group buying: should joining become a binding commitment (deposit/escrow) once a tier unlocks?
-7. Business side: free for now, or introduce commissions/subscriptions? How should businesses be
-   verified (ABN lookup, licence registers, insurance certificates)?
-8. Launch market: Australia only first (current assumption: AUD, Australian regulators), or
-   multi-country from the start?
-
-## 11. Suggested next build phases
-
-1. Run everything on a staging Supabase project; make agreement → transaction → ledger atomic;
-   move to Supabase Auth.
-2. Stripe for the success fee (charged only on verified savings), with refunds and clear fee
-   disclosure before every acceptance.
-3. Business verification (ABN, licences, insurance expiry) and reviews from verified jobs only.
-4. First real data sources behind the existing interfaces (energy plan data, partner APIs, CDR).
-5. Email/SMS/push notifications and scheduled monitoring.
-6. Production gates: rate limiting, upload scanning, privacy policy, accessibility audit,
-   monitoring, backups, legal review.
-
-## 12. Where to look in the code
-
-- Overview and setup: `dealpilot/README.md`
-- Architecture and security: `dealpilot/docs/ARCHITECTURE.md`
-- Deployment: `dealpilot/docs/DEPLOYMENT.md`
-- Roadmap and production gates: `dealpilot/docs/ROADMAP.md`
-- Category registry: `dealpilot/src/lib/domain/categories.ts`
-- Negotiation state machine and policy: `dealpilot/src/lib/domain/negotiation.ts`
-- Savings and fee rules: `dealpilot/src/lib/domain/savings.ts`
-- Database schema: `dealpilot/supabase/migrations/20261113000000_dealpilot_core.sql`
+1. Staging credentials (see section 6), and who will act as the first DealPilot administrator.
+2. Confirm the GST assumption for Energy Made Easy prices, and whether to show estimates excluding GST too.
+3. Should business accounts also require MFA (`MFA_REQUIRED_ROLES=admin,business`)?
+4. Pilot category and region.
+5. Email sending domain and support contact address.

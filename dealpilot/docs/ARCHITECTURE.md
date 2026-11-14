@@ -28,7 +28,7 @@ levers, a completion label and consumer notes. Adding a category is one object i
 open ─DRAFT_ACTION→ awaiting_approval ─SEND→ awaiting_counterparty ─RECEIVE_COUNTER→ counter_received
   │                       │                        │                                    │
   └──────────────── ESCALATE → escalated ←─────────┴────────────────────────────────────┘
-any active state ─ACCEPT→ agreed ─COMPLETE (verification)→ completed
+any active state ─ACCEPT→ final_approval ─APPROVE_TERMS (both parties)→ agreed ─COMPLETE (verification)→ completed
                  ─REJECT/CANCEL/EXPIRE→ declined | cancelled | expired   (no saving, no fee)
 ```
 
@@ -42,6 +42,17 @@ Transitions are a table in `domain/negotiation.ts`; anything else throws. Permis
 
 Businesses see a **redacted** negotiation: no customer target, no AI analysis, no drafts.
 
+**Final terms (Phase 2).** Accepting a price only *proposes* final terms. A deal is agreed when the
+customer and the business have both approved them, or the business side is formally exempt
+(`simulated` counterparty, `not_applicable` for retailer price adjustments, `pre_approved` for a
+published group offer). Limited Autopilot can propose but never approves for the customer.
+A database constraint rejects an agreed negotiation without these approvals.
+
+**Concurrency.** Every negotiation write carries a `version` guard (optimistic concurrency). Multi-row
+operations use `Store.atomic(guards, ops)`: in Postgres, `apply_batch()` locks guarded rows
+(`SELECT … FOR UPDATE`), checks preconditions and applies all inserts/updates in one transaction or
+none; the memory driver applies the same semantics without awaiting between guard and write.
+
 ## Money and savings integrity
 
 - All amounts are integer cents (`bigint` in SQL). Parsing rejects more than 2 decimals.
@@ -50,8 +61,11 @@ Businesses see a **redacted** negotiation: no customer target, no AI analysis, n
 - A transaction is created as `pending_verification` when a deal is agreed. Savings count, and the
   fee is calculated, only when the customer confirms the **final invoiced amount**. Savings are
   recalculated from that amount, so an invoice that comes in higher reduces the saving.
-- Fee = `min(SUCCESS_FEE_CENTS, saving)`, only for verified savings. Unsuccessful or cancelled deals
-  cost nothing.
+- Fee = `min(SUCCESS_FEE_CENTS, saving)`, assessed once per completed, verified, **qualifying** saving:
+  saving > 0 and a real counterparty (or a saving the customer achieved, such as a retailer price
+  adjustment). Simulated, unsuccessful and cancelled deals never incur a fee. Fees are *assessed*
+  (ledger `fee_assessed`); collection is a separate, disabled payment step.
+- Savings are shown as **realised** (verified) vs **monthly** and **projected 12-month** for recurring bills.
 - The ledger is append-only (DB trigger, memory-store guard) and every entry has a unique
   idempotency key (`fee:<txId>`), so a retried request can't charge twice.
 
@@ -61,6 +75,25 @@ See `supabase/migrations/20261113000000_dealpilot_core.sql`. Tables: `categories
 `businesses`, `documents`, `purchase_requests`, `offers`, `negotiations` (messages as jsonb),
 `purchasing_groups` (tiered offers as jsonb), `price_watches` (history as jsonb), `alerts`,
 `expense_lines`, `transactions`, `ledger_entries`, `audit_logs`.
+
+## Business verification
+
+`domain/verification.ts` + `services/verification.ts`. ABN checksum, then ABN Lookup (or an
+administrator's recorded manual check). Licences and insurance are submitted with evidence and expiry;
+only an administrator (document review or register lookup) marks them verified; the database refuses
+a verified credential without a recorded check. Only an administrator can verify or suspend a
+business, and only once blockers are cleared. Offers from unverified businesses are refused by both
+the service and a database trigger.
+
+## Integrations (`src/lib/integrations`)
+
+| Module | Purpose | Status |
+| --- | --- | --- |
+| `cdr-energy.ts` | Energy Made Easy CDR plans: list, detail, single-rate costing, cache | Live, tested against the public API |
+| `abr.ts` | ABN Lookup JSON client | Built; needs `ABR_GUID` |
+| `scanner.ts` | ClamAV `clamd` INSTREAM + baseline checks | Tested against a real daemon |
+| `notifications.ts` | SMTP email | Tested against Mailpit |
+| `payments.ts` | Fee collection interface; disabled provider | Disabled by design |
 
 ## Security
 
