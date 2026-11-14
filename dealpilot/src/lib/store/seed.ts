@@ -4,7 +4,7 @@ import { getCategory } from "../domain/categories";
 import { evaluateWatch } from "../domain/monitoring";
 import { calculateSavings } from "../domain/savings";
 import type {
-  Alert, Business, ExpenseLine, LedgerEntry, Negotiation, Offer, PriceWatch, PurchaseRequest,
+  Alert, Business, BusinessCredential, ExpenseLine, LedgerEntry, Negotiation, Offer, PriceWatch, PurchaseRequest,
   PurchasingGroup, StoredDocument, Transaction, User,
 } from "../domain/types";
 import type { Store } from "./types";
@@ -83,18 +83,32 @@ export async function seedDemoData(store: Store, now = new Date()): Promise<void
 
   // ─── Businesses ───────────────────────────────────────────────────────────
   const biz = (b: Partial<Business> & Pick<Business, "id" | "name" | "categories" | "regions">): Business => ({
-    description: "", qualifications: [], insured: true, reviewCount: 0, reviewsVerified: false, isSimulated: true, createdAt: iso(-90), ...b,
+    description: "", qualifications: [], insured: true, reviewCount: 0, reviewsVerified: false, isSimulated: true, verificationStatus: "unverified", createdAt: iso(-90), ...b,
   });
+  // Demo businesses operated by demo users are marked verified by the demo admin so the journeys
+  // work. Their ABNs are deliberately absent: they are fictional and must never resemble real ABNs.
+  const demoVerified: Partial<Business> = { verificationStatus: "verified", abnStatus: "admin_confirmed", verifiedAt: iso(-80), verifiedBy: IDS.admin, statusReason: "Fictional demo business — verified for demonstration only" };
   const businesses: Business[] = [
-    biz({ id: IDS.bBen, ownerId: IDS.ben, name: "Ben's Fencing & Gates (demo)", categories: ["trades"], regions: ["Sydney NSW"], description: "Colorbond, timber and pool fencing across Sydney. Demo business account.", qualifications: ["Licensed fencing contractor (demo)", "Public liability $10m (demo)"], licenceNumber: "DEMO-LIC-48213", rating: 4.8, reviewCount: 3, reviewsVerified: true, isSimulated: false }),
+    biz({ id: IDS.bBen, ownerId: IDS.ben, name: "Ben's Fencing & Gates (demo)", categories: ["trades"], regions: ["Sydney NSW"], description: "Colorbond, timber and pool fencing across Sydney. Demo business account.", qualifications: ["Licensed fencing contractor (demo)", "Public liability $10m (demo)"], licenceNumber: "DEMO-LIC-48213", isSimulated: false, ...demoVerified }),
     biz({ id: IDS.bHarbour, name: "Harbour Fence Co (simulated)", categories: ["trades"], regions: ["Sydney NSW"], qualifications: ["Licensed (simulated)"], licenceNumber: "SIM-LIC-11822", rating: 4.5, reviewCount: 41 }),
     biz({ id: IDS.bBudget, name: "Budget Boundaries (simulated)", categories: ["trades"], regions: ["Sydney NSW"], insured: false, rating: 3.9, reviewCount: 12 }),
-    biz({ id: IDS.bErin, ownerId: IDS.erin, name: "Bright Energy Co-op (demo)", categories: ["energy"], regions: ["Australia-wide"], description: "Community energy retailer. Demo business account.", qualifications: ["Authorised retailer (demo)"], licenceNumber: "DEMO-RET-0091", isSimulated: false }),
+    biz({ id: IDS.bErin, ownerId: IDS.erin, name: "Bright Energy Co-op (demo)", categories: ["energy"], regions: ["Australia-wide"], description: "Community energy retailer. Demo business account.", qualifications: ["Authorised retailer (demo)"], licenceNumber: "DEMO-RET-0091", isSimulated: false, ...demoVerified }),
     biz({ id: IDS.bStreamline, name: "StreamLine Broadband (simulated)", categories: ["telco"], regions: ["Australia-wide"] }),
     biz({ id: IDS.bSunpeak, name: "SunPeak Solar (simulated)", categories: ["energy", "trades"], regions: ["Sydney NSW"], licenceNumber: "SIM-CEC-5521", qualifications: ["Accredited installer (simulated)"] }),
     biz({ id: IDS.bAutocare, name: "Inner West Autocare (simulated)", categories: ["vehicle"], regions: ["Sydney NSW"], licenceNumber: "SIM-MVR-7712" }),
   ];
   for (const b of businesses) await store.insert("businesses", b);
+  const cred = (c: Partial<BusinessCredential> & Pick<BusinessCredential, "id" | "businessId" | "kind" | "reference">): BusinessCredential => ({
+    issuer: "", jurisdiction: "NSW", status: "verified", checkMethod: "admin_document_review", checkedBy: IDS.admin, checkedAt: iso(-80),
+    notes: "Demo credential — fictional, reviewed by the demo admin", createdAt: iso(-85), ...c,
+  });
+  const credentials: BusinessCredential[] = [
+    cred({ id: sid(1101), businessId: IDS.bBen, kind: "licence", reference: "DEMO-LIC-48213", issuer: "NSW Fair Trading (demo)", expiresAt: iso(300) }),
+    // Expires soon, so the expiry warning can be demonstrated.
+    cred({ id: sid(1102), businessId: IDS.bBen, kind: "insurance", reference: "DEMO-PL-7781", issuer: "Demo Insurer Pty Ltd (fictional)", expiresAt: iso(20) }),
+    cred({ id: sid(1103), businessId: IDS.bErin, kind: "licence", reference: "DEMO-RET-0091", issuer: "Australian Energy Regulator (demo)", jurisdiction: "AU", expiresAt: iso(400) }),
+  ];
+  for (const c of credentials) await store.insert("credentials", c);
 
   // ─── Documents ────────────────────────────────────────────────────────────
   const enc = new TextEncoder();
@@ -128,7 +142,7 @@ export async function seedDemoData(store: Store, now = new Date()): Promise<void
   const fenceNeg: Negotiation = {
     id: IDS.negFence, customerId: IDS.alex, categoryId: "trades", title: "Fence replacement with Ben's Fencing & Gates", requestId: IDS.reqFence, offerId: IDS.offBen, businessId: IDS.bBen,
     counterpartyName: "Ben's Fencing & Gates (demo)", mode: "approval", state: "awaiting_counterparty", baselineCents: 550_000, targetCents: 460_000, currentOfferCents: 510_000,
-    recurrence: "one_off", simulated: false, createdAt: iso(-2), updatedAt: iso(-1),
+    recurrence: "one_off", simulated: false, version: 0, createdAt: iso(-2), updatedAt: iso(-1),
     messages: [
       { id: sid(5011), at: iso(-2), from: "ai", kind: "analysis", body: "Ben's offer is $400 under your original $5,500 quote and has the longest warranty (7 years). Competing offers go as low as $4,400, but that one has no insurance and non-Colorbond panels. Suggested target: $4,600." },
       { id: sid(5012), at: iso(-1), from: "ai", kind: "sent", body: "Hi Ben, thanks for the quote. I have other licensed and insured offers in the high $4,000s. If you can do $4,600 with the same scope and 7-year warranty, I'm ready to book. — Alex", amountCents: 460_000, approvedAt: iso(-1) },
@@ -140,7 +154,7 @@ export async function seedDemoData(store: Store, now = new Date()): Promise<void
   const inetNeg: Negotiation = {
     id: IDS.negInternet, customerId: IDS.alex, categoryId: "telco", title: "Home internet — StreamLine Broadband", businessId: IDS.bStreamline,
     counterpartyName: "StreamLine Broadband (simulated)", mode: "approval", state: "awaiting_approval", baselineCents: 12_000, targetCents: 8_400, currentOfferCents: 12_000,
-    recurrence: "monthly", simulated: true, createdAt: iso(-1), updatedAt: iso(-1),
+    recurrence: "monthly", simulated: true, version: 0, createdAt: iso(-1), updatedAt: iso(-1),
     messages: [
       { id: sid(5021), at: iso(-1), from: "ai", kind: "analysis", body: "Your bill is $120/month ($110 plan + $10 modem rental). After 4 years with no lock-in you're a good candidate for a retention offer. Simulated market range for similar plans is $84–$102. Suggested target: $84/month." },
       { id: sid(5022), at: iso(-1), from: "ai", kind: "draft", pendingApproval: true, amountCents: 8_400, simulated: true, body: "Hi StreamLine Broadband, I've been a customer for 4 years and I'm paying $120/month including modem rental. Comparable NBN 100 plans are available for less. I'd like to stay with you at $84/month. Can you offer that? — Alex" },
@@ -204,13 +218,16 @@ export async function seedDemoData(store: Store, now = new Date()): Promise<void
   const tx: Transaction = {
     id: IDS.txCar, customerId: IDS.alex, businessId: IDS.bAutocare, categoryId: "vehicle", description: "Logbook service — Inner West Autocare (simulated)",
     baselineCents: 48_000, finalCents: 39_500, recurrence: "one_off", periodSavingsCents: s.periodSavingsCents, annualSavingsCents: s.annualSavingsCents,
-    status: "verified", verificationMethod: "customer_confirmed_invoice", verifiedAt: iso(-20), verifiedBy: IDS.alex, feeCents: 150, feeStatus: "charged_simulated", simulated: true, createdAt: iso(-25),
+    status: "verified", verificationMethod: "customer_confirmed_invoice", verifiedAt: iso(-20), verifiedBy: IDS.alex,
+    // Simulated counterparty: never a qualifying transaction, so no fee.
+    feeCents: 0, feeStatus: "not_qualifying", qualifiesForFee: false, feeReason: "Simulated counterparty — demonstration only, no fee",
+    currency: "AUD", jurisdiction: "AU", simulated: true, createdAt: iso(-25),
   };
   await store.insert("transactions", tx);
   const ledger: LedgerEntry[] = [
     { id: sid(8011), transactionId: tx.id, userId: IDS.alex, type: "saving_recorded", amountCents: s.periodSavingsCents, currency: "AUD", idempotencyKey: `saving:${tx.id}`, simulated: true, createdAt: iso(-25) },
     { id: sid(8012), transactionId: tx.id, userId: IDS.alex, type: "saving_verified", amountCents: s.periodSavingsCents, currency: "AUD", idempotencyKey: `verified:${tx.id}`, simulated: true, createdAt: iso(-20) },
-    { id: sid(8013), transactionId: tx.id, userId: IDS.alex, type: "fee_charged", amountCents: 150, currency: "AUD", idempotencyKey: `fee:${tx.id}`, simulated: true, note: "Simulated payment — no real charge", createdAt: iso(-20) },
+    { id: sid(8013), transactionId: tx.id, userId: IDS.alex, type: "fee_waived", amountCents: 0, currency: "AUD", idempotencyKey: `fee:${tx.id}`, simulated: true, note: "Simulated counterparty — demonstration only, no fee", createdAt: iso(-20) },
   ];
   for (const e of ledger) await store.insert("ledger", e);
 }

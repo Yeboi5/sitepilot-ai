@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Flash } from "@/components/ui";
-import { dataDriver } from "@/lib/config";
+import { demoMode } from "@/lib/config";
 import { flash, type SearchParams } from "@/lib/page";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/store/seed";
 import { demoSignInAction, signInAction } from "../actions/auth";
@@ -10,7 +10,7 @@ export const metadata = { title: "Sign in" };
 export default async function SignIn({ searchParams }: { searchParams: SearchParams }) {
   const f = await flash(searchParams);
   const next = f.get("next") ?? "";
-  const demo = dataDriver() === "memory";
+  const demo = demoMode();
   return (
     <div className="mx-auto grid min-h-screen max-w-5xl items-center gap-8 px-4 py-10 lg:grid-cols-2">
       <div>

@@ -5,7 +5,7 @@ import { currentPrice, evaluateWatch } from "../domain/monitoring";
 import { ForbiddenError, NotFoundError, requireRole, ValidationError } from "../domain/permissions";
 import type { Actor, Negotiation, PriceWatch, WatchKind } from "../domain/types";
 import { audit, newId, type Ctx } from "./context";
-import { recordAgreement } from "./transactions";
+import { proposeFinalTerms } from "./transactions";
 
 async function ownWatch(ctx: Ctx, actor: Actor, id: string): Promise<PriceWatch> {
   const w = await ctx.store.get("watches", id);
@@ -91,15 +91,16 @@ export async function claimPriceAdjustment(ctx: Ctx, actor: Actor, id: string) {
   if (existing) throw new ValidationError("You've already recorded this claim");
   const now = ctx.now().toISOString();
   const n: Negotiation = {
-    id: newId(), customerId: actor.userId, categoryId: w.categoryId, title: `Price adjustment: ${w.label}`, counterpartyName: w.merchant, mode: "advisory", state: "agreed",
-    baselineCents: w.purchasePriceCents, targetCents: price, currentOfferCents: price, agreedCents: price, recurrence: "one_off", simulated: w.dataSource !== "approved_api",
-    createdAt: now, updatedAt: now,
+    id: newId(), customerId: actor.userId, categoryId: w.categoryId, title: `Price adjustment: ${w.label}`, counterpartyName: w.merchant, mode: "advisory", state: "open",
+    // Prices the customer entered are real; only the labelled simulated feed is a simulation.
+    baselineCents: w.purchasePriceCents, targetCents: price, currentOfferCents: price, recurrence: "one_off", simulated: w.dataSource === "simulated_feed",
+    version: 0, createdAt: now, updatedAt: now,
     messages: [{ id: newId(), at: now, from: "ai", kind: "note", amountCents: price, body: "Take your receipt to the retailer (or use their online form) and request the difference under their price-adjustment policy. Once refunded, confirm the amount to verify the saving." }],
   };
   await ctx.store.insert("negotiations", n);
-  await recordAgreement(ctx, n);
   await audit(ctx, actor, "watch.adjustment_claimed", "watch", id);
-  return n;
+  // No business on DealPilot is party to a retailer adjustment; the customer's claim is the approval.
+  return proposeFinalTerms(ctx, n, { by: "customer", userId: actor.userId, priceCents: price, businessApproval: "not_applicable" });
 }
 
 export async function removeWatch(ctx: Ctx, actor: Actor, id: string) {

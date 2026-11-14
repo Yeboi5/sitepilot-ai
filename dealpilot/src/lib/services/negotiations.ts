@@ -1,12 +1,14 @@
 import { getCategory, isCategory } from "../domain/categories";
 import { formatMoney, type Cents } from "../domain/money";
 import {
-  ACTIVE_STATES, checkAutopilot, recommendResponse, suggestTarget, transition, type NegotiationEvent, type Recommendation,
+  ACTIVE_STATES, checkAutopilot, recommendResponse, suggestTarget, type NegotiationEvent, type Recommendation,
 } from "../domain/negotiation";
 import { canViewNegotiation, ForbiddenError, NotFoundError, requireRole, ValidationError } from "../domain/permissions";
 import type { Actor, Negotiation, NegotiationMessage, PermissionMode, Recurrence } from "../domain/types";
+import { upd } from "../store/types";
 import { audit, newId, notify, type Ctx } from "./context";
-import { recordAgreement } from "./transactions";
+import { applyNegotiation, msg, per } from "./negotiation-store";
+import { proposeFinalTerms } from "./transactions";
 
 const round100 = (c: number) => Math.round(c / 100) * 100;
 
@@ -17,14 +19,8 @@ async function load(ctx: Ctx, actor: Actor, id: string): Promise<Negotiation> {
   return n;
 }
 
-function msg(ctx: Ctx, m: Omit<NegotiationMessage, "id" | "at">): NegotiationMessage {
-  return { id: newId(), at: ctx.now().toISOString(), ...m };
-}
-
-async function apply(ctx: Ctx, n: Negotiation, event: NegotiationEvent, patch: Partial<Negotiation>, messages: NegotiationMessage[] = []): Promise<Negotiation> {
-  const state = transition(n.state, event);
-  return ctx.store.update("negotiations", n.id, { ...patch, state, messages: [...n.messages, ...messages], updatedAt: ctx.now().toISOString() });
-}
+const apply = (ctx: Ctx, n: Negotiation, event: NegotiationEvent | null, patch: Partial<Negotiation>, messages: NegotiationMessage[] = []) =>
+  applyNegotiation(ctx, n, event, patch, messages);
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 
@@ -60,7 +56,7 @@ export async function startExternalNegotiation(ctx: Ctx, actor: Actor, input: St
   const n: Negotiation = {
     id: newId(), customerId: actor.userId, categoryId: input.categoryId, title: input.title.trim().slice(0, 140) || `${category.name} — ${counterparty}`,
     counterpartyName: `${counterparty} (simulated)`, mode: input.mode ?? user.permissionMode, state: "open", baselineCents: input.baselineCents,
-    targetCents: target, currentOfferCents: input.baselineCents, recurrence: input.recurrence, simulated: true, createdAt: now, updatedAt: now,
+    targetCents: target, currentOfferCents: input.baselineCents, recurrence: input.recurrence, simulated: true, version: 0, createdAt: now, updatedAt: now,
     messages: [msg(ctx, { from: "ai", kind: "analysis", simulated: true, body: `You pay ${formatMoney(input.baselineCents)}${per(input.recurrence)}. Simulated market range suggests a target of ${formatMoney(target)}${per(input.recurrence)}. Levers: ${category.negotiationLevers.join(", ")}.` })],
   };
   await ctx.store.insert("negotiations", n);
@@ -85,16 +81,14 @@ export async function startOfferNegotiation(ctx: Ctx, actor: Actor, offerId: str
   const n: Negotiation = {
     id: newId(), customerId: actor.userId, categoryId: req.categoryId, title: `${req.title} — ${business.name}`, requestId: req.id, offerId, businessId: business.id,
     counterpartyName: business.name, mode: user.permissionMode, state: "open", baselineCents: req.baselineCents, targetCents: target,
-    currentOfferCents: offer.priceCents, recurrence: req.recurrence, simulated: offer.isSimulated, createdAt: now, updatedAt: now,
+    currentOfferCents: offer.priceCents, recurrence: req.recurrence, simulated: offer.isSimulated, version: 0, createdAt: now, updatedAt: now,
     messages: [msg(ctx, { from: "ai", kind: "analysis", body: `${business.name} offered ${formatMoney(offer.priceCents)} against your ${formatMoney(req.baselineCents)} quote. Suggested target: ${formatMoney(target)}.` })],
   };
-  await ctx.store.insert("negotiations", n);
-  await ctx.store.update("requests", req.id, { status: "negotiating" });
+  await ctx.store.atomic([], [{ op: "insert", table: "negotiations", row: n as unknown as Record<string, unknown> }, upd("requests", req.id, { status: "negotiating" })]);
   await audit(ctx, actor, "negotiation.started", "negotiation", n.id, { offerId, mode: n.mode });
   return n;
 }
 
-const per = (r: Recurrence) => (r === "monthly" ? "/month" : r === "annual" ? "/year" : r === "weekly" ? "/week" : r === "quarterly" ? "/quarter" : "");
 
 // ─── AI next step (respects permission mode) ────────────────────────────────
 
@@ -111,7 +105,7 @@ export async function prepareNextAction(ctx: Ctx, actor: Actor, id: string): Pro
 
   if (rec.action === "escalate") {
     const updated = n.state === "escalated"
-      ? await ctx.store.update("negotiations", n.id, { messages: [...n.messages, msg(ctx, { from: "ai", kind: "escalation", body: rec.reason })] })
+      ? await apply(ctx, n, null, {}, [msg(ctx, { from: "ai", kind: "escalation", body: rec.reason })])
       : await apply(ctx, n, "ESCALATE", {}, [msg(ctx, { from: "ai", kind: "escalation", body: rec.reason, amountCents: rec.priceCents })]);
     await audit(ctx, actor, "negotiation.escalated", "negotiation", n.id, { reason: rec.reason });
     return { negotiation: updated, recommendation: rec };
@@ -121,10 +115,7 @@ export async function prepareNextAction(ctx: Ctx, actor: Actor, id: string): Pro
   const body = await ctx.ai.draftNegotiationMessage({ negotiation: n, category, intent, priceCents: rec.priceCents, customerName: user.name.split(" ")[0] });
 
   if (n.mode === "advisory") {
-    const updated = await ctx.store.update("negotiations", n.id, {
-      messages: [...n.messages, msg(ctx, { from: "ai", kind: "note", amountCents: rec.priceCents, body: `Recommendation: ${rec.action} at ${formatMoney(rec.priceCents)}. ${rec.reason}\n\nSuggested wording you can send yourself:\n${body}` })],
-      updatedAt: ctx.now().toISOString(),
-    });
+    const updated = await apply(ctx, n, null, {}, [msg(ctx, { from: "ai", kind: "note", amountCents: rec.priceCents, body: `Recommendation: ${rec.action} at ${formatMoney(rec.priceCents)}. ${rec.reason}\n\nSuggested wording you can send yourself:\n${body}` })]);
     await audit(ctx, actor, "negotiation.advised", "negotiation", n.id, { action: rec.action });
     return { negotiation: updated, recommendation: rec };
   }
@@ -165,8 +156,8 @@ export async function approveDraft(ctx: Ctx, actor: Actor, id: string, messageId
   const messages = n.messages.map((m) => (m.id === messageId ? { ...m, pendingApproval: false, approvedAt: now } : m));
   await audit(ctx, actor, "negotiation.draft_approved", "negotiation", n.id, { amountCents: draft.amountCents, edited: !!editedBody && editedBody !== draft.body });
   if (isAccept) {
-    await ctx.store.update("negotiations", n.id, { messages });
-    return acceptCurrentOffer(ctx, actor, n.id, true);
+    const withApproval = await apply(ctx, n, null, { messages });
+    return acceptCurrentOffer(ctx, actor, withApproval.id, true);
   }
   const sent = await apply(ctx, { ...n, messages }, "SEND", {}, [msg(ctx, { from: "customer", kind: "sent", body, amountCents: draft.amountCents, simulated: n.simulated })]);
   return afterSend(ctx, sent, draft.amountCents);
@@ -178,7 +169,7 @@ export async function discardDraft(ctx: Ctx, actor: Actor, id: string): Promise<
   const messages = n.messages.map((m) => (m.pendingApproval ? { ...m, pendingApproval: false, body: `${m.body}\n\n(Discarded by you)` } : m));
   const hasCounter = messages.some((m) => m.kind === "counter");
   // Return to the state where the customer can decide again.
-  return ctx.store.update("negotiations", n.id, { messages, state: hasCounter ? "counter_received" : "open", updatedAt: ctx.now().toISOString() });
+  return apply(ctx, n, null, { messages, state: hasCounter ? "counter_received" : "open" });
 }
 
 /** After a message is sent: notify a real business, or let the simulated counterparty respond. */
@@ -201,11 +192,12 @@ export async function simulateCounterparty(ctx: Ctx, n: Negotiation, askCents: C
   const b = getCategory(n.categoryId).simulatedBenchmark;
   const floor = round100(n.baselineCents * (b.low + (b.high - b.low) * 0.4));
   if (askCents >= floor) {
-    const agreed = await apply(ctx, n, "ACCEPT", { agreedCents: askCents, currentOfferCents: askCents }, [
-      msg(ctx, { from: "business", kind: "decision", simulated: true, amountCents: askCents, body: `(Simulated reply) We can do ${formatMoney(askCents)}${per(n.recurrence)}. We've applied it to your account from the next billing period.` }),
-    ]);
     await audit(ctx, "system", "negotiation.simulated_accept", "negotiation", n.id, { askCents });
-    return recordAgreement(ctx, agreed);
+    // The simulated provider "accepts"; the customer must still explicitly approve the final terms.
+    return proposeFinalTerms(ctx, n, {
+      by: "business", userId: "simulated", priceCents: askCents, businessApproval: "simulated",
+      messages: [msg(ctx, { from: "business", kind: "decision", simulated: true, amountCents: askCents, body: `(Simulated reply) We can do ${formatMoney(askCents)}${per(n.recurrence)}. Please approve the final terms to confirm.` })],
+    });
   }
   const counter = Math.min(n.currentOfferCents - 100, Math.max(floor, round100((askCents + n.currentOfferCents) / 2)));
   const updated = await apply(ctx, n, "RECEIVE_COUNTER", { currentOfferCents: counter }, [
@@ -231,13 +223,12 @@ export async function acceptCurrentOffer(ctx: Ctx, actor: Actor, id: string, con
   if (!confirmed) throw new ValidationError("Please confirm you want to accept");
   const n = await load(ctx, actor, id);
   const agreedCents = n.currentOfferCents;
-  const agreed = await apply(ctx, n, "ACCEPT", { agreedCents }, [msg(ctx, { from: via === "autopilot" ? "ai" : "customer", kind: "decision", amountCents: agreedCents, body: `${via === "autopilot" ? "Limited Autopilot accepted" : "You accepted"} ${formatMoney(agreedCents)}${per(n.recurrence)}.` })]);
   await audit(ctx, actor, "negotiation.accepted", "negotiation", n.id, { agreedCents, via });
-  if (n.businessId && !n.simulated) {
-    const b = await ctx.store.get("businesses", n.businessId);
-    if (b?.ownerId) await notify(ctx, b.ownerId, { kind: "negotiation", title: `Accepted: ${n.title}`, body: `Customer accepted ${formatMoney(agreedCents)}.`, href: `/biz/inbox/${n.id}` });
-  }
-  return recordAgreement(ctx, agreed);
+  // Autopilot can propose acceptance, but final terms always need the customer's own approval.
+  return proposeFinalTerms(ctx, n, {
+    by: via === "autopilot" ? "autopilot" : "customer", userId: actor.userId, priceCents: agreedCents,
+    messages: [msg(ctx, { from: via === "autopilot" ? "ai" : "customer", kind: "decision", amountCents: agreedCents, body: via === "autopilot" ? `Limited Autopilot proposes accepting ${formatMoney(agreedCents)}${per(n.recurrence)}. You must approve the final terms.` : `You accepted ${formatMoney(agreedCents)}${per(n.recurrence)}.` })],
+  });
 }
 
 export async function walkAway(ctx: Ctx, actor: Actor, id: string): Promise<Negotiation> {
@@ -252,7 +243,7 @@ export async function walkAway(ctx: Ctx, actor: Actor, id: string): Promise<Nego
 export async function setNegotiationMode(ctx: Ctx, actor: Actor, id: string, mode: PermissionMode): Promise<Negotiation> {
   requireRole(actor, "customer");
   const n = await load(ctx, actor, id);
-  const updated = await ctx.store.update("negotiations", n.id, { mode, updatedAt: ctx.now().toISOString() });
+  const updated = await apply(ctx, n, null, { mode });
   await audit(ctx, actor, "negotiation.mode_changed", "negotiation", n.id, { from: n.mode, to: mode });
   return updated;
 }
@@ -261,7 +252,7 @@ export async function setTarget(ctx: Ctx, actor: Actor, id: string, targetCents:
   const n = await load(ctx, actor, id);
   if (actor.userId !== n.customerId) throw new ForbiddenError();
   if (!Number.isInteger(targetCents) || targetCents <= 0 || targetCents > n.baselineCents) throw new ValidationError("Target must be positive and no higher than what you pay now");
-  return ctx.store.update("negotiations", n.id, { targetCents, updatedAt: ctx.now().toISOString() });
+  return apply(ctx, n, null, { targetCents });
 }
 
 // ─── Business side ───────────────────────────────────────────────────────────
@@ -280,6 +271,8 @@ export function redactForBusiness(n: Negotiation): Negotiation {
     messages: n.messages.filter((m) => m.kind === "sent" || m.kind === "counter" || (m.kind === "decision" && m.from !== "ai")),
   };
 }
+
+export { approveFinalTerms } from "./transactions";
 
 export async function getBusinessNegotiation(ctx: Ctx, actor: Actor, id: string) {
   requireRole(actor, "business");
@@ -302,17 +295,21 @@ export async function businessRespond(
 ): Promise<Negotiation> {
   requireRole(actor, "business");
   const n = await load(ctx, actor, id);
+  const biz = await ctx.store.get("businesses", n.businessId!);
+  if (biz?.verificationStatus !== "verified") throw new ForbiddenError(biz?.verificationStatus === "suspended" ? "Your business is suspended" : "Your business must be verified to respond");
   if (n.state !== "awaiting_counterparty") throw new ValidationError("Waiting on the customer — nothing to respond to");
   const lastAsk = [...n.messages].reverse().find((m) => m.kind === "sent" && m.amountCents !== undefined)?.amountCents;
   const body = input.message.trim().slice(0, 2000);
   let updated: Negotiation;
   if (input.action === "accept") {
     if (lastAsk === undefined) throw new ValidationError("No customer price to accept");
-    updated = await apply(ctx, n, "ACCEPT", { agreedCents: lastAsk, currentOfferCents: lastAsk }, [msg(ctx, { from: "business", kind: "decision", amountCents: lastAsk, body: body || `Accepted ${formatMoney(lastAsk)}.` })]);
-    if (n.offerId) await ctx.store.update("offers", n.offerId, { priceCents: lastAsk, updatedAt: ctx.now().toISOString() });
     await audit(ctx, actor, "negotiation.business_accepted", "negotiation", n.id, { agreedCents: lastAsk });
-    await notify(ctx, n.customerId, { kind: "negotiation", title: `${n.counterpartyName} accepted ${formatMoney(lastAsk)}`, body: "Confirm the final invoice to record your verified saving.", href: `/app/negotiations/${n.id}` });
-    return redactForBusiness(await recordAgreement(ctx, updated));
+    // The business's acceptance is its approval of the final terms; the customer must approve too.
+    updated = await proposeFinalTerms(ctx, n, {
+      by: "business", userId: actor.userId, priceCents: lastAsk,
+      messages: [msg(ctx, { from: "business", kind: "decision", amountCents: lastAsk, body: body || `Accepted ${formatMoney(lastAsk)}.` })],
+    });
+    return redactForBusiness(updated);
   }
   if (input.action === "decline") {
     updated = await apply(ctx, n, "REJECT", {}, [msg(ctx, { from: "business", kind: "decision", body: body || "Declined." })]);
@@ -324,8 +321,8 @@ export async function businessRespond(
   if (!price || !Number.isInteger(price) || price <= 0) throw new ValidationError("Enter your counteroffer price");
   if (price >= n.currentOfferCents) throw new ValidationError(`A counteroffer must be lower than your current offer of ${formatMoney(n.currentOfferCents)}`);
   if (lastAsk !== undefined && price <= lastAsk) throw new ValidationError("That's at or below the customer's ask — accept it instead");
-  updated = await apply(ctx, n, "RECEIVE_COUNTER", { currentOfferCents: price }, [msg(ctx, { from: "business", kind: "counter", amountCents: price, body: body || `We can offer ${formatMoney(price)}.` })]);
-  if (n.offerId) await ctx.store.update("offers", n.offerId, { priceCents: price, status: "countered", updatedAt: ctx.now().toISOString() });
+  updated = await applyNegotiation(ctx, n, "RECEIVE_COUNTER", { currentOfferCents: price }, [msg(ctx, { from: "business", kind: "counter", amountCents: price, body: body || `We can offer ${formatMoney(price)}.` })],
+    n.offerId ? [upd("offers", n.offerId, { priceCents: price, status: "countered", updatedAt: ctx.now().toISOString() })] : []);
   await audit(ctx, actor, "negotiation.business_countered", "negotiation", n.id, { priceCents: price });
   await notify(ctx, n.customerId, { kind: "negotiation", title: `Counteroffer: ${formatMoney(price)}`, body: `${n.counterpartyName} responded on "${n.title}".`, href: `/app/negotiations/${n.id}` });
   return redactForBusiness(updated);
@@ -340,5 +337,5 @@ export async function getCustomerNegotiation(ctx: Ctx, actor: Actor, id: string)
   requireRole(actor, "customer", "admin");
   const n = await load(ctx, actor, id);
   const tx = (await ctx.store.list("transactions", { negotiationId: id }))[0];
-  return { negotiation: n, transaction: tx, recommendation: ACTIVE_STATES.includes(n.state) && n.state !== "agreed" ? recommendResponse(n) : undefined };
+  return { negotiation: n, transaction: tx, recommendation: ["open", "counter_received", "escalated"].includes(n.state) ? recommendResponse(n) : undefined };
 }

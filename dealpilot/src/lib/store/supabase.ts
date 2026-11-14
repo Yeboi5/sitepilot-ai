@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Row, Store, TableName } from "./types";
+import type { BatchOp, Guard, Row, Store, TableName } from "./types";
 
 import { rowFromDb, rowToDb, TABLE_MAP, toSnake } from "./supabase-mapping";
 
@@ -43,6 +43,22 @@ export class SupabaseStore implements Store {
     const { data, error } = await this.db.from(TABLE_MAP[table]).update(rowToDb(patch as Record<string, unknown>)).eq("id", id).select("*").single();
     if (error) throw new Error(error.message);
     return rowFromDb<Row<T>>(data);
+  }
+
+  async atomic(guards: Guard[], ops: BatchOp[]) {
+    const body = {
+      guards: guards.map((g) => ({ ...g, table: TABLE_MAP[g.table], field: toSnake(g.field), ...("equals" in g ? { equals: String(g.equals) } : {}) })),
+      ops: ops.map((o) => (o.op === "insert" ? { op: "insert", table: TABLE_MAP[o.table], row: rowToDb(o.row) } : { op: "update", table: TABLE_MAP[o.table], id: o.id, patch: rowToDb(o.patch) })),
+    };
+    const { data, error } = await this.db.rpc("apply_batch", body);
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+
+  async rateLimit(key: string, max: number, windowSeconds: number) {
+    const { data, error } = await this.db.rpc("rate_limit_hit", { p_key: key, p_max: max, p_window_seconds: windowSeconds });
+    if (error) throw new Error(error.message);
+    return data === true;
   }
 
   async putBlob(key: string, data: Uint8Array, mimeType: string) {

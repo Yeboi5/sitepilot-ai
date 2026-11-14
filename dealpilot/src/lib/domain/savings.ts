@@ -9,11 +9,21 @@ export const PERIODS_PER_YEAR: Record<Recurrence, number> = {
   annual: 1,
 };
 
+export const isRecurring = (r: Recurrence) => r !== "one_off";
+
 export interface SavingsResult {
   periodSavingsCents: Cents;
+  /** For recurring savings this is a 12-month PROJECTION, not money already saved. */
   annualSavingsCents: Cents;
+  /** Monthly-equivalent saving for recurring bills (0 for one-off purchases). */
+  monthlySavingsCents: Cents;
   percent: number;
   isSaving: boolean;
+}
+
+export function monthlyEquivalent(periodCents: Cents, recurrence: Recurrence): Cents {
+  if (!isRecurring(recurrence)) return 0;
+  return Math.round((periodCents * PERIODS_PER_YEAR[recurrence]) / 12);
 }
 
 /**
@@ -30,6 +40,7 @@ export function calculateSavings(baselineCents: Cents, finalCents: Cents, recurr
   return {
     periodSavingsCents: period,
     annualSavingsCents: period * PERIODS_PER_YEAR[recurrence],
+    monthlySavingsCents: monthlyEquivalent(period, recurrence),
     percent: baselineCents === 0 ? 0 : Math.round((period / baselineCents) * 1000) / 10,
     isSaving: period > 0,
   };
@@ -40,41 +51,68 @@ export interface FeeConfig {
   currency: string;
 }
 
+export interface FeeAssessment {
+  qualifies: boolean;
+  feeCents: Cents;
+  feeStatus: Transaction["feeStatus"];
+  reason: string;
+}
+
 /**
- * Success fee: charged only for a verified, completed transaction with a real
- * saving. Never charged for unsuccessful negotiations, and never more than the
- * saving itself (customers must never be worse off for using DealPilot).
+ * Success-fee rule (product decision, Phase 2):
+ *  - charged once per completed, VERIFIED, qualifying transaction;
+ *  - qualifying = a real saving (> 0) achieved with a real counterparty or by the customer
+ *    themselves; deals with simulated counterparties never qualify;
+ *  - capped at the actual saving, so a customer is never worse off;
+ *  - nothing for unsuccessful, cancelled or unverified deals.
+ * The fee is ASSESSED here. Collection is a separate, explicitly enabled payment step.
  */
-export function calculateFee(
-  tx: Pick<Transaction, "status" | "periodSavingsCents">,
-  config: FeeConfig,
-): { feeCents: Cents; reason: string } {
-  if (tx.status !== "verified") return { feeCents: 0, reason: "Not verified — no fee" };
-  if (tx.periodSavingsCents <= 0) return { feeCents: 0, reason: "No saving — no fee" };
+export function assessFee(tx: Pick<Transaction, "status" | "periodSavingsCents" | "simulated">, config: FeeConfig): FeeAssessment {
+  if (tx.status !== "verified") return { qualifies: false, feeCents: 0, feeStatus: "not_applicable", reason: "Not verified — no fee" };
+  if (tx.periodSavingsCents <= 0) return { qualifies: false, feeCents: 0, feeStatus: "waived", reason: "No saving — no fee" };
+  if (tx.simulated) return { qualifies: false, feeCents: 0, feeStatus: "not_qualifying", reason: "Simulated counterparty — demonstration only, no fee" };
   const fee = Math.min(config.successFeeCents, tx.periodSavingsCents);
-  return { feeCents: fee, reason: fee < config.successFeeCents ? "Fee capped at the amount saved" : "Standard success fee" };
+  return {
+    qualifies: true,
+    feeCents: fee,
+    feeStatus: "assessed",
+    reason: fee < config.successFeeCents ? "Fee capped at the amount saved" : "Standard success fee",
+  };
+}
+
+/** @deprecated Phase 1 name, kept for callers; use assessFee. */
+export function calculateFee(tx: Pick<Transaction, "status" | "periodSavingsCents"> & { simulated?: boolean }, config: FeeConfig) {
+  const a = assessFee({ simulated: false, ...tx }, config);
+  return { feeCents: a.feeCents, reason: a.reason };
 }
 
 export interface SavingsSummary {
-  verifiedAnnualCents: Cents;
-  pendingAnnualCents: Cents;
-  feesCents: Cents;
-  netAnnualCents: Cents;
+  /** Money actually saved and verified (one verified period per transaction). */
+  realisedCents: Cents;
+  /** Verified recurring savings expressed per month. */
+  monthlyRecurringCents: Cents;
+  /** Verified recurring savings projected over 12 months, plus verified one-off savings. Not yet realised. */
+  projectedAnnualCents: Cents;
+  /** Agreed but not yet verified — not counted anywhere else. */
+  pendingCents: Cents;
+  feesAssessedCents: Cents;
   verifiedCount: number;
   pendingCount: number;
 }
 
 export function summariseSavings(txs: Transaction[]): SavingsSummary {
-  let verifiedAnnualCents = 0, pendingAnnualCents = 0, feesCents = 0, verifiedCount = 0, pendingCount = 0;
+  const s: SavingsSummary = { realisedCents: 0, monthlyRecurringCents: 0, projectedAnnualCents: 0, pendingCents: 0, feesAssessedCents: 0, verifiedCount: 0, pendingCount: 0 };
   for (const tx of txs) {
     if (tx.status === "verified") {
-      verifiedAnnualCents += tx.annualSavingsCents;
-      feesCents += tx.feeCents;
-      verifiedCount++;
+      s.realisedCents += tx.periodSavingsCents;
+      s.monthlyRecurringCents += monthlyEquivalent(tx.periodSavingsCents, tx.recurrence);
+      s.projectedAnnualCents += tx.annualSavingsCents;
+      s.feesAssessedCents += tx.feeCents;
+      s.verifiedCount++;
     } else if (tx.status === "pending_verification") {
-      pendingAnnualCents += tx.annualSavingsCents;
-      pendingCount++;
+      s.pendingCents += tx.periodSavingsCents;
+      s.pendingCount++;
     }
   }
-  return { verifiedAnnualCents, pendingAnnualCents, feesCents, netAnnualCents: verifiedAnnualCents - feesCents, verifiedCount, pendingCount };
+  return s;
 }

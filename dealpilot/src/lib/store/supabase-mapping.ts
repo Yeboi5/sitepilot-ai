@@ -15,6 +15,9 @@ export const TABLE_MAP: Record<TableName, string> = {
   transactions: "transactions",
   ledger: "ledger_entries",
   audit: "audit_logs",
+  credentials: "business_credentials",
+  reviews: "reviews",
+  notifications: "notification_log",
 };
 
 export const toSnake = (k: string) => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);

@@ -48,7 +48,7 @@ export async function signUp(ctx: Ctx, input: SignUpInput): Promise<User> {
     if (!cats.length) throw new ValidationError("Choose at least one service category");
     const b: Business = {
       id: newId(), ownerId: user.id, name: input.businessName.trim().slice(0, 120), description: "", categories: cats, regions: [user.region],
-      qualifications: [], insured: false, reviewCount: 0, reviewsVerified: false, isSimulated: false, createdAt: now,
+      qualifications: [], insured: false, reviewCount: 0, reviewsVerified: false, isSimulated: false, verificationStatus: "unverified", abnStatus: "not_checked", createdAt: now,
     };
     user.businessId = b.id;
     await ctx.store.insert("users", user);
@@ -58,6 +58,28 @@ export async function signUp(ctx: Ctx, input: SignUpInput): Promise<User> {
   }
   await audit(ctx, { userId: user.id, role: user.role }, "auth.signed_up", "user", user.id);
   return user;
+}
+
+/**
+ * Supabase sign-ups create a profile via a database trigger. A business account's business record
+ * is created on first sign-in (after email verification) from the sign-up details. It starts
+ * unverified: nothing a business submits about itself makes it verified.
+ */
+export async function ensureBusinessOnboarded(ctx: Ctx, user: User, meta: Record<string, unknown>): Promise<User> {
+  if (user.role !== "business" || user.businessId) return user;
+  const now = ctx.now().toISOString();
+  const cats = (Array.isArray(meta.categories) ? meta.categories.map(String) : []).filter(isCategory);
+  const b: Business = {
+    id: newId(), ownerId: user.id, name: String(meta.business_name ?? `${user.name}'s business`).slice(0, 120), description: "",
+    categories: cats.length ? cats : ["custom"], regions: [user.region], qualifications: [], insured: false, reviewCount: 0,
+    reviewsVerified: false, isSimulated: false, verificationStatus: "unverified", abnStatus: "not_checked", jurisdiction: user.jurisdiction ?? "AU", createdAt: now,
+  };
+  const ok = await ctx.store.atomic([{ table: "users", id: user.id, field: "businessId", isNull: true }], [
+    { op: "insert", table: "businesses", row: b as unknown as Record<string, unknown> },
+    { op: "update", table: "users", id: user.id, patch: { businessId: b.id } },
+  ]);
+  if (ok) await audit(ctx, { userId: user.id, role: "business" }, "business.registered", "business", b.id);
+  return (await ctx.store.get("users", user.id)) ?? user;
 }
 
 export async function updateSettings(ctx: Ctx, actor: Actor, input: { permissionMode: PermissionMode; autopilotLimitCents: Cents; region: string }) {

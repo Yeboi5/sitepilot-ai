@@ -7,6 +7,10 @@ export class NotFoundError extends Error {
   constructor(what = "Record") { super(`${what} not found`); }
 }
 export class ValidationError extends Error {}
+/** Someone else changed the record first (optimistic concurrency). Safe to show to the user. */
+export class ConflictError extends ValidationError {
+  constructor(message = "This was updated by someone else. Refresh and try again.") { super(message); }
+}
 
 export function requireRole(actor: Actor, ...roles: Role[]): void {
   if (!roles.includes(actor.role)) throw new ForbiddenError();

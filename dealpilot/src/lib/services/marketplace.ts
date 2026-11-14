@@ -1,6 +1,12 @@
 import { getCategory, isCategory, validateCategoryFields } from "../domain/categories";
 import type { Cents } from "../domain/money";
-import { compareOffers, isCustomerVisible } from "../domain/offers";
+import { compareOffers, isCustomerVisible, type ReviewStats } from "../domain/offers";
+import { offerEligibility } from "../domain/verification";
+import type { Review } from "../domain/types";
+
+export function reviewStats(rs: Review[]): ReviewStats {
+  return { count: rs.length, average: rs.length ? rs.reduce((a, r) => a + r.rating, 0) / rs.length : 0 };
+}
 import {
   businessMatchesRequest, canViewOffer, canViewRequest, ForbiddenError, NotFoundError, requireRole, ValidationError,
 } from "../domain/permissions";
@@ -69,7 +75,7 @@ export async function simulateMarketBids(ctx: Ctx, req: PurchaseRequest): Promis
   for (const p of profiles) {
     const business: Business = {
       id: newId(), name: p.name, description: "Simulated provider for demonstrations.", categories: [req.categoryId], regions: [req.region],
-      qualifications: p.licence ? ["Licensed (simulated)"] : [], licenceNumber: p.licence, insured: p.insured, reviewCount: 0, reviewsVerified: false, isSimulated: true, createdAt: now.toISOString(),
+      qualifications: p.licence ? ["Licensed (simulated)"] : [], licenceNumber: p.licence, insured: p.insured, reviewCount: 0, reviewsVerified: false, isSimulated: true, verificationStatus: "unverified", createdAt: now.toISOString(),
     };
     await ctx.store.insert("businesses", business);
     const offer: Offer = {
@@ -96,10 +102,17 @@ export async function getRequestForCustomer(ctx: Ctx, actor: Actor, id: string) 
   if (!req) throw new NotFoundError("Request");
   if (!canViewRequest(actor, req)) throw new ForbiddenError();
   const now = ctx.now();
-  const offers = (await ctx.store.list("offers", { requestId: id })).filter((o) => isCustomerVisible(o, now) || ["accepted", "declined", "countered"].includes(o.status));
   const businesses = new Map((await ctx.store.list("businesses")).map((b) => [b.id, b]));
+  const offers = (await ctx.store.list("offers", { requestId: id })).filter((o) => {
+    const b = businesses.get(o.businessId);
+    if (b && !o.isSimulated && b.verificationStatus === "suspended" && o.status !== "accepted") return false;
+    return isCustomerVisible(o, now, b) || ["accepted", "declined", "countered"].includes(o.status);
+  });
   const category = getCategory(req.categoryId);
-  const comparison = compareOffers(offers.filter((o) => o.status !== "declined"), businesses, category);
+  const businessIds = [...new Set(offers.map((o) => o.businessId))];
+  const credentials = new Map(await Promise.all(businessIds.map(async (bid) => [bid, await ctx.store.list("credentials", { businessId: bid })] as const)));
+  const reviews = new Map(await Promise.all(businessIds.map(async (bid) => [bid, reviewStats(await ctx.store.list("reviews", { businessId: bid }))] as const)));
+  const comparison = compareOffers(offers.filter((o) => o.status !== "declined"), businesses, category, { credentials, reviews, now });
   const negotiations = (await ctx.store.list("negotiations", { requestId: id })).filter((n) => n.customerId === actor.userId || actor.role === "admin");
   const document = req.documentId ? await ctx.store.get("documents", req.documentId) : undefined;
   return { request: req, category, comparison, negotiations, document };
@@ -175,8 +188,11 @@ export async function draftBidWithAI(ctx: Ctx, actor: Actor, requestId: string) 
 
 /** A real business user submits (and thereby approves) an offer. */
 export async function submitOffer(ctx: Ctx, actor: Actor, requestId: string, input: OfferInput & { aiDrafted: boolean }): Promise<Offer> {
-  const { business, request } = await getRequestForBusiness(ctx, actor, requestId);
+  const { business, request, category } = await getRequestForBusiness(ctx, actor, requestId);
   if (!["open", "negotiating"].includes(request.status)) throw new ValidationError("This request is no longer accepting offers");
+  // Only verified businesses with current credentials can submit genuine offers.
+  const eligibility = offerEligibility(business, await ctx.store.list("credentials", { businessId: business.id }), category, ctx.now());
+  if (!eligibility.eligible) throw new ForbiddenError(eligibility.reasons.join(". "));
   validateOffer(input);
   const existing = (await ctx.store.list("offers", { requestId, businessId: business.id }))[0];
   if (existing && !["draft", "withdrawn", "expired"].includes(existing.status)) throw new ValidationError("You already have an active offer — respond in the negotiation inbox instead");

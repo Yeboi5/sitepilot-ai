@@ -23,10 +23,10 @@ export default async function Savings({ searchParams }: { searchParams: SearchPa
       <PageHeader title="Savings & transactions" subtitle={<>Savings count only once you verify the final amount. Fee: <Money cents={fee.successFeeCents} /> per verified saving, capped at the amount saved. No saving, no fee.</>} />
       <Flash error={f.error} notice={f.notice} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat tone="brand" label="Verified (12 mo)" value={<Money cents={summary.verifiedAnnualCents} />} />
-        <Stat label="Pending" value={<Money cents={summary.pendingAnnualCents} />} hint={`${summary.pendingCount} to verify`} />
-        <Stat label="Fees" value={<Money cents={summary.feesCents} />} hint="Simulated, not charged" />
-        <Stat label="Net" value={<Money cents={summary.netAnnualCents} />} />
+        <Stat tone="brand" label="Verified (12 mo)" value={<Money cents={summary.realisedCents} />} />
+        <Stat label="Pending" value={<Money cents={summary.pendingCents} />} hint={`${summary.pendingCount} to verify`} />
+        <Stat label="Fees" value={<Money cents={summary.feesAssessedCents} />} hint="Simulated, not charged" />
+        <Stat label="Net" value={<Money cents={summary.projectedAnnualCents} />} />
       </div>
 
       {pending.length > 0 && (

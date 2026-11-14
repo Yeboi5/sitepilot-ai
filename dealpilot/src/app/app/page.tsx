@@ -28,10 +28,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Search
       <PageHeader title={`Hi ${user.name.split(" ")[0]}`} subtitle={<>AI mode: <strong>{MODE_LABELS[user.permissionMode].label}</strong> · <Link className="text-brand-700 underline" href="/app/settings">change</Link></>} actions={<LinkButton href="/app/documents">Upload a bill or quote</LinkButton>} />
       <Flash error={f.error} notice={f.notice} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat tone="brand" label="Verified savings (12 mo)" value={<Money cents={d.summary.verifiedAnnualCents} />} hint={`${d.summary.verifiedCount} completed deal${d.summary.verifiedCount === 1 ? "" : "s"}`} />
-        <Stat label="Pending verification" value={<Money cents={d.summary.pendingAnnualCents} />} hint="Not counted until you confirm the invoice" />
-        <Stat label="Success fees paid" value={<Money cents={d.summary.feesCents} />} hint="Simulated — only on verified savings" />
-        <Stat label="Net saved" value={<Money cents={d.summary.netAnnualCents} />} />
+        <Stat tone="brand" label="Verified savings (12 mo)" value={<Money cents={d.summary.realisedCents} />} hint={`${d.summary.verifiedCount} completed deal${d.summary.verifiedCount === 1 ? "" : "s"}`} />
+        <Stat label="Pending verification" value={<Money cents={d.summary.pendingCents} />} hint="Not counted until you confirm the invoice" />
+        <Stat label="Success fees paid" value={<Money cents={d.summary.feesAssessedCents} />} hint="Simulated — only on verified savings" />
+        <Stat label="Net saved" value={<Money cents={d.summary.projectedAnnualCents} />} />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">

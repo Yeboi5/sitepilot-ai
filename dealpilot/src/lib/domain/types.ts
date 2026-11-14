@@ -18,7 +18,43 @@ export interface User {
   /** Limited Autopilot: max committed amount per action. 0 disables autopilot actions. */
   autopilotLimitCents: Cents;
   region: string;
+  /** Market the account belongs to (e.g. "AU"). Drives currency and regulatory notes. */
+  jurisdiction?: string;
+  currency?: string;
+  /** Customer agreed to send documents to the configured AI provider. */
+  aiProcessingConsent?: boolean;
+  deletedAt?: string;
   isDemo: boolean;
+  createdAt: string;
+}
+
+export type VerificationStatus = "unverified" | "pending" | "verified" | "suspended" | "rejected";
+export type AbnStatus = "not_checked" | "checksum_valid" | "invalid" | "abr_active" | "abr_cancelled" | "abr_not_found" | "admin_confirmed";
+
+export interface BusinessCredential {
+  id: string;
+  businessId: string;
+  kind: "licence" | "insurance";
+  reference: string;
+  issuer: string;
+  jurisdiction: string;
+  expiresAt?: string;
+  evidenceDocumentId?: string;
+  status: "submitted" | "verified" | "rejected";
+  checkMethod?: "admin_document_review" | "register_lookup";
+  checkedBy?: string;
+  checkedAt?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface Review {
+  id: string;
+  transactionId: string;
+  businessId: string;
+  customerId: string;
+  rating: number;
+  comment: string;
   createdAt: string;
 }
 
@@ -40,6 +76,15 @@ export interface Business {
   reviewsVerified: boolean;
   /** Fictional business used only for demonstrations. */
   isSimulated: boolean;
+  /** Set only by an administrator after checks. Self-declared details never make a business verified. */
+  verificationStatus: VerificationStatus;
+  abnStatus?: AbnStatus;
+  abnEntityName?: string;
+  abnCheckedAt?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  statusReason?: string;
+  jurisdiction?: string;
   createdAt: string;
 }
 
@@ -72,11 +117,25 @@ export interface StoredDocument {
   mimeType: string;
   sizeBytes: number;
   categoryId: string;
-  kind: "quote" | "bill" | "receipt" | "contract" | "invoice" | "statement" | "other";
+  kind: "quote" | "bill" | "receipt" | "contract" | "invoice" | "statement" | "certificate" | "other";
   storageKey: string;
   analysis?: DocumentAnalysis;
+  scanStatus?: "not_scanned" | "clean" | "infected" | "error";
+  scanEngine?: string;
+  scannedAt?: string;
+  /** Values the customer reviewed and corrected after AI extraction. These, not the raw AI output, are used downstream. */
+  confirmed?: ConfirmedExtraction;
+  confirmedAt?: string;
   isDemo: boolean;
   uploadedAt: string;
+}
+
+export interface ConfirmedExtraction {
+  vendor?: string;
+  totalCents?: Cents;
+  recurrence: Recurrence;
+  lineItems: LineItem[];
+  notes?: string;
 }
 
 export type RequestStatus = "open" | "negotiating" | "awarded" | "completed" | "cancelled";
@@ -129,6 +188,7 @@ export type NegotiationState =
   | "awaiting_counterparty"
   | "counter_received"
   | "escalated"
+  | "final_approval"
   | "agreed"
   | "completed"
   | "declined"
@@ -171,8 +231,29 @@ export interface Negotiation {
   messages: NegotiationMessage[];
   /** External counterparty is simulated (no authorised integration exists). */
   simulated: boolean;
+  /** Final terms both parties must explicitly approve before a deal is agreed. */
+  finalTerms?: FinalTerms;
+  /** Set when the deal came from a purchasing group. */
+  groupId?: string;
+  /** Optimistic-concurrency version; every write must match and increment it. */
+  version: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface FinalTerms {
+  priceCents: Cents;
+  recurrence: Recurrence;
+  scope?: string;
+  warrantyMonths?: number;
+  completionDays?: number;
+  proposedBy: "customer" | "business";
+  customerApprovedAt?: string;
+  customerApprovedBy?: string;
+  businessApprovedAt?: string;
+  businessApprovedBy?: string;
+  /** Who must approve on the business side: a real person, or a recorded exemption. */
+  businessApproval: "required" | "simulated" | "not_applicable" | "pre_approved";
 }
 
 export interface PriceTier {
@@ -288,12 +369,17 @@ export interface Transaction {
   verifiedAt?: string;
   verifiedBy?: string;
   feeCents: Cents;
-  feeStatus: "not_applicable" | "pending" | "charged_simulated" | "waived";
+  /** assessed = owed but not collected (payments disabled). collected only via a payment provider. */
+  feeStatus: "not_applicable" | "pending" | "not_qualifying" | "waived" | "assessed" | "collected" | "refunded" | "charged_simulated";
+  qualifiesForFee?: boolean;
+  feeReason?: string;
+  currency?: string;
+  jurisdiction?: string;
   simulated: boolean;
   createdAt: string;
 }
 
-export type LedgerEntryType = "saving_recorded" | "saving_verified" | "fee_charged" | "fee_waived" | "commission_recorded";
+export type LedgerEntryType = "saving_recorded" | "saving_verified" | "fee_assessed" | "fee_collected" | "fee_refunded" | "fee_waived" | "fee_charged" | "commission_recorded";
 
 export interface LedgerEntry {
   id: string;
@@ -317,6 +403,17 @@ export interface AuditLog {
   entityType: string;
   entityId: string;
   detail?: Record<string, unknown>;
+}
+
+export interface NotificationLog {
+  id: string;
+  userId?: string;
+  channel: "email" | "sms" | "push" | "in_app";
+  template: string;
+  status: "sent" | "failed" | "skipped";
+  provider: string;
+  error?: string;
+  createdAt: string;
 }
 
 export interface Actor {

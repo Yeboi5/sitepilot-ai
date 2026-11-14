@@ -108,7 +108,7 @@ export function LinkButton({ href, children, variant = "primary" }: { href: stri
 }
 
 const STATE_TONE: Record<NegotiationState, Tone> = {
-  open: "slate", awaiting_approval: "amber", awaiting_counterparty: "blue", counter_received: "amber", escalated: "red",
+  open: "slate", awaiting_approval: "amber", awaiting_counterparty: "blue", counter_received: "amber", escalated: "red", final_approval: "amber",
   agreed: "violet", completed: "green", declined: "slate", cancelled: "slate", expired: "slate",
 };
 export function StateBadge({ state }: { state: NegotiationState }) {

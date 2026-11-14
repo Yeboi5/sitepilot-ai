@@ -3,7 +3,7 @@ import { checkEligibility, groupStatus, validateTiers } from "../domain/groups";
 import { NotFoundError, requireRole, ValidationError } from "../domain/permissions";
 import type { Actor, GroupOffer, Negotiation, PriceTier } from "../domain/types";
 import { audit, newId, notify, type Ctx } from "./context";
-import { recordAgreement } from "./transactions";
+import { proposeFinalTerms } from "./transactions";
 import { myBusiness } from "./marketplace";
 
 export async function listGroups(ctx: Ctx) {
@@ -81,16 +81,18 @@ export async function takeUpGroupDeal(ctx: Ctx, actor: Actor, id: string, confir
   const now = ctx.now().toISOString();
   const n: Negotiation = {
     id: newId(), customerId: actor.userId, categoryId: g.categoryId, title: `${g.title} — group deal`, businessId: business.id, counterpartyName: business.name,
-    mode: "approval", state: "agreed", baselineCents: g.baselineCents, targetCents: s.currentPriceCents, currentOfferCents: s.currentPriceCents, agreedCents: s.currentPriceCents,
-    recurrence: g.recurrence, simulated: s.bestOffer.isSimulated, createdAt: now, updatedAt: now,
-    messages: [{ id: newId(), at: now, from: "customer", kind: "decision", amountCents: s.currentPriceCents, body: `You took up the group price of ${formatMoney(s.currentPriceCents)} (${s.members} members).` }],
+    mode: "approval", state: "open", baselineCents: g.baselineCents, targetCents: s.currentPriceCents, currentOfferCents: s.currentPriceCents,
+    recurrence: g.recurrence, simulated: s.bestOffer.isSimulated, groupId: id, version: 0, createdAt: now, updatedAt: now, messages: [],
   };
   await ctx.store.insert("negotiations", n);
-  await recordAgreement(ctx, n);
-  const tx = (await ctx.store.list("transactions", { negotiationId: n.id }))[0];
-  await ctx.store.update("transactions", tx.id, { groupId: id });
   await audit(ctx, actor, "group.deal_taken", "group", id, { priceCents: s.currentPriceCents });
-  return tx;
+  // The business pre-approved these terms when a person published the group offer.
+  await proposeFinalTerms(ctx, n, {
+    by: "customer", userId: actor.userId, priceCents: s.currentPriceCents,
+    businessApproval: s.bestOffer.isSimulated ? "simulated" : "pre_approved",
+    messages: [{ id: newId(), at: now, from: "customer", kind: "decision", amountCents: s.currentPriceCents, body: `You took up the group price of ${formatMoney(s.currentPriceCents)} (${s.members} members).` }],
+  });
+  return (await ctx.store.list("transactions", { negotiationId: n.id }))[0];
 }
 
 export async function submitGroupOffer(ctx: Ctx, actor: Actor, groupId: string, input: { tiers: PriceTier[]; terms: string; validDays: number }) {

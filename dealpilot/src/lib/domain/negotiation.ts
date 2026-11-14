@@ -1,5 +1,5 @@
 import type { Cents } from "./money";
-import type { Negotiation, NegotiationState, PermissionMode } from "./types";
+import type { FinalTerms, Negotiation, NegotiationState, PermissionMode } from "./types";
 
 /**
  * Negotiation state machine. All negotiations, in every category, move
@@ -11,18 +11,20 @@ export type NegotiationEvent =
   | "SEND" // a message was sent to the counterparty (by customer, approved draft, or autopilot)
   | "RECEIVE_COUNTER" // counterparty responded with a price
   | "ESCALATE" // decision needs the customer
-  | "ACCEPT" // terms agreed
+  | "ACCEPT" // one side accepted a price: final terms now need both parties' approval
+  | "APPROVE_TERMS" // both parties have approved the final terms
   | "REJECT" // counterparty or customer declined; negotiation unsuccessful
   | "CANCEL"
   | "EXPIRE"
   | "COMPLETE"; // transaction recorded
 
 const T: Record<NegotiationState, Partial<Record<NegotiationEvent, NegotiationState>>> = {
-  open: { DRAFT_ACTION: "awaiting_approval", SEND: "awaiting_counterparty", RECEIVE_COUNTER: "counter_received", ESCALATE: "escalated", ACCEPT: "agreed", CANCEL: "cancelled", EXPIRE: "expired" },
-  awaiting_approval: { SEND: "awaiting_counterparty", DRAFT_ACTION: "awaiting_approval", ACCEPT: "agreed", CANCEL: "cancelled", ESCALATE: "escalated", EXPIRE: "expired" },
-  awaiting_counterparty: { RECEIVE_COUNTER: "counter_received", ACCEPT: "agreed", REJECT: "declined", CANCEL: "cancelled", EXPIRE: "expired" },
-  counter_received: { DRAFT_ACTION: "awaiting_approval", SEND: "awaiting_counterparty", ESCALATE: "escalated", ACCEPT: "agreed", REJECT: "declined", CANCEL: "cancelled", EXPIRE: "expired" },
-  escalated: { DRAFT_ACTION: "awaiting_approval", SEND: "awaiting_counterparty", ACCEPT: "agreed", REJECT: "declined", CANCEL: "cancelled", EXPIRE: "expired" },
+  open: { DRAFT_ACTION: "awaiting_approval", SEND: "awaiting_counterparty", RECEIVE_COUNTER: "counter_received", ESCALATE: "escalated", ACCEPT: "final_approval", CANCEL: "cancelled", EXPIRE: "expired" },
+  awaiting_approval: { SEND: "awaiting_counterparty", DRAFT_ACTION: "awaiting_approval", ACCEPT: "final_approval", CANCEL: "cancelled", ESCALATE: "escalated", EXPIRE: "expired" },
+  awaiting_counterparty: { RECEIVE_COUNTER: "counter_received", ACCEPT: "final_approval", REJECT: "declined", CANCEL: "cancelled", EXPIRE: "expired" },
+  counter_received: { DRAFT_ACTION: "awaiting_approval", SEND: "awaiting_counterparty", ESCALATE: "escalated", ACCEPT: "final_approval", REJECT: "declined", CANCEL: "cancelled", EXPIRE: "expired" },
+  escalated: { DRAFT_ACTION: "awaiting_approval", SEND: "awaiting_counterparty", ACCEPT: "final_approval", REJECT: "declined", CANCEL: "cancelled", EXPIRE: "expired" },
+  final_approval: { APPROVE_TERMS: "agreed", REJECT: "declined", CANCEL: "cancelled", EXPIRE: "expired" },
   agreed: { COMPLETE: "completed", CANCEL: "cancelled" },
   completed: {},
   declined: {},
@@ -31,7 +33,7 @@ const T: Record<NegotiationState, Partial<Record<NegotiationEvent, NegotiationSt
 };
 
 export const TERMINAL_STATES: NegotiationState[] = ["completed", "declined", "cancelled", "expired"];
-export const ACTIVE_STATES: NegotiationState[] = ["open", "awaiting_approval", "awaiting_counterparty", "counter_received", "escalated", "agreed"];
+export const ACTIVE_STATES: NegotiationState[] = ["open", "awaiting_approval", "awaiting_counterparty", "counter_received", "escalated", "final_approval", "agreed"];
 
 export class InvalidTransitionError extends Error {
   constructor(public from: NegotiationState, public event: NegotiationEvent) {
@@ -55,6 +57,7 @@ export const STATE_LABELS: Record<NegotiationState, string> = {
   awaiting_counterparty: "Waiting for reply",
   counter_received: "Counteroffer received",
   escalated: "Your decision needed",
+  final_approval: "Final terms — awaiting approval",
   agreed: "Agreed — record & verify",
   completed: "Completed",
   declined: "Unsuccessful",
@@ -130,4 +133,18 @@ export function suggestTarget(baselineCents: Cents, benchmarkLowCents?: Cents): 
   const fallback = Math.round((baselineCents * 0.85) / 100) * 100;
   const t = benchmarkLowCents ?? fallback;
   return Math.min(t, baselineCents);
+}
+
+/** Both sides have approved (or the business side is formally exempt: simulated, external or pre-approved). */
+export function termsFullyApproved(t: FinalTerms): boolean {
+  const business = t.businessApproval === "required" ? !!t.businessApprovedAt : true;
+  return !!t.customerApprovedAt && business;
+}
+
+/** Who still has to approve, for display. */
+export function pendingApprovals(t: FinalTerms): ("customer" | "business")[] {
+  const out: ("customer" | "business")[] = [];
+  if (!t.customerApprovedAt) out.push("customer");
+  if (t.businessApproval === "required" && !t.businessApprovedAt) out.push("business");
+  return out;
 }
