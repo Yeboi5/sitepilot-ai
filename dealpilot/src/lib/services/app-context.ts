@@ -1,6 +1,7 @@
 import "server-only";
 import { getAI } from "../ai";
-import { dataDriver, demoMode, feeConfig } from "../config";
+import { appUrl, dataDriver, demoMode, feeConfig } from "../config";
+import { smtpEmailProvider, type EmailProvider } from "../integrations/notifications";
 import { builtinScanner, clamdScanner, type Scanner } from "../integrations/scanner";
 import { getStore } from "../store";
 import type { Ctx } from "./context";
@@ -22,6 +23,12 @@ function getScanner(): Scanner {
   return scanner;
 }
 
+let email: EmailProvider | null | undefined;
+function getEmail(): Ctx["email"] {
+  if (email === undefined) email = process.env.SMTP_URL ? smtpEmailProvider(process.env.SMTP_URL, process.env.EMAIL_FROM ?? "DealPilot <no-reply@dealpilot.invalid>") : null;
+  return email ? { provider: email, appUrl: appUrl() } : undefined;
+}
+
 export async function appCtx(): Promise<Ctx> {
-  return { store: await getStore(), ai: getAI(), fees: feeConfig(), now: () => new Date(), scanner: getScanner() };
+  return { store: await getStore(), ai: getAI(), fees: feeConfig(), now: () => new Date(), scanner: getScanner(), email: getEmail() };
 }

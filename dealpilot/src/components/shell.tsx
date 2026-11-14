@@ -11,6 +11,7 @@ export const CUSTOMER_NAV: NavItem[] = [
   { href: "/app/documents", label: "Documents", icon: "FileText" },
   { href: "/app/groups", label: "Group buying", icon: "Users" },
   { href: "/app/monitor", label: "Price monitor", icon: "LineChart", mobile: true },
+  { href: "/app/energy", label: "Energy plans", icon: "Zap" },
   { href: "/app/guardian", label: "Money Guardian", icon: "ShieldCheck" },
   { href: "/app/savings", label: "Savings & ledger", icon: "PiggyBank", mobile: true },
   { href: "/app/settings", label: "AI permissions", icon: "SlidersHorizontal" },

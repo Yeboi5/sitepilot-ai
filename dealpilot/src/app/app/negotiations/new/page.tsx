@@ -26,7 +26,7 @@ export default async function NewNegotiation({ searchParams }: { searchParams: S
           <div className="sm:col-span-2"><label className="label" htmlFor="title">Title</label><input className="input" id="title" name="title" placeholder="e.g. Home internet" /></div>
           <div><label className="label" htmlFor="baseline">What you pay now (AUD)</label><input className="input" id="baseline" name="baseline" inputMode="decimal" required defaultValue={f.get("baseline") && f.get("baseline") !== "0" ? f.get("baseline") : ""} /></div>
           <div><label className="label" htmlFor="recurrence">Billing</label><RecurrenceSelect defaultValue={f.get("recurrence") ?? "monthly"} /></div>
-          <div><label className="label" htmlFor="target">Target price (optional)</label><input className="input" id="target" name="target" inputMode="decimal" placeholder="AI suggests one if blank" /></div>
+          <div><label className="label" htmlFor="target">Target price (optional)</label><input className="input" id="target" name="target" inputMode="decimal" placeholder="AI suggests one if blank" defaultValue={f.get("target") ?? ""} /></div>
           <div>
             <label className="label" htmlFor="mode">AI permission mode</label>
             <select className="input" id="mode" name="mode" defaultValue={user.permissionMode}>

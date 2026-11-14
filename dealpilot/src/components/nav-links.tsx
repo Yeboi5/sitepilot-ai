@@ -2,13 +2,13 @@
 
 import {
   BadgeCheck, Building2, FileText, Gavel, Inbox, LayoutDashboard, LineChart, MessagesSquare, PiggyBank, Receipt, Route, ScrollText,
-  ShieldCheck, SlidersHorizontal, Users, type LucideIcon,
+  ShieldCheck, SlidersHorizontal, Users, Zap, type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ICONS: Record<string, LucideIcon> = {
-  BadgeCheck, Building2, FileText, Gavel, Inbox, LayoutDashboard, LineChart, MessagesSquare, PiggyBank, Receipt, Route, ScrollText, ShieldCheck, SlidersHorizontal, Users,
+  BadgeCheck, Building2, FileText, Gavel, Inbox, LayoutDashboard, LineChart, MessagesSquare, PiggyBank, Receipt, Route, ScrollText, ShieldCheck, SlidersHorizontal, Users, Zap,
 };
 
 export interface NavItem {

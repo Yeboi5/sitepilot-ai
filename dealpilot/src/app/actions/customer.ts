@@ -249,3 +249,10 @@ export async function leaveReviewAction(fd: FormData) {
   const { actor, ctx } = await customer();
   await act(() => leaveReview(ctx, actor, str(fd, "txId"), int(fd, "rating"), str(fd, "comment")), () => "/app/savings", "/app/savings", "Thanks — your review is published");
 }
+
+export async function compareEnergyAction(fd: FormData) {
+  await customer();
+  const q = new URLSearchParams({ postcode: str(fd, "postcode"), dailyKwh: str(fd, "dailyKwh"), current: str(fd, "current") });
+  const { redirect } = await import("next/navigation");
+  redirect(`/app/energy?${q}`);
+}
