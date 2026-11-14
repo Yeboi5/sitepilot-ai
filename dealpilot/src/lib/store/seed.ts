@@ -121,7 +121,9 @@ export async function seedDemoData(store: Store, now = new Date()): Promise<void
     const storageKey = `${IDS.alex}/${id}`;
     await store.putBlob(storageKey, data, "text/plain");
     const analysis = await ai.analyseDocument({ filename, mimeType: "text/plain", data, category: getCategory(categoryId) });
-    await store.insert("documents", { id, ownerId: IDS.alex, filename, mimeType: "text/plain", sizeBytes: data.length, categoryId, kind, storageKey, analysis, isDemo: true, uploadedAt: iso(-3) });
+    // Demo documents have already been reviewed by the customer.
+    const confirmed = { vendor: analysis.vendor, totalCents: analysis.totalCents, recurrence: analysis.recurrence ?? "one_off", lineItems: analysis.lineItems };
+    await store.insert("documents", { id, ownerId: IDS.alex, filename, mimeType: "text/plain", sizeBytes: data.length, categoryId, kind, storageKey, analysis, confirmed, confirmedAt: iso(-3), scanStatus: "clean", scanEngine: "demo-seed", isDemo: true, uploadedAt: iso(-3) });
   }
 
   // ─── Journey 1/5/6: fencing request, competing bids, negotiation ─────────

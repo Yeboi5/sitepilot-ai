@@ -7,7 +7,8 @@ import { CounterDraft, decodeDraft } from "@/lib/draft-param";
 import { flash, type IdParams, type SearchParams } from "@/lib/page";
 import { appCtx } from "@/lib/services/app-context";
 import { getBusinessNegotiation } from "@/lib/services/negotiations";
-import { draftCounterAction, respondAction } from "../../../actions/business";
+import { FinalTermsCard } from "@/components/final-terms";
+import { approveTermsBizAction, draftCounterAction, respondAction } from "../../../actions/business";
 
 export const metadata = { title: "Negotiation" };
 
@@ -30,6 +31,7 @@ export default async function BizNegotiation({ params, searchParams }: { params:
             <div className="card p-3"><p className="text-xs text-slate-500">Your current offer</p><p className="font-semibold"><Money cents={n.agreedCents ?? n.currentOfferCents} recurrence={n.recurrence} /></p></div>
             <div className="card p-3"><p className="text-xs text-slate-500">Customer asked for</p><p className="font-semibold">{lastAsk !== undefined ? <Money cents={lastAsk} recurrence={n.recurrence} /> : "—"}</p></div>
           </div>
+          {n.finalTerms && ["final_approval", "agreed", "completed"].includes(n.state) && <FinalTermsCard n={n} side="business" action={approveTermsBizAction} />}
           <Card title="Messages">
             <ol className="space-y-3">
               {n.messages.map((m) => (
@@ -73,7 +75,7 @@ export default async function BizNegotiation({ params, searchParams }: { params:
               </Card>
             </>
           ) : (
-            <Card title="Status"><p className="text-sm text-slate-600">{n.state === "agreed" || n.state === "completed" ? "Deal agreed. The customer will confirm the final invoice." : n.state === "counter_received" ? "Waiting for the customer to respond to your counteroffer." : "No action needed."}</p></Card>
+            <Card title="Status"><p className="text-sm text-slate-600">{n.state === "final_approval" ? "Final terms are awaiting approval — see above." : n.state === "agreed" || n.state === "completed" ? "Deal agreed by both parties. The customer will confirm the final invoice." : n.state === "counter_received" ? "Waiting for the customer to respond to your counteroffer." : "No action needed."}</p></Card>
           )}
           <Link href="/biz/inbox" className="text-sm text-brand-700">← Inbox</Link>
         </div>

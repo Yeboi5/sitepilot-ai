@@ -22,7 +22,7 @@ export function VerifyForm({ tx, docs, back, feeCents }: { tx: Transaction; docs
         </div>
         <label className="flex items-start gap-2 text-sm sm:col-span-2">
           <input type="checkbox" name="confirm" required className="mt-1" />
-          <span>I confirm this deal was completed at the amount above. If there is a saving, a <Money cents={feeCents} /> success fee is recorded (simulated in this prototype — no real charge). No saving, no fee.</span>
+          <span>I confirm this deal was completed at the amount above. If this is a qualifying saving, a <Money cents={feeCents} /> success fee (capped at the amount saved) is assessed — it is not charged during launch. Simulated deals and deals with no saving never incur a fee.</span>
         </label>
         <div className="flex flex-wrap gap-2 sm:col-span-2"><button className="btn-primary" type="submit">Verify saving</button></div>
       </form>

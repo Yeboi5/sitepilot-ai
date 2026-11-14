@@ -4,6 +4,7 @@ import { VerifyForm } from "@/components/verify-form";
 import { requireUser } from "@/lib/auth/session";
 import { feeConfig } from "@/lib/config";
 import { getCategory } from "@/lib/domain/categories";
+import { monthlyEquivalent } from "@/lib/domain/savings";
 import { flash, type SearchParams } from "@/lib/page";
 import { appCtx } from "@/lib/services/app-context";
 import { listDocuments } from "@/lib/services/documents";
@@ -20,13 +21,14 @@ export default async function Savings({ searchParams }: { searchParams: SearchPa
   const pending = transactions.filter((t) => t.status === "pending_verification");
   return (
     <>
-      <PageHeader title="Savings & transactions" subtitle={<>Savings count only once you verify the final amount. Fee: <Money cents={fee.successFeeCents} /> per verified saving, capped at the amount saved. No saving, no fee.</>} />
+      <PageHeader title="Savings & transactions" subtitle={<>Savings count only once you verify the final amount. A <Money cents={fee.successFeeCents} /> fee applies once per completed, verified qualifying saving, capped at the amount saved. No saving, no fee. Fees are assessed but not charged during launch.</>} />
       <Flash error={f.error} notice={f.notice} />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat tone="brand" label="Verified (12 mo)" value={<Money cents={summary.realisedCents} />} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <Stat tone="brand" label="Realised (verified)" value={<Money cents={summary.realisedCents} />} hint="Money you've actually saved" />
+        <Stat label="Recurring / month" value={<Money cents={summary.monthlyRecurringCents} />} />
+        <Stat label="Projected 12 months" value={<Money cents={summary.projectedAnnualCents} />} hint="Projection, not yet realised" />
         <Stat label="Pending" value={<Money cents={summary.pendingCents} />} hint={`${summary.pendingCount} to verify`} />
-        <Stat label="Fees" value={<Money cents={summary.feesAssessedCents} />} hint="Simulated, not charged" />
-        <Stat label="Net" value={<Money cents={summary.projectedAnnualCents} />} />
+        <Stat label="Fees assessed" value={<Money cents={summary.feesAssessedCents} />} hint="Not charged during launch" />
       </div>
 
       {pending.length > 0 && (
@@ -44,15 +46,17 @@ export default async function Savings({ searchParams }: { searchParams: SearchPa
         {transactions.length === 0 ? <Empty title="No transactions yet" /> : (
           <div className="-mx-4 overflow-x-auto sm:mx-0">
             <table className="w-full min-w-[640px] text-sm">
-              <thead><tr className="border-b text-xs uppercase text-slate-500"><th className="table-cell">Deal</th><th className="table-cell">Before</th><th className="table-cell">After</th><th className="table-cell">Saved (12 mo)</th><th className="table-cell">Fee</th><th className="table-cell">Status</th></tr></thead>
+              <thead><tr className="border-b text-xs uppercase text-slate-500"><th className="table-cell">Deal</th><th className="table-cell">Before</th><th className="table-cell">After</th><th className="table-cell">Realised</th><th className="table-cell">Per month</th><th className="table-cell">Projected 12 mo</th><th className="table-cell">Fee</th><th className="table-cell">Status</th></tr></thead>
               <tbody>
                 {transactions.map((t) => (
                   <tr key={t.id} className="border-b border-slate-100">
                     <td className="table-cell"><p className="font-medium">{t.negotiationId ? <Link className="hover:underline" href={`/app/negotiations/${t.negotiationId}`}>{t.description}</Link> : t.description}</p><p className="text-xs text-slate-500">{getCategory(t.categoryId).name} · {new Date(t.createdAt).toLocaleDateString("en-AU")} {t.simulated && <Badge tone="amber">Simulated</Badge>}</p></td>
                     <td className="table-cell"><Money cents={t.baselineCents} recurrence={t.recurrence} /></td>
                     <td className="table-cell"><Money cents={t.finalCents} recurrence={t.recurrence} /></td>
-                    <td className="table-cell font-semibold text-brand-700"><Money cents={t.annualSavingsCents} /></td>
-                    <td className="table-cell"><Money cents={t.feeCents} /> <span className="text-xs text-slate-500">{t.feeStatus.replace("_", " ")}</span></td>
+                    <td className="table-cell font-semibold text-brand-700">{t.status === "verified" ? <Money cents={t.periodSavingsCents} /> : <span className="text-slate-400">—</span>}</td>
+                    <td className="table-cell">{t.recurrence === "one_off" ? "—" : <Money cents={monthlyEquivalent(t.periodSavingsCents, t.recurrence)} />}</td>
+                    <td className="table-cell text-slate-600">{t.recurrence === "one_off" ? "—" : <Money cents={t.annualSavingsCents} />}</td>
+                    <td className="table-cell"><Money cents={t.feeCents} /> <span className="block text-xs text-slate-500" title={t.feeReason}>{t.feeStatus.replace(/_/g, " ")}</span></td>
                     <td className="table-cell"><TxBadge status={t.status} /></td>
                   </tr>
                 ))}

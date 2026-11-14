@@ -51,7 +51,7 @@ export default async function RequestPage({ params, searchParams }: { params: Id
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {i === 0 && <Badge tone="green">Best overall</Badge>}
-                    {row.offer.isSimulated ? <Provenance kind="simulated" /> : <Provenance kind="live">Registered business</Provenance>}
+                    {row.offer.isSimulated ? <Provenance kind="simulated" /> : (row.business.verificationStatus === "verified" ? <Provenance kind="live">Verified business{row.business.statusReason?.startsWith("Fictional") ? " (demo)" : ""}</Provenance> : <Badge tone="red">Not verified</Badge>)}
                     {row.offer.aiDrafted && <Badge tone="violet">AI-assisted</Badge>}
                     {row.offer.status !== "submitted" && <Badge tone="blue">{row.offer.status}</Badge>}
                   </div>
@@ -59,12 +59,11 @@ export default async function RequestPage({ params, searchParams }: { params: Id
                     <dt className="text-slate-500">You save</dt><dd>{s.isSaving ? <span className="text-brand-700"><Money cents={s.periodSavingsCents} /> ({s.percent}%)</span> : "—"}</dd>
                     <dt className="text-slate-500">Warranty</dt><dd>{row.offer.warrantyMonths ? `${row.offer.warrantyMonths} months` : "—"}{row.best.warranty && " ✓"}</dd>
                     <dt className="text-slate-500">{category.completionLabel}</dt><dd>{row.offer.completionDays} days{row.best.completion && " ✓"}</dd>
-                    <dt className="text-slate-500">Reviews</dt><dd>{row.verifiedRating !== undefined ? `★ ${row.verifiedRating} (verified)` : "No verified reviews"}</dd>
+                    <dt className="text-slate-500">Reviews</dt><dd>{row.verifiedRating !== undefined ? `★ ${row.verifiedRating} (${row.reviewCount} verified jobs)` : "No verified reviews"}</dd>
                   </dl>
                   <p className="mt-2 text-xs text-slate-600">{row.offer.scope} <span className="text-slate-500">{row.offer.materials}</span></p>
                   <div className="mt-1 text-xs">
-                    {row.business.licenceNumber && <span className="mr-2">Licence {row.business.licenceNumber}</span>}
-                    {row.business.insured && row.offer.includesInsurance && <span>Insured</span>}
+                    <Credentials row={row} />
                     {row.flags.filter((x) => x !== "Simulated demo offer").map((x) => <p key={x} className="text-red-700">⚠ {x}</p>)}
                   </div>
                   <div className="mt-3"><OfferActions offerId={row.offer.id} status={row.offer.status} requestId={r.id} closed={closed} neg={neg} /></div>
@@ -90,7 +89,7 @@ export default async function RequestPage({ params, searchParams }: { params: Id
                         <p className="font-medium">{row.business.name}</p>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {i === 0 && <Badge tone="green">Best overall</Badge>}
-                          {row.offer.isSimulated ? <Provenance kind="simulated" /> : <Provenance kind="live">Registered business</Provenance>}
+                          {row.offer.isSimulated ? <Provenance kind="simulated" /> : (row.business.verificationStatus === "verified" ? <Provenance kind="live">Verified business{row.business.statusReason?.startsWith("Fictional") ? " (demo)" : ""}</Provenance> : <Badge tone="red">Not verified</Badge>)}
                           {row.offer.aiDrafted && <Badge tone="violet" title="Drafted with AI, approved by a person at the business">AI-assisted</Badge>}
                           {row.offer.status !== "submitted" && <Badge tone="blue">{row.offer.status}</Badge>}
                         </div>
@@ -101,11 +100,10 @@ export default async function RequestPage({ params, searchParams }: { params: Id
                       <td className="table-cell">{row.offer.warrantyMonths ? `${row.offer.warrantyMonths} mo` : "—"}{row.best.warranty && <Check className="ml-1 inline h-4 w-4 text-brand-600" aria-label="Longest" />}</td>
                       <td className="table-cell">{row.offer.completionDays} days{row.best.completion && <Check className="ml-1 inline h-4 w-4 text-brand-600" aria-label="Fastest" />}</td>
                       <td className="table-cell text-xs">
-                        {row.business.licenceNumber ? <p>Licence {row.business.licenceNumber}</p> : null}
-                        {row.business.insured && row.offer.includesInsurance ? <p>Insured</p> : null}
+                        <Credentials row={row} />
                         {row.flags.filter((x) => x !== "Simulated demo offer").map((x) => <p key={x} className="text-red-700">⚠ {x}</p>)}
                       </td>
-                      <td className="table-cell text-xs">{row.verifiedRating !== undefined ? <>★ {row.verifiedRating} <span className="text-slate-500">(verified, {row.business.reviewCount})</span></> : <span className="text-slate-400">No verified reviews</span>}</td>
+                      <td className="table-cell text-xs">{row.verifiedRating !== undefined ? <>★ {row.verifiedRating} <span className="text-slate-500">({row.reviewCount} verified job{row.reviewCount === 1 ? "" : "s"})</span></> : <span className="text-slate-400">No verified reviews</span>}</td>
                       <td className="table-cell">
                         <OfferActions offerId={row.offer.id} status={row.offer.status} requestId={r.id} closed={closed} neg={neg} />
                       </td>
@@ -138,6 +136,21 @@ function OfferActions({ offerId, status, requestId, closed, neg }: { offerId: st
                             </form>
                           </div>
                         )}
+    </>
+  );
+}
+
+const CRED: Record<string, string> = { verified: "verified", expiring: "verified · expires soon", expired: "expired", submitted: "awaiting review", rejected: "rejected", missing: "not provided" };
+
+/** Credentials as DealPilot has checked them — never self-declared details presented as fact. */
+function Credentials({ row }: { row: import("@/lib/domain/offers").OfferComparisonRow }) {
+  if (row.offer.isSimulated) {
+    return <p className="text-slate-500">{[row.business.licenceNumber && `Licence ${row.business.licenceNumber}`, row.business.insured && row.offer.includesInsurance && "Insured"].filter(Boolean).join(" · ") || "No details"} (self-declared, simulated)</p>;
+  }
+  return (
+    <>
+      <p className={row.licence === "verified" || row.licence === "expiring" ? "" : "text-slate-500"}>Licence {CRED[row.licence ?? "missing"]}</p>
+      <p className={row.insurance === "verified" || row.insurance === "expiring" ? "" : "text-slate-500"}>Insurance {CRED[row.insurance ?? "missing"]}</p>
     </>
   );
 }

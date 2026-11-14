@@ -7,7 +7,7 @@ import { updateBusinessProfile } from "@/lib/services/accounts";
 import { appCtx } from "@/lib/services/app-context";
 import { submitGroupOffer } from "@/lib/services/groups";
 import { submitOffer, withdrawOffer } from "@/lib/services/marketplace";
-import { businessRespond } from "@/lib/services/negotiations";
+import { approveFinalTerms, businessRespond } from "@/lib/services/negotiations";
 import { act, int, money, optionalMoney, str } from "./helpers";
 
 async function business() {
@@ -81,4 +81,10 @@ export async function draftCounterAction(fd: FormData) {
   const id = str(fd, "id");
   const { draftBusinessCounter } = await import("@/lib/services/negotiations");
   await act(() => draftBusinessCounter(ctx, actor, id, money(fd, "minimum", "lowest acceptable price")), (d) => `/biz/inbox/${id}?draft=${Buffer.from(JSON.stringify(d)).toString("base64url")}`, `/biz/inbox/${id}`);
+}
+
+export async function approveTermsBizAction(fd: FormData) {
+  const { actor, ctx } = await business();
+  const id = str(fd, "id");
+  await act(() => approveFinalTerms(ctx, actor, id, fd.get("confirm") === "on"), () => `/biz/inbox/${id}`, `/biz/inbox/${id}`, "Final terms approved");
 }

@@ -6,14 +6,14 @@ import { ValidationError } from "@/lib/domain/permissions";
 import type { PermissionMode, Recurrence, StoredDocument, VerificationMethod, WatchKind } from "@/lib/domain/types";
 import { updateSettings } from "@/lib/services/accounts";
 import { appCtx } from "@/lib/services/app-context";
-import { uploadDocument } from "@/lib/services/documents";
+import { confirmExtraction, uploadDocument } from "@/lib/services/documents";
 import { joinGroup, leaveGroup, simulateGroupGrowth, takeUpGroupDeal } from "@/lib/services/groups";
 import { cancelRequest, createRequest } from "@/lib/services/marketplace";
 import {
   addExpense, addPricePoint, claimPriceAdjustment, createWatch, importExpensesCsv, markAlertRead, removeWatch, simulateFeedTick,
 } from "@/lib/services/monitoring";
 import {
-  acceptCurrentOffer, approveDraft, discardDraft, prepareNextAction, recordExternalReply, setNegotiationMode, setTarget, startExternalNegotiation,
+  acceptCurrentOffer, approveDraft, approveFinalTerms, discardDraft, prepareNextAction, recordExternalReply, setNegotiationMode, setTarget, startExternalNegotiation,
   startOfferNegotiation, walkAway,
 } from "@/lib/services/negotiations";
 import { acceptOfferDirectly, cancelTransaction, verifyTransaction } from "@/lib/services/transactions";
@@ -40,6 +40,25 @@ export async function uploadDocumentAction(fd: FormData) {
       categoryId: str(fd, "categoryId"), kind: (str(fd, "kind") || "other") as StoredDocument["kind"], statedAmountCents: optionalMoney(fd, "statedAmount"),
     });
   }, (d) => `/app/documents/${d.id}`, "/app/documents", "Uploaded and analysed");
+}
+
+export async function confirmExtractionAction(fd: FormData) {
+  const { actor, ctx } = await customer();
+  const id = str(fd, "id");
+  await act(async () => {
+    const lineItems: { description: string; amountCents: number }[] = [];
+    for (let i = 0; i < 50; i++) {
+      const d = str(fd, `li_desc_${i}`);
+      if (!d && !str(fd, `li_amt_${i}`)) continue;
+      lineItems.push({ description: d, amountCents: money(fd, `li_amt_${i}`, "line item amount") });
+    }
+    return confirmExtraction(ctx, actor, id, { vendor: str(fd, "vendor"), totalCents: optionalMoney(fd, "total"), recurrence: recurrence(str(fd, "recurrence")), lineItems, notes: str(fd, "notes") });
+  }, () => `/app/documents/${id}`, `/app/documents/${id}`, "Details confirmed");
+}
+
+export async function approveTermsAction(fd: FormData) {
+  const { actor, ctx } = await customer();
+  await act(() => approveFinalTerms(ctx, actor, str(fd, "id"), fd.get("confirm") === "on"), () => negPath(fd), negPath(fd), "Final terms approved");
 }
 
 // ─── Requests & offers ──────────────────────────────────────────────────────
@@ -71,7 +90,7 @@ export async function negotiateOfferAction(fd: FormData) {
 
 export async function acceptOfferAction(fd: FormData) {
   const { actor, ctx } = await customer();
-  await act(() => acceptOfferDirectly(ctx, actor, str(fd, "offerId"), fd.get("confirm") === "on"), () => "/app/savings", `/app/requests/${str(fd, "requestId")}`, "Offer accepted — confirm the final invoice to verify your saving");
+  await act(() => acceptOfferDirectly(ctx, actor, str(fd, "offerId"), fd.get("confirm") === "on"), (n) => `/app/negotiations/${n.id}`, `/app/requests/${str(fd, "requestId")}`, "Offer accepted — waiting for the business to approve the final terms");
 }
 
 // ─── Negotiations ───────────────────────────────────────────────────────────
@@ -105,7 +124,7 @@ export async function discardDraftAction(fd: FormData) {
 
 export async function acceptNegotiationAction(fd: FormData) {
   const { actor, ctx } = await customer();
-  await act(() => acceptCurrentOffer(ctx, actor, str(fd, "id"), fd.get("confirm") === "on"), () => negPath(fd), negPath(fd), "Accepted — now verify the final invoice");
+  await act(() => acceptCurrentOffer(ctx, actor, str(fd, "id"), fd.get("confirm") === "on"), () => negPath(fd), negPath(fd), "Accepted — final terms recorded");
 }
 
 export async function walkAwayAction(fd: FormData) {

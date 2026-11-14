@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ForbiddenError, ValidationError } from "@/lib/domain/permissions";
-import { uploadDocument } from "@/lib/services/documents";
+import { confirmExtraction, uploadDocument } from "@/lib/services/documents";
 import { getGroup, joinGroup, simulateGroupGrowth, submitGroupOffer, takeUpGroupDeal } from "@/lib/services/groups";
 import {
   createRequest, draftBidWithAI, getRequestForBusiness, getRequestForCustomer, listRequestsForBusiness, submitOffer,
@@ -25,6 +25,13 @@ describe("Journey 1 — $5,500 fencing quote receives competing bids", () => {
     expect(doc.analysis?.totalCents).toBe(550_000);
     expect(doc.analysis?.simulated).toBe(true);
     expect(doc.analysis?.risks.some((r) => /warranty/i.test(r))).toBe(true);
+
+    // The customer must review the extraction before it's used.
+    const draftReq = { categoryId: "trades", title: "Front fence 12m", description: "Colorbond", region: "Sydney NSW", baselineCents: 550_000, recurrence: "one_off" as const, fields: { trade: "Fencing", size: "12" }, documentId: doc.id };
+    await expect(createRequest(ctx, alex, draftReq)).rejects.toThrow(/Review and confirm/);
+    const confirmed = await confirmExtraction(ctx, alex, doc.id, { vendor: "Fictional Fences Pty Ltd", totalCents: 550_000, recurrence: "one_off", lineItems: doc.analysis!.lineItems });
+    expect(confirmed.confirmed?.vendor).toBe("Fictional Fences Pty Ltd");
+    await expect(confirmExtraction(ctx, priya, doc.id, { recurrence: "one_off", lineItems: [] })).rejects.toBeInstanceOf(ForbiddenError);
 
     const req = await createRequest(ctx, alex, {
       categoryId: "trades", title: "Front fence 12m", description: "Colorbond", region: "Sydney NSW", baselineCents: 550_000,

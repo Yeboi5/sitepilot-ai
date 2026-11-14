@@ -2,6 +2,7 @@ import { Bot, Building2, Info, User } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, Card, cx, DemoNote, Flash, Money, PageHeader, Provenance, StateBadge, TxBadge } from "@/components/ui";
+import { FinalTermsCard } from "@/components/final-terms";
 import { VerifyForm } from "@/components/verify-form";
 import { requireUser } from "@/lib/auth/session";
 import { feeConfig } from "@/lib/config";
@@ -12,7 +13,7 @@ import { appCtx } from "@/lib/services/app-context";
 import { listDocuments } from "@/lib/services/documents";
 import { getCustomerNegotiation } from "@/lib/services/negotiations";
 import {
-  acceptNegotiationAction, approveDraftAction, discardDraftAction, prepareActionAction, recordReplyAction, setModeAction, setTargetAction, walkAwayAction,
+  acceptNegotiationAction, approveDraftAction, approveTermsAction, discardDraftAction, prepareActionAction, recordReplyAction, setModeAction, setTargetAction, walkAwayAction,
 } from "../../../actions/customer";
 
 export const metadata = { title: "Negotiation" };
@@ -49,7 +50,11 @@ export default async function NegotiationPage({ params, searchParams }: { params
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="card p-3"><p className="text-xs text-slate-500">Was paying</p><p className="font-semibold"><Money cents={n.baselineCents} recurrence={n.recurrence} /></p></div>
             <div className="card p-3"><p className="text-xs text-slate-500">{n.agreedCents !== undefined ? "Agreed" : "Their offer"}</p><p className="font-semibold"><Money cents={n.agreedCents ?? n.currentOfferCents} recurrence={n.recurrence} /></p></div>
-            <div className="card border-brand-200 bg-brand-50 p-3"><p className="text-xs text-slate-500">Saving / year</p><p className="font-semibold text-brand-800"><Money cents={s.annualSavingsCents} /></p></div>
+            {n.recurrence === "one_off" ? (
+              <div className="card border-brand-200 bg-brand-50 p-3"><p className="text-xs text-slate-500">Saving</p><p className="font-semibold text-brand-800"><Money cents={s.periodSavingsCents} /></p></div>
+            ) : (
+              <div className="card border-brand-200 bg-brand-50 p-3"><p className="text-xs text-slate-500">Saving per month</p><p className="font-semibold text-brand-800"><Money cents={s.monthlySavingsCents} /></p><p className="text-[11px] text-slate-500">projected <Money cents={s.annualSavingsCents} />/yr</p></div>
+            )}
           </div>
 
           {draft && n.state === "awaiting_approval" && (
@@ -65,6 +70,8 @@ export default async function NegotiationPage({ params, searchParams }: { params
             </Card>
           )}
 
+          {n.finalTerms && ["final_approval", "agreed", "completed"].includes(n.state) && <FinalTermsCard n={n} side="customer" action={approveTermsAction} />}
+
           {n.state === "agreed" && tx && (
             <Card title={<span className="flex items-center gap-2">Record & verify your saving <TxBadge status={tx.status} /></span>} className="border-brand-300">
               <VerifyForm tx={tx} docs={docs} back={`/app/negotiations/${n.id}`} feeCents={feeConfig().successFeeCents} />
@@ -72,7 +79,11 @@ export default async function NegotiationPage({ params, searchParams }: { params
           )}
           {tx && tx.status !== "pending_verification" && (
             <Card title="Outcome">
-              <p className="flex flex-wrap items-center gap-2 text-sm"><TxBadge status={tx.status} /> Final <Money cents={tx.finalCents} recurrence={tx.recurrence} /> · saved <Money cents={tx.annualSavingsCents} /> over 12 months · fee <Money cents={tx.feeCents} /> {tx.feeStatus === "charged_simulated" && <Badge tone="amber">Simulated charge</Badge>}</p>
+              <p className="flex flex-wrap items-center gap-2 text-sm">
+                <TxBadge status={tx.status} /> Final <Money cents={tx.finalCents} recurrence={tx.recurrence} /> · realised saving <Money cents={tx.periodSavingsCents} />
+                {tx.recurrence !== "one_off" && <> · projected <Money cents={tx.annualSavingsCents} /> over 12 months</>}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Fee: <Money cents={tx.feeCents} /> — {tx.feeReason ?? tx.feeStatus.replace(/_/g, " ")}{tx.feeStatus === "assessed" && ". Assessed only; nothing was charged."}</p>
               <Link href="/app/savings" className="mt-2 inline-block text-sm text-brand-700">View ledger →</Link>
             </Card>
           )}

@@ -30,6 +30,12 @@ async function noError(page) {
   const err = await page.locator('[data-flash="error"]').count();
   if (err) throw new Error(`Error banner: ${await page.locator('[data-flash="error"]').first().innerText()}`);
 }
+async function approveTerms(page) {
+  await expectText(page, "Final terms");
+  await page.locator('form:has(button:text("Approve final terms")) input[name="confirm"]').check();
+  await page.getByRole("button", { name: "Approve final terms" }).click();
+  await page.waitForLoadState("networkidle"); await noError(page);
+}
 async function shot(page, name) { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true }); }
 
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); // phone-sized
@@ -45,7 +51,7 @@ await step("signed-out visitors are sent to sign-in", async () => {
 });
 
 await signIn(page, "alex@demo.dealpilot.test");
-await step("customer dashboard renders", async () => { await expectText(page, "Verified savings"); await shot(page, "01-dashboard"); });
+await step("customer dashboard renders", async () => { await expectText(page, "Realised savings"); await expectText(page, "Projected next 12 months"); await shot(page, "01-dashboard"); });
 
 await step("J1: upload a quote and get competing bids", async () => {
   await page.goto(`${BASE}/app/documents`);
@@ -53,7 +59,12 @@ await step("J1: upload a quote and get competing bids", async () => {
   await page.selectOption("#categoryId", "trades");
   await page.getByRole("button", { name: "Upload & analyse" }).click();
   await page.waitForURL(/\/app\/documents\/[0-9a-f-]+/);
-  await noError(page); await expectText(page, "$5,500.00");
+  await noError(page);
+  if ((await page.getByRole("link", { name: "Get competing bids" }).count()) !== 0) throw new Error("bids offered before the customer confirmed the extraction");
+  await page.fill("#vendor", "Example Fences Pty Ltd");
+  await page.getByRole("button", { name: "Confirm details" }).click();
+  await page.waitForLoadState("networkidle"); await noError(page);
+  await expectText(page, "Details confirmed");
   await shot(page, "02-analysis");
   await page.getByRole("link", { name: "Get competing bids" }).click();
   await page.fill("#title", "Rear fence 20m");
@@ -76,6 +87,7 @@ await step("J2: approve AI draft, receive simulated counter, approve again, veri
   await page.locator('form:has(textarea[name="body"]) input[name="confirm"]').check();
   await page.getByRole("button", { name: "Approve & send" }).click();
   await page.waitForLoadState("networkidle"); await noError(page);
+  await approveTerms(page);
   await expectText(page, "Record & verify your saving");
   await shot(page, "04-internet-agreed");
   await page.locator('form:has(input[name="finalAmount"]) input[name="confirm"]').check();
@@ -164,13 +176,14 @@ await step("J6: customer counters, business accepts, customer verifies; fee reco
   await ctx.clearCookies();
   await signIn(page, "alex@demo.dealpilot.test");
   await page.goto(`${BASE}/app/negotiations/${IDS.negFence}`);
+  await approveTerms(page);
   await expectText(page, "Record & verify your saving");
   await page.locator('form:has(input[name="finalAmount"]) input[name="confirm"]').check();
   await page.getByRole("button", { name: "Verify saving" }).click();
   await page.waitForLoadState("networkidle"); await noError(page);
   await expectText(page, "Outcome");
   await page.goto(`${BASE}/app/savings`);
-  await expectText(page, "fee charged");
+  await expectText(page, "fee assessed");
   await shot(page, "07-savings");
 });
 

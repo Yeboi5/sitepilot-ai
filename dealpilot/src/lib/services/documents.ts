@@ -1,6 +1,6 @@
 import { getCategory, isCategory } from "../domain/categories";
 import { ForbiddenError, NotFoundError, requireRole, ValidationError } from "../domain/permissions";
-import type { Actor, StoredDocument } from "../domain/types";
+import type { Actor, Recurrence, StoredDocument } from "../domain/types";
 import { audit, newId, type Ctx } from "./context";
 
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -79,4 +79,31 @@ export async function getDocumentFile(ctx: Ctx, actor: Actor, id: string) {
   if (!blob) throw new NotFoundError("File");
   await audit(ctx, actor, "document.downloaded", "document", id);
   return { doc, blob };
+}
+
+export interface ConfirmExtractionInput {
+  vendor?: string;
+  totalCents?: number;
+  recurrence: Recurrence;
+  lineItems: { description: string; amountCents: number }[];
+  notes?: string;
+}
+
+/**
+ * The customer reviews what the AI extracted and corrects it. Only these confirmed values are
+ * used for requests and negotiations; the raw AI output is kept for audit.
+ */
+export async function confirmExtraction(ctx: Ctx, actor: Actor, id: string, input: ConfirmExtractionInput): Promise<StoredDocument> {
+  const doc = await getDocument(ctx, actor, id);
+  if (doc.ownerId !== actor.userId) throw new ForbiddenError();
+  if (input.totalCents !== undefined && (!Number.isInteger(input.totalCents) || input.totalCents <= 0)) throw new ValidationError("Total must be a positive amount");
+  const lineItems = input.lineItems
+    .filter((l) => l.description.trim() && Number.isInteger(l.amountCents) && l.amountCents >= 0)
+    .slice(0, 50)
+    .map((l) => ({ description: l.description.trim().slice(0, 200), amountCents: l.amountCents }));
+  const confirmed = { vendor: input.vendor?.trim().slice(0, 120) || undefined, totalCents: input.totalCents, recurrence: input.recurrence, lineItems, notes: input.notes?.trim().slice(0, 1000) || undefined };
+  const changed = JSON.stringify({ v: doc.analysis?.vendor, t: doc.analysis?.totalCents, r: doc.analysis?.recurrence }) !== JSON.stringify({ v: confirmed.vendor, t: confirmed.totalCents, r: confirmed.recurrence });
+  const updated = await ctx.store.update("documents", id, { confirmed, confirmedAt: ctx.now().toISOString() });
+  await audit(ctx, actor, "document.extraction_confirmed", "document", id, { correctedByCustomer: changed });
+  return updated;
 }

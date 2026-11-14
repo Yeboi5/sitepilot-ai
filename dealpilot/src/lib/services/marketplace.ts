@@ -39,6 +39,7 @@ export async function createRequest(ctx: Ctx, actor: Actor, input: CreateRequest
   if (input.documentId) {
     const doc = await ctx.store.get("documents", input.documentId);
     if (!doc || doc.ownerId !== actor.userId) throw new ForbiddenError("That document isn't yours");
+    if (!doc.confirmedAt) throw new ValidationError("Review and confirm the details extracted from your document first");
   }
   const now = ctx.now();
   const req: PurchaseRequest = {

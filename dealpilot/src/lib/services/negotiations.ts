@@ -48,6 +48,7 @@ export async function startExternalNegotiation(ctx: Ctx, actor: Actor, input: St
   if (input.documentId) {
     const doc = await ctx.store.get("documents", input.documentId);
     if (!doc || doc.ownerId !== actor.userId) throw new ForbiddenError("That document isn't yours");
+    if (!doc.confirmedAt) throw new ValidationError("Review and confirm the details extracted from your document first");
     benchmarkLow = doc.analysis?.benchmarkLowCents;
   }
   benchmarkLow ??= round100(input.baselineCents * category.simulatedBenchmark.low);
