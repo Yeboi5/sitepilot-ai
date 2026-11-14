@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge, Card, Empty, Flash, Money, PageHeader, Stat, TxBadge } from "@/components/ui";
 import { VerifyForm } from "@/components/verify-form";
+import { leaveReviewAction } from "../../actions/customer";
 import { requireUser } from "@/lib/auth/session";
 import { feeConfig } from "@/lib/config";
 import { getCategory } from "@/lib/domain/categories";
@@ -16,7 +17,8 @@ export default async function Savings({ searchParams }: { searchParams: SearchPa
   const f = await flash(searchParams);
   const { actor } = await requireUser("customer");
   const ctx = await appCtx();
-  const [{ transactions, summary }, ledger, docs] = await Promise.all([listCustomerTransactions(ctx, actor), listLedger(ctx, actor), listDocuments(ctx, actor)]);
+  const [{ transactions, summary }, ledger, docs, reviews] = await Promise.all([listCustomerTransactions(ctx, actor), listLedger(ctx, actor), listDocuments(ctx, actor), ctx.store.list("reviews", { customerId: actor.userId })]);
+  const reviewable = transactions.filter((t) => t.status === "verified" && !t.simulated && t.businessId && !reviews.some((r) => r.transactionId === t.id));
   const fee = feeConfig();
   const pending = transactions.filter((t) => t.status === "pending_verification");
   return (
@@ -40,6 +42,21 @@ export default async function Savings({ searchParams }: { searchParams: SearchPa
             </Card>
           ))}
         </div>
+      )}
+
+      {reviewable.length > 0 && (
+        <Card title="Review your verified jobs" className="mt-6">
+          <p className="mb-3 text-sm text-slate-600">Only customers with a verified, completed DealPilot job can review a business, so ratings can be trusted.</p>
+          {reviewable.map((t) => (
+            <form key={t.id} action={leaveReviewAction} className="mb-3 grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-6">
+              <input type="hidden" name="txId" value={t.id} />
+              <p className="text-sm font-medium sm:col-span-6">{t.description}</p>
+              <select className="input" name="rating" defaultValue="5" aria-label="Rating">{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{"★".repeat(n)}</option>)}</select>
+              <input className="input sm:col-span-4" name="comment" placeholder="How did it go? (optional)" />
+              <button className="btn-secondary" type="submit">Post review</button>
+            </form>
+          ))}
+        </Card>
       )}
 
       <Card title="Savings history" className="mt-6">

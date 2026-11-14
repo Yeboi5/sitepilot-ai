@@ -5,6 +5,7 @@ import { getCategory } from "@/lib/domain/categories";
 import { ValidationError } from "@/lib/domain/permissions";
 import type { PermissionMode, Recurrence, StoredDocument, VerificationMethod, WatchKind } from "@/lib/domain/types";
 import { updateSettings } from "@/lib/services/accounts";
+import { leaveReview } from "@/lib/services/verification";
 import { appCtx } from "@/lib/services/app-context";
 import { confirmExtraction, uploadDocument } from "@/lib/services/documents";
 import { joinGroup, leaveGroup, simulateGroupGrowth, takeUpGroupDeal } from "@/lib/services/groups";
@@ -242,4 +243,9 @@ export async function updateSettingsAction(fd: FormData) {
   await act(() => updateSettings(ctx, actor, {
     permissionMode: str(fd, "mode") as PermissionMode, autopilotLimitCents: optionalMoney(fd, "limit") ?? 0, region: str(fd, "region"),
   }), () => "/app/settings", "/app/settings", "Settings saved");
+}
+
+export async function leaveReviewAction(fd: FormData) {
+  const { actor, ctx } = await customer();
+  await act(() => leaveReview(ctx, actor, str(fd, "txId"), int(fd, "rating"), str(fd, "comment")), () => "/app/savings", "/app/savings", "Thanks — your review is published");
 }

@@ -6,6 +6,7 @@ import type { PriceTier } from "@/lib/domain/types";
 import { updateBusinessProfile } from "@/lib/services/accounts";
 import { appCtx } from "@/lib/services/app-context";
 import { submitGroupOffer } from "@/lib/services/groups";
+import { addCredential, requestVerification, submitAbn } from "@/lib/services/verification";
 import { submitOffer, withdrawOffer } from "@/lib/services/marketplace";
 import { approveFinalTerms, businessRespond } from "@/lib/services/negotiations";
 import { act, int, money, optionalMoney, str } from "./helpers";
@@ -87,4 +88,28 @@ export async function approveTermsBizAction(fd: FormData) {
   const { actor, ctx } = await business();
   const id = str(fd, "id");
   await act(() => approveFinalTerms(ctx, actor, id, fd.get("confirm") === "on"), () => `/biz/inbox/${id}`, `/biz/inbox/${id}`, "Final terms approved");
+}
+
+// ─── Verification ───────────────────────────────────────────────────────────
+
+export async function submitAbnAction(fd: FormData) {
+  const { actor, ctx } = await business();
+  await act(() => submitAbn(ctx, actor, str(fd, "abn")), () => "/biz/verification", "/biz/verification", "ABN checked");
+}
+
+export async function addCredentialAction(fd: FormData) {
+  const { actor, ctx } = await business();
+  await act(async () => {
+    const file = fd.get("evidence");
+    const evidence = file instanceof File && file.size > 0 ? { filename: file.name, mimeType: file.type, data: new Uint8Array(await file.arrayBuffer()) } : undefined;
+    return addCredential(ctx, actor, {
+      kind: str(fd, "kind") as "licence" | "insurance", reference: str(fd, "reference"), issuer: str(fd, "issuer"), jurisdiction: str(fd, "jurisdiction"),
+      expiresAt: str(fd, "expiresAt") || undefined, evidence,
+    });
+  }, () => "/biz/verification", "/biz/verification", "Submitted for review — it isn't verified until an administrator checks it");
+}
+
+export async function requestVerificationAction() {
+  const { actor, ctx } = await business();
+  await act(() => requestVerification(ctx, actor), () => "/biz/verification", "/biz/verification", "Verification requested");
 }

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AIProvider } from "../ai/types";
+import type { Scanner } from "../integrations/scanner";
 import type { FeeConfig } from "../domain/savings";
 import type { Actor, Alert, AuditLog } from "../domain/types";
 import type { Store } from "../store/types";
@@ -10,6 +11,8 @@ export interface Ctx {
   ai: AIProvider;
   fees: FeeConfig;
   now: () => Date;
+  /** Malware scanner for uploads. Defaults to the built-in baseline checks. */
+  scanner?: Scanner;
 }
 
 export const newId = () => randomUUID();

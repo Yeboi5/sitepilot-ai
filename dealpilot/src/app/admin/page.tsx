@@ -1,4 +1,3 @@
-import { ADMIN_NAV, Shell } from "@/components/shell";
 import { Badge, Card, Flash, Money, PageHeader } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { dataDriver, aiProviderName, feeConfig } from "@/lib/config";
@@ -13,12 +12,12 @@ export const metadata = { title: "Audit & ledger" };
 
 export default async function Admin({ searchParams }: { searchParams: SearchParams }) {
   const f = await flash(searchParams);
-  const { user, actor } = await requireUser("admin");
+  const { actor } = await requireUser("admin");
   const ctx = await appCtx();
   const [audit, ledger] = await Promise.all([listAudit(ctx, actor, 300), listLedger(ctx, actor)]);
-  const fees = ledger.filter((e) => e.type === "fee_charged").reduce((s, e) => s + e.amountCents, 0);
+  const fees = ledger.filter((e) => e.type === "fee_assessed").reduce((s, e) => s + e.amountCents, 0);
   return (
-    <Shell user={user} nav={ADMIN_NAV} portal="Admin">
+    <>
       <PageHeader title="Audit log & ledger" subtitle={<>Driver: <Badge>{dataDriver()}</Badge> · AI: <Badge>{aiProviderName()}</Badge> · fee <Money cents={feeConfig().successFeeCents} /></>}
         actions={dataDriver() === "memory" && <form action={resetDemoAction}><button className="btn-danger" type="submit">Reset demo data</button></form>} />
       <Flash error={f.error} notice={f.notice} />
@@ -31,7 +30,7 @@ export default async function Admin({ searchParams }: { searchParams: SearchPara
             </table>
           </div>
         </Card>
-        <Card title="Platform ledger" action={<span className="text-sm">Fees recorded: <Money cents={fees} /> <Badge tone="amber">Simulated</Badge></span>}>
+        <Card title="Platform ledger" action={<span className="text-sm">Fees assessed: <Money cents={fees} /> <Badge tone="amber">Not collected</Badge></span>}>
           <div className="max-h-[640px] overflow-auto">
             <table className="w-full text-xs">
               <thead><tr className="border-b uppercase text-slate-500"><th className="table-cell">When</th><th className="table-cell">Type</th><th className="table-cell text-right">Amount</th><th className="table-cell">Key</th></tr></thead>
@@ -40,6 +39,6 @@ export default async function Admin({ searchParams }: { searchParams: SearchPara
           </div>
         </Card>
       </div>
-    </Shell>
+    </>
   );
 }

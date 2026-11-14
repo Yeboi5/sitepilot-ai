@@ -181,3 +181,38 @@ describe("Persistence and integrity through the Supabase driver", () => {
     expect(env().url).toContain("127.0.0.1");
   });
 });
+
+describe("Business verification persisted in Supabase", () => {
+  it("onboard → ABN → credential with evidence in Storage → admin review → verified", async () => {
+    const { submitAbn, addCredential, confirmAbnManually, reviewCredential, setBusinessStatus } = await import("@/lib/services/verification");
+    const ctx = supabaseCtx();
+    const email = uniqueEmail("verify");
+    const { data } = await adminClient().auth.admin.createUser({ email, password: "a-strong-passphrase", email_confirm: true, user_metadata: { role: "business", name: "Vee", business_name: "Vee's Electrical", categories: ["trades"] } });
+    const profile = await ensureBusinessOnboarded(ctx, (await ctx.store.get("users", data.user!.id))!, data.user!.user_metadata);
+    const actor = { userId: profile.id, role: "business" as const, businessId: profile.businessId };
+    const admin = { userId: IDS.admin, role: "admin" as const };
+    const noAbr = { configured: false, lookup: async () => ({ ok: false as const, reason: "not_configured" as const, message: "" }) };
+    await submitAbn(ctx, actor, "51 824 753 556", noAbr);
+    const pdf = new TextEncoder().encode("%PDF-1.4\n%%EOF");
+    const lic = await addCredential(ctx, actor, { kind: "licence", reference: "EC-1", issuer: "NSW Fair Trading", jurisdiction: "NSW", expiresAt: "2028-01-01", evidence: { filename: "lic.pdf", mimeType: "application/pdf", data: pdf } });
+    const ins = await addCredential(ctx, actor, { kind: "insurance", reference: "PL-9", issuer: "Insurer", jurisdiction: "NSW", expiresAt: "2028-01-01", evidence: { filename: "pl.pdf", mimeType: "application/pdf", data: pdf } });
+    const evidence = await ctx.store.get("documents", lic.evidenceDocumentId!);
+    expect(evidence?.kind).toBe("certificate");
+    expect((await ctx.store.getBlob(evidence!.storageKey))?.data.length).toBeGreaterThan(0);
+    // The database itself refuses a "verified" credential without a recorded check.
+    const raw = await adminClient().from("business_credentials").update({ status: "verified" }).eq("id", lic.id);
+    expect(raw.error?.message).toMatch(/verified_credential_has_check/);
+    await expect(setBusinessStatus(ctx, admin, actor.businessId!, "verified", "")).rejects.toThrow(/Can't verify yet/);
+    await confirmAbnManually(ctx, admin, actor.businessId!, "VEE ELECTRICAL PTY LTD");
+    await reviewCredential(ctx, admin, lic.id, "verified", "Checked licence certificate");
+    await reviewCredential(ctx, admin, ins.id, "verified", "Checked certificate of currency");
+    const b = await setBusinessStatus(ctx, admin, actor.businessId!, "verified", "");
+    expect(b).toMatchObject({ verificationStatus: "verified", verifiedBy: IDS.admin });
+    // The business owner can read their own credentials through RLS; another business can't.
+    const c = anonClient();
+    await c.auth.signInWithPassword({ email, password: "a-strong-passphrase" });
+    expect((await c.from("business_credentials").select("id")).data).toHaveLength(2);
+    const asBen = await signedInAs("ben@demo.dealpilot.test");
+    expect((await asBen.from("business_credentials").select("id").eq("business_id", actor.businessId!)).data).toHaveLength(0);
+  });
+});

@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  Building2, FileText, Gavel, Inbox, LayoutDashboard, LineChart, MessagesSquare, PiggyBank, Receipt, Route, ScrollText,
+  BadgeCheck, Building2, FileText, Gavel, Inbox, LayoutDashboard, LineChart, MessagesSquare, PiggyBank, Receipt, Route, ScrollText,
   ShieldCheck, SlidersHorizontal, Users, type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ICONS: Record<string, LucideIcon> = {
-  Building2, FileText, Gavel, Inbox, LayoutDashboard, LineChart, MessagesSquare, PiggyBank, Receipt, Route, ScrollText, ShieldCheck, SlidersHorizontal, Users,
+  BadgeCheck, Building2, FileText, Gavel, Inbox, LayoutDashboard, LineChart, MessagesSquare, PiggyBank, Receipt, Route, ScrollText, ShieldCheck, SlidersHorizontal, Users,
 };
 
 export interface NavItem {

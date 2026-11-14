@@ -22,11 +22,13 @@ export const BUSINESS_NAV: NavItem[] = [
   { href: "/biz/inbox", label: "Negotiations", icon: "MessagesSquare", mobile: true },
   { href: "/biz/groups", label: "Bulk offers", icon: "Users", mobile: true },
   { href: "/biz/transactions", label: "Transactions", icon: "Receipt", mobile: true },
+  { href: "/biz/verification", label: "Verification", icon: "BadgeCheck" },
   { href: "/biz/profile", label: "Business profile", icon: "Building2" },
 ];
 
 export const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Audit & ledger", icon: "ScrollText", mobile: true },
+  { href: "/admin/businesses", label: "Business verification", icon: "BadgeCheck", mobile: true },
   { href: "/journeys", label: "Demo journeys", icon: "Route", mobile: true },
 ];
 
