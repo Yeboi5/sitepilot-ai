@@ -1,0 +1,1088 @@
+<title>DealPilot Experience</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
+<style>
+/* Layout: phone-first app shell. Sticky top bar, bottom tab bar on phones, side rail on wide screens.
+   Signature: the "docket" — prices shown struck and replaced, and savings receipts with a perforated edge. */
+:root {
+  --bg: #F2F6F4; --surface: #FFFFFF; --surface-2: #E8EFEB; --ink: #0F241F; --muted: #5A6E67; --line: #D7E1DC;
+  --brand: #0B6B57; --brand-strong: #084F41; --on-brand: #FFFFFF; --brand-soft: #DBF0E8;
+  --sun: #B97A00; --sun-soft: #FFF1CF; --sun-ink: #6A4700;
+  --danger: #B93A26; --danger-soft: #FBE5E0; --info: #2456C9; --info-soft: #E4ECFC;
+  --hero-a: #0B6B57; --hero-b: #0A4F53; --shadow: 0 1px 2px rgba(15,36,31,.06), 0 8px 24px rgba(15,36,31,.07);
+  --display: "Bricolage Grotesque", "DM Sans", system-ui, sans-serif;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 18px; --r-sm: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0D1513; --surface: #152019; --surface-2: #1C2A23; --ink: #E7F0EB; --muted: #9DB0A8; --line: #2A3A33;
+  --brand: #3CC79C; --brand-strong: #6FDDB9; --on-brand: #06231B; --brand-soft: #143328;
+  --sun: #F0B648; --sun-soft: #3A2E10; --sun-ink: #F6D28A;
+  --danger: #F08672; --danger-soft: #3B1B15; --info: #8FB0FF; --info-soft: #18254A;
+  --hero-a: #0F4A3D; --hero-b: #0C3338; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0D1513; --surface: #152019; --surface-2: #1C2A23; --ink: #E7F0EB; --muted: #9DB0A8; --line: #2A3A33;
+  --brand: #3CC79C; --brand-strong: #6FDDB9; --on-brand: #06231B; --brand-soft: #143328;
+  --sun: #F0B648; --sun-soft: #3A2E10; --sun-ink: #F6D28A;
+  --danger: #F08672; --danger-soft: #3B1B15; --info: #8FB0FF; --info-soft: #18254A;
+  --hero-a: #0F4A3D; --hero-b: #0C3338; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface) }
+h1, h2, h3 { font-family: var(--display); line-height: 1.12; margin: 0; text-wrap: balance; letter-spacing: -.01em }
+h1 { font-size: clamp(1.7rem, 5.2vw, 2.3rem); font-weight: 800 }
+h2 { font-size: 1.2rem; font-weight: 700 }
+h3 { font-size: 1rem; font-weight: 700 }
+p { margin: 0 }
+button, input, select, textarea { font: inherit; color: inherit }
+button { cursor: pointer }
+:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; border-radius: 8px }
+.num { font-variant-numeric: tabular-nums }
+.muted { color: var(--muted) }
+.small { font-size: .82rem }
+.eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+svg.ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none }
+
+/* Shell */
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line) }
+.top-in { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; gap: 10px; min-height: 56px; padding-block: 8px }
+.brand { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 800; font-size: 1.12rem; background: none; border: 0; padding: 4px }
+.brand-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--brand); color: var(--on-brand); display: grid; place-items: center; transform: rotate(-6deg) }
+.brand-mark svg { width: 17px; height: 17px }
+.spacer { flex: 1 }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 999px; padding: 3px }
+.seg button { border: 0; background: none; padding: 6px 12px; border-radius: 999px; font-weight: 600; font-size: .84rem; color: var(--muted) }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow) }
+.iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; width: 40px; height: 40px; display: grid; place-items: center }
+.demo-strip { background: var(--sun-soft); color: var(--sun-ink); font-size: .78rem; text-align: center; padding-block: 5px }
+.frame { max-width: 1120px; margin: 0 auto; display: flex; gap: 28px; align-items: flex-start }
+.side { display: none }
+.main { flex: 1; min-width: 0; padding-block: 20px 110px; display: flex; flex-direction: column; gap: 18px }
+.tabs { position: fixed; inset: auto 0 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); display: flex; justify-content: space-around; padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) }
+.tabs button { flex: 1; min-width: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .68rem; font-weight: 600; color: var(--muted); padding: 6px 2px; border-radius: 12px }
+.tabs button[aria-current="page"] { color: var(--brand) }
+.tabs .fab { color: var(--on-brand) }
+.tabs .fab span.dot { width: 44px; height: 44px; margin-top: -20px; border-radius: 16px; background: var(--brand); display: grid; place-items: center; box-shadow: var(--shadow) }
+.tabs .fab b { color: var(--brand); font-weight: 700 }
+@media (min-width: 960px) {
+  .tabs { display: none }
+  .side { display: flex; flex-direction: column; gap: 4px; width: 216px; position: sticky; top: 76px; padding-block: 20px }
+  .side button { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 10px 12px; border-radius: 12px; font-weight: 600; color: var(--muted); text-align: left }
+  .side button:hover { background: var(--surface-2) }
+  .side button[aria-current="page"] { background: var(--brand-soft); color: var(--brand-strong) }
+  .side hr { border: 0; border-top: 1px solid var(--line); width: 100%; margin: 8px 0 }
+  .main { padding-block: 24px 60px }
+}
+
+/* Building blocks */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px }
+.card.flat { box-shadow: none }
+.stack { display: flex; flex-direction: column; gap: 12px }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.between { justify-content: space-between }
+.grow { flex: 1; min-width: 0 }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px }
+@media (min-width: 720px) { .cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: start } .grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important } }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 14px; border: 1px solid transparent; padding: 11px 18px; font-weight: 700; min-height: 46px; text-decoration: none; transition: transform .08s ease, background .15s ease }
+.btn:active { transform: scale(.98) }
+.btn.primary { background: var(--brand); color: var(--on-brand) }
+.btn.primary:hover { background: var(--brand-strong) }
+.btn.ghost { background: var(--surface); border-color: var(--line); color: var(--ink) }
+.btn.ghost:hover { background: var(--surface-2) }
+.btn.danger { background: var(--surface); border-color: var(--danger); color: var(--danger) }
+.btn.sm { min-height: 38px; padding: 7px 13px; font-size: .86rem; border-radius: 11px }
+.btn.block { width: 100% }
+.btn.light { background: #fff; color: #0A4F41 }
+.btn.outline-light { background: transparent; border-color: rgba(255,255,255,.45); color: #fff }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--brand); font-weight: 600; text-decoration: underline; text-underline-offset: 3px }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap }
+.tag.sim { background: var(--sun-soft); color: var(--sun-ink) }
+.tag.ok { background: var(--brand-soft); color: var(--brand-strong) }
+.tag.bad { background: var(--danger-soft); color: var(--danger) }
+.tag.info { background: var(--info-soft); color: var(--info) }
+.tag svg { width: 13px; height: 13px; stroke-width: 2.4 }
+.field { display: flex; flex-direction: column; gap: 5px }
+.field label, .lbl { font-size: .82rem; font-weight: 600; color: var(--muted) }
+.input { width: 100%; background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 44px }
+.input:focus { outline: none; border-color: var(--brand) }
+textarea.input { resize: vertical; line-height: 1.45 }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: .9rem }
+.check input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--brand); flex: none }
+.err { background: var(--danger-soft); color: var(--danger); border-radius: 12px; padding: 10px 12px; font-size: .88rem; font-weight: 600 }
+.note { background: var(--sun-soft); color: var(--sun-ink); border-radius: 12px; padding: 10px 12px; font-size: .84rem }
+.hint { background: var(--info-soft); color: var(--info); border-radius: 12px; padding: 10px 12px; font-size: .86rem }
+.was { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--muted) }
+.price { font-family: var(--display); font-weight: 800; font-size: 1.5rem; letter-spacing: -.02em }
+.save { color: var(--brand); font-weight: 700 }
+.listrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); width: 100%; background: none; border-left: 0; border-right: 0; border-bottom: 0; text-align: left }
+.listrow:first-child { border-top: 0 }
+button.listrow:hover { background: var(--surface-2) }
+.badge-ic { width: 40px; height: 40px; border-radius: 12px; background: var(--brand-soft); color: var(--brand-strong); display: grid; place-items: center; flex: none }
+.badge-ic.warn { background: var(--sun-soft); color: var(--sun-ink) }
+.badge-ic.bad { background: var(--danger-soft); color: var(--danger) }
+.pill-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px }
+.pill-tabs button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; font-weight: 600; font-size: .86rem; white-space: nowrap; color: var(--muted) }
+.pill-tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+
+/* Hero */
+.hero { background: linear-gradient(150deg, var(--hero-a), var(--hero-b)); color: #fff; border-radius: 26px; padding: 26px 22px; display: grid; gap: 22px; overflow: hidden }
+.hero h1 { color: #fff; font-size: clamp(2rem, 7vw, 3rem) }
+.hero p.lede { color: rgba(255,255,255,.86); font-size: 1.05rem; max-width: 34ch }
+.hero .eyebrow { color: rgba(255,255,255,.7) }
+@media (min-width: 760px) { .hero { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; padding: 40px } }
+.docket { background: #fff; color: #10231F; border-radius: 16px; padding: 16px 16px 14px; transform: rotate(1.6deg); box-shadow: 0 18px 40px rgba(0,0,0,.25); position: relative; max-width: 330px; justify-self: center; width: 100% }
+.docket::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 54px; border-top: 2px dashed #C9D6D0 }
+.docket .line { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; font-size: .92rem }
+.docket .total { padding-top: 22px; font-family: var(--display); font-weight: 800; font-size: 1.2rem; color: #0B6B57 }
+.docket .strike { position: relative; color: #6C7F78 }
+.docket .strike::after { content: ""; position: absolute; left: -3px; right: -3px; top: 52%; height: 2px; background: #B93A26; transform-origin: left; animation: strike .7s .5s both ease-out }
+@keyframes strike { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+.steps { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); counter-reset: s }
+.steps li { list-style: none; counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; gap: 12px; align-items: flex-start }
+.steps li::before { content: counter(s); font-family: var(--display); font-weight: 800; width: 30px; height: 30px; border-radius: 10px; background: var(--brand-soft); color: var(--brand-strong); display: grid; place-items: center; flex: none }
+.steps { padding: 0; margin: 0 }
+
+/* Stats */
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 2px; text-align: left; width: 100% }
+button.stat:hover { border-color: var(--brand) }
+.stat .v { font-family: var(--display); font-weight: 800; font-size: 1.55rem; letter-spacing: -.02em }
+.stat.big { background: var(--brand); color: var(--on-brand); border-color: transparent }
+.stat.big .eyebrow, .stat.big .small { color: inherit; opacity: .85 }
+
+/* Offers */
+.offer { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; animation: rise .45s both }
+.offer.top { border-color: var(--brand); box-shadow: var(--shadow) }
+.offer.risky { border-color: var(--danger) }
+.offer.declined { opacity: .55 }
+@keyframes rise { from { opacity: .0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+.checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
+.chk { display: flex; gap: 8px; align-items: flex-start; font-size: .86rem; background: var(--surface-2); border-radius: 12px; padding: 8px 10px }
+.chk.bad { background: var(--danger-soft); color: var(--danger) }
+.chk.good { background: var(--brand-soft); color: var(--brand-strong) }
+.chk svg { width: 16px; height: 16px; margin-top: 2px; stroke-width: 2.4 }
+.chk b { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .8 }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: .88rem }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted) }
+tr:last-child td { border-bottom: 0 }
+td.no { color: var(--danger); font-weight: 700 } td.yes { color: var(--brand-strong); font-weight: 600 }
+
+/* Negotiation */
+.thread { display: flex; flex-direction: column; gap: 10px }
+.msg { max-width: 88%; padding: 10px 13px; border-radius: 16px; font-size: .92rem; white-space: pre-wrap; animation: rise .3s both }
+.msg .who { display: flex; gap: 6px; align-items: center; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .8; margin-bottom: 3px; flex-wrap: wrap }
+.msg.you { align-self: flex-end; background: var(--brand); color: var(--on-brand); border-bottom-right-radius: 5px }
+.msg.them { align-self: flex-start; background: var(--surface-2); border-bottom-left-radius: 5px }
+.msg.ai { align-self: flex-start; background: var(--info-soft); color: var(--ink); border-bottom-left-radius: 5px }
+.msg.sys { align-self: center; background: none; color: var(--muted); font-size: .8rem; text-align: center; padding: 2px }
+.typing { display: inline-flex; gap: 4px; padding: 4px 0 } .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite } .typing i:nth-child(2) { animation-delay: .15s } .typing i:nth-child(3) { animation-delay: .3s }
+@keyframes blink { 0%, 80%, 100% { opacity: .25 } 40% { opacity: 1 } }
+.modes { display: grid; gap: 8px }
+.mode { display: flex; gap: 10px; align-items: flex-start; border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; background: var(--surface); text-align: left; width: 100% }
+.mode[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft) }
+.mode .radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted); margin-top: 2px; flex: none }
+.mode[aria-pressed="true"] .radio { border: 5px solid var(--brand) }
+
+/* Receipt */
+.receipt { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; position: relative }
+.receipt .ln { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: .95rem }
+.receipt .perf { border-top: 2px dashed var(--line); margin: 8px -18px; position: relative }
+.receipt .perf::before, .receipt .perf::after { content: ""; position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line) }
+.receipt .perf::before { left: -9px } .receipt .perf::after { right: -9px }
+.receipt .net { font-family: var(--display); font-weight: 800; font-size: 1.35rem; color: var(--brand) }
+.stamp { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--brand); color: var(--brand); border-radius: 10px; padding: 3px 10px; font-weight: 800; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; transform: rotate(-3deg) }
+
+/* Progress */
+.bar { height: 12px; border-radius: 999px; background: var(--surface-2); position: relative; overflow: visible }
+.bar > i { display: block; height: 100%; border-radius: 999px; background: var(--brand); transition: width .6s cubic-bezier(.2,.8,.2,1) }
+.bar .mark { position: absolute; top: -4px; width: 3px; height: 20px; background: var(--ink); border-radius: 2px; opacity: .55 }
+.tier { border: 1.5px solid var(--line); border-radius: 14px; padding: 12px; flex: 1; min-width: 130px; background: var(--surface) }
+.tier.on { border-color: var(--brand); background: var(--brand-soft) }
+.drop { border: 2px dashed var(--line); border-radius: var(--r); padding: 26px 16px; text-align: center; background: var(--surface); display: flex; flex-direction: column; gap: 10px; align-items: center; transition: border-color .15s, background .15s }
+.drop.over { border-color: var(--brand); background: var(--brand-soft) }
+.catbtn { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border: 1.5px solid var(--line); background: var(--surface); border-radius: 16px; padding: 14px; font-weight: 600; text-align: left; min-height: 92px }
+.catbtn:hover, .catbtn[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft) }
+.scan li { list-style: none; display: flex; gap: 10px; align-items: center; padding: 6px 0; opacity: .35; animation: lit .4s forwards }
+.scan li:nth-child(2) { animation-delay: .5s } .scan li:nth-child(3) { animation-delay: 1s } .scan li:nth-child(4) { animation-delay: 1.5s }
+@keyframes lit { to { opacity: 1 } }
+.scan { padding: 0; margin: 0 }
+
+/* Coach, modal, toast */
+.coach { background: var(--ink); color: var(--bg); }
+.coach-in { max-width: 1120px; margin: 0 auto; display: flex; gap: 10px; align-items: center; padding-block: 9px; font-size: .88rem; line-height: 1.35 }
+.coach .btn { flex: none }
+.coach .btn { min-height: 34px; padding: 5px 12px; font-size: .82rem; background: var(--bg); color: var(--ink) }
+.coach .x { background: none; border: 0; color: inherit; opacity: .7; padding: 6px }
+.overlay { position: fixed; inset: 0; z-index: 40; background: rgba(8,20,17,.55); display: flex; align-items: flex-end; justify-content: center; animation: fade .2s both }
+.sheet { background: var(--surface); width: 100%; max-width: 560px; max-height: 92%; overflow: auto; border-radius: 24px 24px 0 0; padding: 20px max(18px, env(safe-area-inset-right, 0px)) calc(22px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 14px; animation: up .28s both cubic-bezier(.2,.8,.2,1) }
+@media (min-width: 640px) { .overlay { align-items: center } .sheet { border-radius: 24px } }
+@keyframes fade { from { opacity: 0 } } @keyframes up { from { transform: translateY(30px); opacity: 0 } }
+#toasts { position: fixed; z-index: 50; left: 0; right: 0; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.toast { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 10px 16px; font-weight: 600; font-size: .9rem; box-shadow: var(--shadow); animation: up .25s both; max-width: 100% }
+.toast.bad { background: var(--danger); color: #fff }
+@media (min-width: 960px) { #toasts { bottom: 28px } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important } }
+</style>
+<div id="app"></div>
+<div id="toasts" aria-live="polite"></div>
+<script>
+(function () {
+"use strict";
+// ───────────────────────── helpers ─────────────────────────
+const P = {
+  home: "M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z", tag: "M3 12V4h8l10 10-8 8z M7.5 8.5h.01", plus: "M12 5v14M5 12h14",
+  shield: "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z", users: "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1 M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7 M21 19v-1a4 4 0 0 0-3-3.9 M15 3.2a3.5 3.5 0 0 1 0 6.6",
+  wallet: "M3 7a2 2 0 0 1 2-2h13v4 M3 7v10a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z M16.5 14h.01", menu: "M4 7h16M4 12h16M4 17h16", check: "M5 12.5l4.5 4.5L19 7.5", x: "M6 6l12 12M18 6L6 18",
+  alert: "M12 4l9 16H3z M12 10v4 M12 17h.01", chat: "M4 5h16v11H9l-5 4z", upload: "M12 16V4 M7 9l5-5 5 5 M4 20h16", inbox: "M3 13l3-8h12l3 8v6H3z M3 13h5l1 3h6l1-3h5",
+  compass: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M15.5 8.5l-2 5-5 2 2-5z", arrow: "M5 12h14M13 6l6 6-6 6", bolt: "M13 3L5 13h6l-1 8 8-10h-6z",
+  wifi: "M3 9a14 14 0 0 1 18 0 M6.5 12.5a9 9 0 0 1 11 0 M10 16a3.5 3.5 0 0 1 4 0 M12 19.5h.01", car: "M4 16v-4l2-5h12l2 5v4 M4 16h16v2H4z M7 13h.01 M17 13h.01",
+  bag: "M5 8h14l-1 12H6z M9 8V6a3 3 0 0 1 6 0v2", truck: "M3 6h11v10H3z M14 10h4l3 3v3h-7 M7.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3 M17.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3",
+  repeat: "M4 11V9a3 3 0 0 1 3-3h11 M15 3l3 3-3 3 M20 13v2a3 3 0 0 1-3 3H6 M9 21l-3-3 3-3", hammer: "M14 5l5 5-2 2-5-5z M12 8l-8 8 2 2 8-8",
+  clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2", won: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M8 12.5l3 3 5-6", info: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 11v5 M12 8h.01",
+  lock: "M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 0 1 7 0v3", spark: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z", file: "M6 3h8l4 4v14H6z M14 3v4h4",
+};
+const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${P[n] || P.info}"/></svg>`;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const r2 = (n) => Math.round(n * 100) / 100;
+const fmt = (n) => "$" + Number(n).toLocaleString("en-AU", { minimumFractionDigits: Number.isInteger(r2(n)) ? 0 : 2, maximumFractionDigits: 2 });
+const perS = (p) => (p === "mo" ? "/mo" : p === "yr" ? "/yr" : "");
+const perL = (p) => (p === "mo" ? " a month" : p === "yr" ? " a year" : "");
+const num = (v) => { const n = Number(String(v ?? "").replace(/[$,\s]/g, "")); return Number.isFinite(n) ? n : NaN; };
+const val = (id) => { const el = document.getElementById(id); return el ? el.value : ""; };
+const checked = (id) => { const el = document.getElementById(id); return !!(el && el.checked); };
+const SIM = `<span class="tag sim">Simulated</span>`;
+const DEMO = `<span class="tag sim">Demo data</span>`;
+
+// ───────────────────────── demo data ─────────────────────────
+const CATS = [
+  { id: "trades", name: "Trades & renovations", ic: "hammer" }, { id: "energy", name: "Electricity & gas", ic: "bolt", bill: true },
+  { id: "telco", name: "Internet & mobile", ic: "wifi", bill: true }, { id: "insurance", name: "Insurance", ic: "shield", bill: true },
+  { id: "vehicle", name: "Vehicle services", ic: "car" }, { id: "retail", name: "Retail purchases", ic: "bag" },
+  { id: "home", name: "Cleaning & moving", ic: "truck" }, { id: "subs", name: "Subscriptions", ic: "repeat", bill: true }, { id: "other", name: "Other / custom", ic: "plus" },
+];
+const SAMPLE = {
+  trades: { title: "Replace 30 m Colorbond side and rear fence", provider: "Premier Perimeter Fencing (fictional)", amount: 5500, per: "", scope: "Supply and install 30 m of Colorbond fence, 1.8 m high. Remove and dispose of the existing timber fence.",
+    inc: ["Removal of old timber fence: $650", "Colorbond panels, posts and rails (30 m): $3,150", "Labour and installation: $1,450", "Concrete footings: $250"], exc: ["Warranty: not mentioned", "Licence number: not shown", "Insurance: not mentioned"],
+    cond: ["30% deposit before work starts", "Price may change if site conditions differ", "Quote valid for 30 days"], opp: ["Comparable demo offers range from $4,400 to $5,100", "Ask for a fixed price and a written warranty", "A flexible start date often lowers the price"] },
+  telco: { title: "Home internet", provider: "StreamLine Broadband (fictional)", amount: 120, per: "mo", scope: "NBN 100 Unlimited, month to month.", inc: ["Plan fee: $110 a month", "Modem rental: $10 a month"], exc: ["No setup fee listed", "No contract term"],
+    cond: ["No lock-in contract", "Customer for 4 years"], opp: ["Long-term customers can ask for a loyalty price", "Using your own modem removes the $10 rental", "Illustrative range for similar plans: $84 to $102"] },
+  energy: { title: "Electricity bill", provider: "Demo Energy Retailer (fictional)", amount: 236, per: "mo", scope: "Residential electricity, single-rate tariff.", inc: ["Usage charges", "Daily supply charge"], exc: ["Solar feed-in: none", "Pay-on-time discount: none"], cond: ["Rates changed last quarter (+12.4%)"], opp: ["Ask your retailer to match its best current plan", "Compare against the government comparison site"] },
+  insurance: { title: "Car insurance renewal", provider: "Demo Insurer (fictional)", amount: 1420, per: "yr", scope: "Comprehensive car cover, agreed value.", inc: ["Windscreen cover", "Hire car after theft"], exc: ["Hire car after an accident", "Roadside assistance"], cond: ["$800 excess", "Renews automatically"], opp: ["Ask how the premium compares with last year", "A higher excess usually lowers the premium"] },
+  vehicle: { title: "Logbook service", provider: "Demo Motors (fictional)", amount: 480, per: "", scope: "60,000 km logbook service.", inc: ["Oil and filter", "Brake inspection", "Labour"], exc: ["Brake pads", "Tyres"], cond: ["Parts priced separately if needed"], opp: ["Ask for an itemised parts and labour split", "Independent licensed mechanics can do logbook services"] },
+  retail: { title: "Noise-cancelling headphones", provider: "Demo Electronics (fictional)", amount: 449, per: "", scope: "One pair, new, with delivery.", inc: ["12-month manufacturer warranty", "Free delivery"], exc: ["Extended warranty"], cond: ["30-day price adjustment window"], opp: ["Track the price and claim an adjustment if it drops", "Ask for a price match"] },
+  home: { title: "End-of-lease clean", provider: "Demo Cleaning Co (fictional)", amount: 520, per: "", scope: "3-bedroom end-of-lease clean.", inc: ["Kitchen and bathrooms", "Carpet steam clean"], exc: ["Windows (outside)", "Balcony"], cond: ["Re-clean guarantee within 72 hours"], opp: ["Mid-week bookings are often cheaper", "Bundle carpet and window cleaning"] },
+  subs: { title: "StreamFlix Premium", provider: "StreamFlix (fictional)", amount: 24.99, per: "mo", scope: "Premium plan, 4 screens.", inc: ["4K streaming", "4 profiles"], exc: [], cond: ["Renews monthly", "Price rose from $22.99"], opp: ["An annual plan or a lower tier may suit you", "Cancelling often triggers a retention offer"] },
+  other: { title: "My purchase", provider: "Your provider", amount: 1000, per: "", scope: "Describe what you're buying.", inc: [], exc: [], cond: [], opp: ["Competing written quotes are the strongest lever"] },
+};
+const FENCE_OFFERS = () => [
+  { id: "ben", biz: "Ben's Fencing & Gates", price: 5100, warranty: 84, days: 10, licence: "verified", insurance: "verified", simulated: false, floor: 4700,
+    materials: "Genuine Colorbond, 65 mm galvanised posts, concrete footings", scope: "Remove old fence, supply and install 30 m Colorbond at 1.8 m.", exc: ["Gates not included"], verdict: "Strongest protection", why: "Licence and insurance checked, and a 7-year warranty." },
+  { id: "harbour", biz: "Harbour Fence Co", price: 4950, warranty: 60, days: 7, licence: "declared", insurance: "declared", simulated: true, floor: 4600,
+    materials: "Colorbond steel panels, galvanised posts", scope: "Remove old fence, supply and install 30 m Colorbond at 1.8 m.", exc: ["Gates not included"], verdict: "Solid middle option", why: "Credentials are self-declared, not yet checked." },
+  { id: "budget", biz: "Budget Boundaries", price: 4400, warranty: 12, days: 5, licence: "missing", insurance: "missing", simulated: true, floor: 4200,
+    materials: "Generic steel panels (not Colorbond)", scope: "Supply and install 30 m steel fence at 1.8 m.", exc: ["Old fence removal not itemised", "No footing detail"], verdict: "Cheapest, with gaps", why: "No licence number, insurance not confirmed, different materials." },
+];
+const genericOffers = (a) => [
+  { id: "g1", biz: "Reliable & Local", price: Math.round(a * 0.93), warranty: 36, days: 8, licence: "declared", insurance: "declared", simulated: true, floor: Math.round(a * 0.88), materials: "As requested", scope: "Full scope as described.", exc: [], verdict: "Most complete", why: "Longest warranty of the three." },
+  { id: "g2", biz: "Premier Choice Co", price: Math.round(a * 0.9), warranty: 12, days: 6, licence: "declared", insurance: "declared", simulated: true, floor: Math.round(a * 0.85), materials: "As requested", scope: "Full scope as described.", exc: [], verdict: "Solid middle option", why: "Credentials are self-declared." },
+  { id: "g3", biz: "Value Pro Services", price: Math.round(a * 0.8), warranty: 0, days: 4, licence: "missing", insurance: "missing", simulated: true, floor: Math.round(a * 0.76), materials: "Not specified", scope: "Basic scope only.", exc: ["Details not itemised"], verdict: "Cheapest, with gaps", why: "No licence or insurance details." },
+];
+
+let uid = 100;
+function internetDeal() {
+  return { id: "internet", key: "internet", title: "Home internet", party: "StreamLine Broadband", simulated: true, was: 120, per: "mo", offer: 120, target: 84, floor: 91, mode: "approval", limit: 100,
+    state: "draft", asks: 0, terms: null, draft: { amt: 84, text: draftText("StreamLine Broadband", 120, 120, 84, "mo", true) },
+    msgs: [{ from: "ai", text: "You pay $120 a month: a $110 plan plus $10 modem rental. After 4 years with no contract you're a good candidate for a loyalty price. Similar plans in this demo sit between $84 and $102, so I suggest opening at $84." }] };
+}
+function fresh() {
+  return {
+    portal: "customer", mode: "approval",
+    ui: { reqId: "fence", dealId: null, modal: null, gtab: "alerts", oview: "cards", open: {}, journey: null, err: null, sawReceipt: false, bizReq: null, bizDraft: null },
+    find: { step: 1, cat: null, file: null, busy: false, ex: null, sample: false },
+    requests: [{ id: "fence", cat: "trades", status: "offers", ...SAMPLE.trades, offers: FENCE_OFFERS() }],
+    deals: [internetDeal()],
+    tx: [{ id: "car", title: "Logbook service, Inner West Autocare", was: 480, final: 395, per: "", saving: 85, projected: null, fee: 0, why: "Simulated counterparty. Demonstration deals never incur a fee.", simulated: true, when: "3 weeks ago" }],
+    guard: { gone: {}, checked: false, claimed: false },
+    group: { joined: false, extra: 0, taken: false },
+    activity: [{ t: "3 offers arrived for your fencing quote", s: "From $4,400 to $5,100", r: "offers" }, { t: "AI drafted a counteroffer for your internet bill", s: "Waiting for your approval", r: "internet" }, { t: "Electricity bill went up 12.4%", s: "Money Guardian", r: "guardian" }],
+    biz: {
+      reqs: [
+        { id: "b1", title: "Replace 30 m Colorbond side and rear fence", area: "Inner West, Sydney NSW", quote: 5500, competing: 2, details: ["30 m, 1.8 m high, Colorbond", "Remove existing timber fence", "Side gate access, flat block"], bid: { price: 5100, status: "In negotiation" } },
+        { id: "b2", title: "Pool fence, 20 m frameless glass", area: "Parramatta area, Sydney NSW", quote: 9000, competing: 1, details: ["20 m frameless glass, 1.2 m", "One self-closing gate", "Concrete surround"], bid: null },
+        { id: "b3", title: "Timber paling fence, 15 m", area: "Northern Beaches, Sydney NSW", quote: 2400, competing: 0, details: ["15 m treated pine paling, 1.8 m", "No removal needed"], bid: null },
+      ],
+      neg: bizNeg(), tiers: null, won: [],
+    },
+  };
+}
+function bizNeg() {
+  return { state: "asked", ask: 4600, offer: 5100, sent: 0, draft: null, terms: null,
+    msgs: [{ from: "you", text: "Offer submitted: $5,100. Genuine Colorbond, 7-year warranty, 10 days.", amt: 5100 }, { from: "them", text: "Thanks for the quote. I have other licensed and insured offers in the high $4,000s. If you can do $4,600 with the same scope and warranty, I'm ready to book.", amt: 4600 }] };
+}
+function draftText(party, was, offer, amt, per, opening) {
+  const p = perL(per);
+  return opening
+    ? `Hi ${party}, I'm reviewing what I pay. I'm currently on ${fmt(was)}${p}. I'd like to stay with you at ${fmt(amt)}${p}. Can you offer that?`
+    : `Thanks for coming back with ${fmt(offer)}${p}. I can commit today at ${fmt(amt)}${p}. If that works, please confirm in writing.`;
+}
+let S = fresh();
+let route = "welcome";
+
+// ───────────────────────── state helpers ─────────────────────────
+const deal = (id) => S.deals.find((d) => d.id === id);
+const req = (id) => S.requests.find((r) => r.id === id);
+const active = (d) => !["verified", "ended"].includes(d.state);
+function log(t, s, r) { S.activity.unshift({ t, s, r }); S.activity = S.activity.slice(0, 8); }
+function toast(msg, bad) {
+  const el = document.createElement("div"); el.className = "toast" + (bad ? " bad" : ""); el.textContent = msg;
+  document.getElementById("toasts").appendChild(el); setTimeout(() => el.remove(), 3200);
+}
+function fail(msg) { S.ui.err = msg; render(); const e = document.querySelector(".err"); if (e) e.scrollIntoView({ block: "center", behavior: "smooth" }); }
+function later(fn, ms) { setTimeout(() => { fn(); render(); }, ms); }
+function go(r) { route = r; S.ui.err = null; S.ui.modal = null; try { history.replaceState(null, "", "#" + r); } catch (e) { location.hash = r; } render(); window.scrollTo(0, 0); }
+function suggest(d) { return d.asks === 0 ? d.target : Math.round((d.target + d.offer) / 2); }
+function feeFor(d, saving) {
+  if (saving <= 0) return { fee: 0, why: "No saving, so no fee." };
+  if (d.simulated) return { fee: 0, why: "Simulated counterparty. Demonstration deals never incur a fee." };
+  const f = Math.min(1.5, saving);
+  return { fee: r2(f), why: f < 1.5 ? "Fee capped at the amount saved." : "$1.50 administration fee recorded. No payment is taken in this demo." };
+}
+function summary() {
+  let realised = 0, monthly = 0, projected = 0, fees = 0, pending = 0;
+  S.tx.forEach((t) => { realised += t.saving; fees += t.fee; if (t.per === "mo") { monthly += t.saving; projected += t.saving * 12; } if (t.per === "yr") projected += t.saving; });
+  S.deals.filter((d) => d.state === "agreed").forEach((d) => { pending += Math.max(0, d.was - d.terms.price); });
+  return { realised: r2(realised), monthly: r2(monthly), projected: r2(projected), fees: r2(fees), pending: r2(pending) };
+}
+function potential() {
+  let p = 0;
+  const f = req("fence"); if (f && f.status === "offers" && !S.deals.some((d) => d.reqId === "fence" && !active(d))) p += 775;
+  S.deals.filter((d) => active(d) && d.state !== "agreed").forEach((d) => { if (d.reqId !== "fence") p += Math.max(0, d.was - d.target) * (d.per === "mo" ? 12 : 1); });
+  if (!S.guard.claimed) p += 50;
+  if (!S.group.taken) p += 900;
+  return Math.round(p);
+}
+const groupCount = () => 4 + (S.group.joined ? 1 : 0) + S.group.extra;
+const groupPrice = () => (groupCount() >= 10 ? 6100 : groupCount() >= 5 ? 6600 : null);
+
+// ───────────────────────── negotiation engine ─────────────────────────
+function newDeal(o) {
+  const d = Object.assign({ id: "d" + ++uid, mode: S.mode, limit: null, state: "open", msgs: [], draft: null, asks: 0, terms: null, per: "" }, o);
+  if (d.limit == null) d.limit = d.offer;
+  S.deals.unshift(d); return d;
+}
+function makeDraft(d) {
+  const amt = suggest(d);
+  if (d.asks > 0 && amt >= d.offer - 1) { d.msgs.push({ from: "ai", text: `Their offer of ${fmt(d.offer)}${perS(d.per)} is close to your target. I recommend accepting it.` }); d.state = "countered"; return; }
+  d.draft = { amt, text: draftText(d.party, d.was, d.offer, amt, d.per, d.asks === 0) };
+  d.state = "draft";
+}
+function sendAsk(d, amt, text, by) {
+  d.msgs.push({ from: "you", text, amt, tag: by });
+  d.asks++; d.draft = null; d.state = "waiting";
+  later(() => reply(d, amt), 1500);
+}
+function reply(d, ask) {
+  const tag = d.simulated ? "Simulated reply" : "Scripted demo reply";
+  if (ask >= d.floor) {
+    d.msgs.push({ from: "them", text: `We can do ${fmt(ask)}${perL(d.per)}. Please approve the final terms to confirm.`, amt: ask, tag });
+    d.offer = ask; d.terms = { price: ask, you: false, them: true, by: "them" }; d.state = "final";
+    log(`${d.party} agreed to ${fmt(ask)}${perS(d.per)}`, "Approve the final terms", d.id);
+  } else {
+    const c = Math.min(d.offer, Math.max(d.floor, Math.round((ask + d.offer) / 2)));
+    const best = c === d.floor || d.asks >= 3;
+    d.msgs.push({ from: "them", text: best ? `${fmt(c)}${perL(d.per)} is the best we can do.` : `We can't do ${fmt(ask)}, but we can offer ${fmt(c)}${perL(d.per)}.`, amt: c, tag });
+    d.offer = c; d.state = "countered";
+    log(`Counteroffer: ${fmt(c)}${perS(d.per)}`, d.title, d.id);
+  }
+  if (S.portal === "customer") toast(`${d.party} replied`);
+}
+function acceptCounter(d) {
+  d.msgs.push({ from: "you", text: `I accept ${fmt(d.offer)}${perL(d.per)}.`, amt: d.offer });
+  d.terms = { price: d.offer, you: true, them: false, by: "you" }; d.state = "final";
+  later(() => { d.terms.them = true; d.msgs.push({ from: "sys", text: `${d.party} approved the final terms (${d.simulated ? "simulated" : "scripted demo"}).` }); finalise(d); }, 1400);
+}
+function finalise(d) {
+  if (d.terms.you && d.terms.them) {
+    d.state = "agreed"; d.msgs.push({ from: "sys", text: "Both parties approved. Confirm the final invoice to verify your saving." });
+    if (d.reqId) { const r = req(d.reqId); if (r) r.status = "awarded"; }
+    log(`Deal agreed at ${fmt(d.terms.price)}${perS(d.per)}`, d.title, d.id); toast("Deal agreed");
+  }
+}
+function verify(d, final) {
+  const saving = r2(Math.max(0, d.was - final)); const f = feeFor(d, saving);
+  const t = { id: "t" + ++uid, dealId: d.id, title: `${d.title}, ${d.party}`, was: d.was, final, per: d.per, saving, projected: d.per === "mo" ? r2(saving * 12) : d.per === "yr" ? saving : null, fee: f.fee, why: f.why, simulated: d.simulated, when: "Just now" };
+  S.tx.unshift(t); d.state = "verified"; d.txId = t.id;
+  log(`Saving verified: ${fmt(saving)}${perS(d.per)}`, d.title, "savings");
+  return t;
+}
+
+// ───────────────────────── journeys ─────────────────────────
+const J = [
+  { n: 1, title: "Upload a $5,500 fencing quote and compare bids", sub: "Upload, check the details, then weigh three offers.", icon: "upload",
+    start() { S.requests = S.requests.filter((r) => r.id !== "fence"); S.deals = S.deals.filter((d) => d.reqId !== "fence"); S.find = { step: 1, cat: null, file: null, busy: false, ex: null, sample: false }; S.portal = "customer"; go("find"); },
+    steps: [["Choose Trades & renovations, then use the sample fencing quote", () => !!S.find.ex || !!req("fence"), "find"], ["Check the extracted details and confirm them", () => !!req("fence"), "find"], ["Compare the three offers. Ask one for a better price, or accept one", () => S.deals.some((d) => d.reqId === "fence"), "offers"]] },
+  { n: 2, title: "Negotiate a $120/month internet bill", sub: "Approve AI-drafted messages down to $93 a month.", icon: "chat",
+    start() { S.deals = S.deals.filter((d) => d.id !== "internet"); S.tx = S.tx.filter((t) => t.dealId !== "internet"); S.deals.unshift(internetDeal()); S.portal = "customer"; S.ui.dealId = "internet"; go("deal"); },
+    steps: [["Approve and send the opening ask of $84", () => deal("internet").asks >= 1, "deal"], ["They countered at $102. Counter again at $93", () => deal("internet").asks >= 2, "deal"], ["Approve the final terms", () => ["agreed", "verified"].includes(deal("internet").state), "deal"], ["Verify the new bill to record $27 a month", () => deal("internet").state === "verified", "deal"]] },
+  { n: 3, title: "Catch a price drop on $449 headphones", sub: "Money Guardian spots $399 inside the adjustment window.", icon: "bag",
+    start() { S.guard.checked = false; S.guard.claimed = false; S.deals = S.deals.filter((d) => d.key !== "phones"); S.tx = S.tx.filter((t) => t.dealId !== "phones"); S.portal = "customer"; S.ui.gtab = "watch"; go("guardian"); },
+    steps: [["Check the price now", () => S.guard.checked, "guardian"], ["Claim the $50 price adjustment", () => S.guard.claimed, "guardian"], ["Confirm the refund to verify the saving", () => S.tx.some((t) => t.dealId === "phones"), "savings"]] },
+  { n: 4, title: "Join the Sydney solar group buy", sub: "More members unlock $6,600, then $6,100.", icon: "users",
+    start() { S.group = { joined: false, extra: 0, taken: false }; S.deals = S.deals.filter((d) => d.key !== "solar"); S.portal = "customer"; go("group"); },
+    steps: [["Join the group to unlock the 5-member price", () => S.group.joined, "group"], ["Simulate five more neighbours joining", () => S.group.extra >= 5, "group"], ["Take up the group price (non-binding)", () => S.group.taken, "group"]] },
+  { n: 5, title: "Send a counteroffer as a business", sub: "Review an AI-drafted reply, approve it, close the job.", icon: "inbox",
+    start() { S.biz.neg = bizNeg(); S.biz.won = S.biz.won.filter((w) => w.id !== "b1"); S.portal = "business"; go("biz-inbox"); },
+    steps: [["Draft a counteroffer with AI, approve it and send", () => S.biz.neg.sent >= 1, "biz-inbox"], ["The customer came back at $4,725. Accept it", () => ["final", "won"].includes(S.biz.neg.state), "biz-inbox"], ["Wait for the customer to approve the final terms", () => S.biz.neg.state === "won", "biz-inbox"]] },
+  { n: 6, title: "Complete a deal and verify the saving", sub: "Confirm the invoice and see the $1.50 fee recorded.", icon: "wallet",
+    start() {
+      S.deals = S.deals.filter((d) => d.reqId !== "fence"); S.tx = S.tx.filter((t) => t.dealId !== "fence6");
+      if (!req("fence")) S.requests.unshift({ id: "fence", cat: "trades", status: "offers", ...SAMPLE.trades, offers: FENCE_OFFERS() });
+      req("fence").status = "awarded";
+      S.deals.unshift({ id: "fence6", reqId: "fence", offerId: "ben", title: "Fence replacement", party: "Ben's Fencing & Gates", simulated: false, was: 5500, per: "", offer: 4725, target: 4600, floor: 4700, mode: "approval", limit: 5000, state: "agreed", asks: 2, draft: null,
+        terms: { price: 4725, you: true, them: true, by: "them" }, msgs: [{ from: "you", text: "I can commit today at $4,725.", amt: 4725 }, { from: "them", text: "We can do $4,725. Please approve the final terms to confirm.", amt: 4725, tag: "Scripted demo reply" }, { from: "sys", text: "Both parties approved. Confirm the final invoice to verify your saving." }] });
+      S.ui.sawReceipt = false; S.portal = "customer"; S.ui.dealId = "fence6"; go("deal");
+    },
+    steps: [["Confirm the final invoice amount", () => deal("fence6") && deal("fence6").state === "verified", "deal"], ["Open the savings receipt", () => S.ui.sawReceipt, "savings"]] },
+];
+function coach() {
+  const j = J.find((x) => x.n === S.ui.journey); if (!j) return "";
+  const i = j.steps.findIndex((s) => !s[1]());
+  const done = i === -1;
+  const body = `<div class="grow">` + (done ? `<b>Journey ${j.n} complete.</b> Nice work.` : `<b>Journey ${j.n} · step ${i + 1} of ${j.steps.length}</b><div>${esc(j.steps[i][0])}</div>`) + `</div>`;
+  const target = done ? "demo" : j.steps[i][2];
+  const onTarget = target === route && (target !== "deal" || true);
+  return `<div class="coach"><div class="coach-in gut">${ic(done ? "won" : "compass")}${body}${done ? `<button class="btn" data-act="go" data-v="demo">More journeys</button>` : onTarget ? "" : `<button class="btn" data-act="coachGo" data-v="${target}">Take me there</button>`}<button class="x" data-act="exitJourney" aria-label="Close guide">${ic("x")}</button></div></div>`;
+}
+
+// ───────────────────────── customer views ─────────────────────────
+function vWelcome() {
+  return `
+  <section class="hero">
+    <div class="stack" style="gap:16px">
+      <span class="eyebrow">Savings and negotiation, done for you</span>
+      <h1>Whatever you're paying for, DealPilot helps you get a better deal.</h1>
+      <p class="lede">Show us a quote or a bill. We find better offers, negotiate with your approval, and you choose.</p>
+      <div class="row">
+        <button class="btn light" data-act="go" data-v="find">Find me a better deal ${ic("arrow")}</button>
+        <button class="btn outline-light" data-act="modal" data-v="how">See how it works</button>
+      </div>
+    </div>
+    <div class="docket num" aria-label="Example saving, demonstration only">
+      <div class="row between" style="margin-bottom:6px"><b>Fencing quote</b><span class="tag sim">Demo example</span></div>
+      <div class="line"><span>You were quoted</span><span class="strike">$5,500.00</span></div>
+      <div class="line"><span>Agreed after negotiating</span><b>$4,725.00</b></div>
+      <div class="line"><span>DealPilot fee</span><span>$1.50</span></div>
+      <div class="line total"><span>You keep</span><span>$773.50</span></div>
+    </div>
+  </section>
+  <div class="grid3">
+    <button class="catbtn" data-act="startFind" data-v="trades">${ic("upload")}Upload a quote</button>
+    <button class="catbtn" data-act="go" data-v="guardian">${ic("shield")}Compare bills</button>
+    <button class="catbtn" data-act="go" data-v="dashboard">${ic("wallet")}Explore savings</button>
+    <button class="catbtn" data-act="go" data-v="demo">${ic("compass")}Try a guided demo</button>
+  </div>
+  <section class="stack">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><div><b>Tell us what you're paying.</b><p class="muted small">Upload a quote, bill or receipt.</p></div></li>
+      <li><div><b>DealPilot finds and negotiates better offers.</b><p class="muted small">Nothing is sent without your say-so.</p></div></li>
+      <li><div><b>You choose the deal.</b><p class="muted small">Compare price, protection and timing.</p></div></li>
+      <li><div><b>Pay $1.50 only when a qualifying saving is verified.</b><p class="muted small">No saving, no fee.</p></div></li>
+    </ol>
+  </section>
+  <section class="stack">
+    <h2>One place for everything you pay for</h2>
+    <div class="row">${CATS.map((c) => `<button class="tag" style="padding:8px 12px;font-size:.84rem;border:0" data-act="startFind" data-v="${c.id}">${ic(c.ic)}${c.name}</button>`).join("")}</div>
+  </section>
+  <p class="muted small">This is an interactive product prototype. Every business, offer, negotiation and saving shown is fictional. <button class="linkbtn" data-act="go" data-v="about">What's different from the real app</button></p>`;
+}
+
+function vDashboard() {
+  const s = summary(); const act = S.deals.filter(active); const fence = req("fence");
+  const offers = S.requests.filter((r) => r.status === "offers").reduce((n, r) => n + r.offers.filter((o) => !o.declined).length, 0);
+  const alerts = guardAlerts().length;
+  return `
+  <div class="row between"><div><h1>Good to see you, Alex</h1><p class="muted">Here's where your money stands.</p></div>${DEMO}</div>
+  <div class="grid2 grid4">
+    <button class="stat big" data-act="go" data-v="savings"><span class="eyebrow">Verified savings</span><span class="v num">${fmt(s.realised)}</span><span class="small">Realised and confirmed</span></button>
+    <button class="stat" data-act="go" data-v="deals"><span class="eyebrow">Potential savings</span><span class="v num">${fmt(potential())}</span><span class="small muted">Estimate, not yet realised</span></button>
+    <button class="stat" data-act="go" data-v="deals"><span class="eyebrow">Active negotiations</span><span class="v num">${act.length}</span><span class="small muted">${act.filter((d) => ["draft", "countered", "final", "agreed"].includes(d.state)).length} need you</span></button>
+    <button class="stat" data-act="go" data-v="offers"><span class="eyebrow">Competing offers</span><span class="v num">${offers}</span><span class="small muted">${fence && fence.status === "offers" ? "On your fencing quote" : "Upload a quote to get more"}</span></button>
+  </div>
+  <button class="btn primary block" data-act="go" data-v="find">${ic("plus")}Find me a better deal</button>
+  <div class="cols">
+    <div class="stack">
+      <section class="card">
+        <div class="row between"><h2>Needs your attention</h2></div>
+        <div>${act.length ? act.map(dealRow).join("") : `<p class="muted" style="padding:10px 0">Nothing waiting on you.</p>`}</div>
+      </section>
+      <section class="card">
+        <div class="row between"><h2>Money Guardian</h2><button class="linkbtn" data-act="go" data-v="guardian">Open</button></div>
+        <div>
+          <button class="listrow" data-act="gtab" data-v="alerts"><span class="badge-ic warn">${ic("alert")}</span><span class="grow"><b>${alerts} alert${alerts === 1 ? "" : "s"}</b><span class="muted small" style="display:block">Duplicate charge, bill increases</span></span>${ic("arrow")}</button>
+          <button class="listrow" data-act="gtab" data-v="renewals"><span class="badge-ic">${ic("clock")}</span><span class="grow"><b>2 upcoming renewals</b><span class="muted small" style="display:block">StreamFlix in 12 days, car insurance in 25</span></span>${ic("arrow")}</button>
+          <button class="listrow" data-act="go" data-v="group"><span class="badge-ic">${ic("users")}</span><span class="grow"><b>Solar group buy</b><span class="muted small" style="display:block">${groupCount()} of 10 members, ${groupPrice() ? fmt(groupPrice()) + " unlocked" : "1 more unlocks $6,600"}</span></span>${ic("arrow")}</button>
+        </div>
+      </section>
+    </div>
+    <section class="card">
+      <h2>Recent activity</h2>
+      <div>${S.activity.map((a) => `<button class="listrow" data-act="actGo" data-v="${a.r}"><span class="grow"><b>${esc(a.t)}</b><span class="muted small" style="display:block">${esc(a.s)}</span></span></button>`).join("")}</div>
+    </section>
+  </div>`;
+}
+const STATE = { open: ["Set your target", ""], draft: ["Needs your approval", "sim"], waiting: ["Waiting for reply", "info"], countered: ["Counteroffer received", "sim"], final: ["Approve final terms", "sim"], agreed: ["Verify your saving", "ok"], verified: ["Verified", "ok"], ended: ["Ended", ""] };
+function dealRow(d) {
+  const st = STATE[d.state];
+  return `<button class="listrow" data-act="openDeal" data-v="${d.id}"><span class="badge-ic">${ic("chat")}</span><span class="grow"><b>${esc(d.title)}</b><span class="muted small" style="display:block">${esc(d.party)} · <span class="was num">${fmt(d.was)}</span> <span class="num">${fmt(d.terms ? d.terms.price : d.offer)}${perS(d.per)}</span></span></span><span class="tag ${st[1]}">${st[0]}</span></button>`;
+}
+
+function vFind() {
+  const f = S.find; const cat = CATS.find((c) => c.id === f.cat);
+  const head = `<div><h1>Find me a better deal</h1><p class="muted">Three quick steps. Nothing is sent to anyone until you say so.</p></div>
+  <div class="pill-tabs" role="tablist">${["What is it?", "Upload", "Check details", "Next step"].map((t, i) => `<button role="tab" aria-selected="${f.step === i + 1}" ${i + 1 < f.step ? `data-act="findStep" data-v="${i + 1}"` : "disabled"}>${i + 1}. ${t}</button>`).join("")}</div>`;
+  if (f.step === 1) return head + `<div class="grid3">${CATS.map((c) => `<button class="catbtn" aria-pressed="${f.cat === c.id}" data-act="pickCat" data-v="${c.id}">${ic(c.ic)}${c.name}</button>`).join("")}</div>`;
+  if (f.step === 2) return head + (f.busy
+    ? `<div class="card stack"><h2>Reading ${esc(f.file)}</h2><ul class="scan"><li>${ic("check")}Finding the provider and total</li><li>${ic("check")}Listing what's included and excluded</li><li>${ic("check")}Checking conditions and fine print</li><li>${ic("check")}Looking for ways to save</li></ul><span class="tag sim" style="align-self:flex-start">Simulated analysis</span></div>`
+    : `<div class="drop" id="drop">${ic("upload")}<b>Drop your ${cat.bill ? "bill" : "quote"} here</b><span class="muted small">PDF, photo or text file</span>
+        <label class="btn ghost sm" for="file">Choose a file</label><input id="file" type="file" hidden accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.csv">
+        <span class="muted small">or</span><button class="btn primary" data-act="useSample">${ic("file")}Use the sample ${cat.id === "trades" ? "$5,500 fencing quote" : cat.name.toLowerCase() + " example"}</button></div>
+      <p class="note">Prototype note: files you choose here stay on your device. They are not uploaded, analysed by AI, or shown to any business. You'll see a sample extraction you can edit.</p>`);
+  if (f.step === 3) { const e = f.ex; return head + `
+    <div class="card stack">
+      <div class="row between"><h2>Here's what we found</h2><span class="tag sim">${f.sample ? "Sample document" : "Sample extraction"}</span></div>
+      <p class="hint">AI can make mistakes. Check and correct anything below. DealPilot only uses what you confirm.</p>
+      ${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+      <div class="grid2">
+        <div class="field"><label for="ex-provider">Provider</label><input class="input" id="ex-provider" value="${esc(e.provider)}"></div>
+        <div class="field"><label for="ex-amount">Quoted amount</label><div class="row" style="flex-wrap:nowrap"><input class="input num" id="ex-amount" inputmode="decimal" value="${esc(e.amount)}"><select class="input" id="ex-per" style="width:auto" aria-label="Billing period"><option value="" ${e.per === "" ? "selected" : ""}>one-off</option><option value="mo" ${e.per === "mo" ? "selected" : ""}>a month</option><option value="yr" ${e.per === "yr" ? "selected" : ""}>a year</option></select></div></div>
+      </div>
+      <div class="field"><label for="ex-title">What it's for</label><input class="input" id="ex-title" value="${esc(e.title)}"></div>
+      <div class="field"><label for="ex-scope">Scope</label><textarea class="input" id="ex-scope" rows="2">${esc(e.scope)}</textarea></div>
+      <div class="grid2">
+        <div class="field"><label for="ex-inc">Included (one per line)</label><textarea class="input" id="ex-inc" rows="4">${esc(e.inc.join("\n"))}</textarea></div>
+        <div class="field"><label for="ex-exc">Excluded or missing</label><textarea class="input" id="ex-exc" rows="4">${esc(e.exc.join("\n"))}</textarea></div>
+      </div>
+      <div class="field"><label for="ex-cond">Important conditions</label><textarea class="input" id="ex-cond" rows="3">${esc(e.cond.join("\n"))}</textarea></div>
+      <div><span class="lbl">Ways you might save</span><ul style="margin:6px 0 0;padding-left:20px">${e.opp.map((o) => `<li>${esc(o)}</li>`).join("")}</ul></div>
+      <button class="btn primary block" data-act="confirmEx">These details are right ${ic("arrow")}</button>
+    </div>`; }
+  const e = f.ex; const bill = cat.bill;
+  return head + `<div class="card stack"><h2>${esc(e.title)}</h2><p>You pay <b class="num">${fmt(e.amount)}${perS(e.per)}</b> with ${esc(e.provider)}. What would you like DealPilot to do?</p>
+    <button class="btn primary block" data-act="findPath" data-v="${bill ? "negotiate" : "offers"}">${bill ? "Negotiate with my provider" : "Get competing offers"}</button>
+    <button class="btn ghost block" data-act="findPath" data-v="${bill ? "offers" : "negotiate"}">${bill ? "Get competing offers instead" : "Negotiate this quote instead"}</button>
+    <p class="muted small">Either way you stay in control. Nothing is accepted without your approval.</p></div>`;
+}
+
+const CRED = { verified: ["Checked by DealPilot", "good", "check"], declared: ["Self-declared, not checked", "", "info"], missing: ["Not provided", "bad", "alert"] };
+function offerCard(o, r, i) {
+  const save = r.amount - o.price; const open = S.ui.open[o.id]; const d = S.deals.find((x) => x.offerId === o.id && x.reqId === r.id);
+  const lic = CRED[o.licence], ins = CRED[o.insurance]; const risky = o.licence === "missing" || o.insurance === "missing";
+  const closed = r.status !== "offers";
+  return `<article class="offer ${i === 0 && !risky ? "top" : ""} ${risky ? "risky" : ""} ${o.declined ? "declined" : ""}" style="animation-delay:${i * 0.12}s">
+    <div class="row between"><div class="row"><span class="tag ${risky ? "bad" : i === 0 ? "ok" : ""}">${esc(o.verdict)}</span><span class="tag sim">${o.simulated ? "Simulated business" : "Registered demo business"}</span></div></div>
+    <div class="row between" style="align-items:flex-end"><div><h3>${esc(o.biz)}</h3><p class="muted small">${esc(o.why)}</p></div>
+      <div style="text-align:right"><div class="price num">${fmt(o.price)}</div><div class="save small num">Save ${fmt(save)}</div></div></div>
+    <div class="checks">
+      <div class="chk ${lic[1]}">${ic(lic[2])}<span><b>Licence</b>${lic[0]}</span></div>
+      <div class="chk ${ins[1]}">${ic(ins[2])}<span><b>Insurance</b>${ins[0]}</span></div>
+      <div class="chk ${o.warranty >= 60 ? "good" : o.warranty < 24 ? "bad" : ""}">${ic("shield")}<span><b>Warranty</b>${o.warranty ? (o.warranty % 12 === 0 ? o.warranty / 12 + " years" : o.warranty + " months") : "None"}</span></div>
+      <div class="chk">${ic("clock")}<span><b>Completed in</b>About ${o.days} days</span></div>
+    </div>
+    ${risky ? `<p class="err" style="font-weight:500">${ic("alert")} <b>Why the lowest price may cost more:</b> without a licence or insurance you may have no cover if the work fails or someone is hurt.</p>` : ""}
+    ${open ? `<div class="stack small" style="gap:6px"><p><b>Scope:</b> ${esc(o.scope)}</p><p><b>Materials:</b> ${esc(o.materials)}</p><p><b>Exclusions:</b> ${o.exc.length ? esc(o.exc.join("; ")) : "None listed"}</p></div>` : ""}
+    <div class="row">
+      ${o.declined ? `<span class="muted grow">You declined this offer.</span><button class="btn ghost sm" data-act="undecline" data-v="${o.id}">Undo</button>`
+        : d ? `<button class="btn primary sm grow" data-act="openDeal" data-v="${d.id}">Open negotiation · ${STATE[d.state][0]}</button>`
+        : closed ? `<span class="muted grow small">This request is closed.</span>`
+        : `<button class="btn primary sm" data-act="askBetter" data-v="${o.id}">Request a better price</button><button class="btn ghost sm" data-act="modal" data-v="accept:${o.id}">Accept</button><button class="btn ghost sm" data-act="decline" data-v="${o.id}">Decline</button>`}
+      <button class="linkbtn small" data-act="toggle" data-v="${o.id}">${open ? "Hide details" : "Scope and exclusions"}</button>
+    </div></article>`;
+}
+function vOffers() {
+  const r = req(S.ui.reqId) || S.requests[0];
+  if (r) S.ui.reqId = r.id;
+  if (!r) return `<h1>Offers</h1><div class="card stack"><p>You have no open requests yet.</p><button class="btn primary" data-act="go" data-v="find">Upload a quote</button></div>`;
+  if (r.status === "inviting") return `<h1>${esc(r.title)}</h1><div class="card stack"><h2>Inviting businesses to bid</h2><div class="bar"><i style="width:70%"></i></div><p class="muted">Matching your request with businesses in your area. Your name and your target price are never shared.</p>${SIM}</div>`;
+  const rank = (o) => (o.licence === "missing" || o.insurance === "missing" ? 1 : 0);
+  const list = [...r.offers].sort((a, b) => rank(a) - rank(b) || b.warranty - a.warranty);
+  const yn = (v) => (v === "verified" ? `<td class="yes">Checked</td>` : v === "declared" ? `<td>Self-declared</td>` : `<td class="no">Not provided</td>`);
+  return `<div class="row between"><div><h1>${esc(r.title)}</h1><p class="muted">Your quote: <b class="num">${fmt(r.amount)}${perS(r.per)}</b> from ${esc(r.provider)}</p></div>${r.status === "awarded" ? `<span class="tag ok">Deal agreed</span>` : ""}</div>
+  ${S.requests.length > 1 ? `<div class="pill-tabs">${S.requests.map((x) => `<button aria-selected="${x.id === r.id}" data-act="pickReq" data-v="${x.id}">${esc(x.title)}</button>`).join("")}</div>` : ""}
+  <p class="note">All three businesses and their bids are fictional demonstrations. In the live app, only businesses verified by DealPilot can submit genuine offers.</p>
+  <div class="row between"><h2>${list.length} competing offers</h2><div class="seg"><button aria-pressed="${S.ui.oview === "cards"}" data-act="oview" data-v="cards">Cards</button><button aria-pressed="${S.ui.oview === "table"}" data-act="oview" data-v="table">Side by side</button></div></div>
+  ${S.ui.oview === "cards" ? `<div class="stack">${list.map((o, i) => offerCard(o, r, i)).join("")}</div>` : `<div class="tablewrap"><table class="num"><thead><tr><th></th>${list.map((o) => `<th>${esc(o.biz)}</th>`).join("")}</tr></thead><tbody>
+    <tr><td>Total price</td>${list.map((o) => `<td><b>${fmt(o.price)}</b></td>`).join("")}</tr>
+    <tr><td>You save</td>${list.map((o) => `<td class="yes">${fmt(r.amount - o.price)}</td>`).join("")}</tr>
+    <tr><td>Licence</td>${list.map((o) => yn(o.licence)).join("")}</tr><tr><td>Insurance</td>${list.map((o) => yn(o.insurance)).join("")}</tr>
+    <tr><td>Warranty</td>${list.map((o) => `<td class="${o.warranty < 24 ? "no" : ""}">${o.warranty ? o.warranty + " months" : "None"}</td>`).join("")}</tr>
+    <tr><td>Completed in</td>${list.map((o) => `<td>${o.days} days</td>`).join("")}</tr>
+    <tr><td>Materials</td>${list.map((o) => `<td>${esc(o.materials)}</td>`).join("")}</tr>
+    <tr><td>Exclusions</td>${list.map((o) => `<td>${o.exc.length ? esc(o.exc.join("; ")) : "None listed"}</td>`).join("")}</tr></tbody></table></div>
+    <p class="muted small">The lowest price is not ranked first when a licence or insurance is missing.</p>`}`;
+}
+
+function vDeals() {
+  const act = S.deals.filter(active), done = S.deals.filter((d) => !active(d));
+  return `<div><h1>Your deals</h1><p class="muted">Offers and negotiations in one place.</p></div>
+  ${S.requests.map((r) => `<button class="card listrow" style="border:1px solid var(--line);padding:14px 16px" data-act="pickReq" data-v="${r.id}"><span class="badge-ic">${ic("tag")}</span><span class="grow"><b>${esc(r.title)}</b><span class="muted small" style="display:block">${r.offers.filter((o) => !o.declined).length} offers · your quote ${fmt(r.amount)}</span></span><span class="tag ${r.status === "awarded" ? "ok" : "sim"}">${r.status === "awarded" ? "Deal agreed" : "Compare offers"}</span></button>`).join("")}
+  <section class="card"><h2>Negotiations</h2><div>${act.length ? act.map(dealRow).join("") : `<p class="muted" style="padding:10px 0">No active negotiations.</p>`}</div>
+    <button class="btn ghost block" style="margin-top:8px" data-act="go" data-v="find">${ic("plus")}Start a new one</button></section>
+  ${done.length ? `<section class="card"><h2>Finished</h2><div>${done.map(dealRow).join("")}</div></section>` : ""}`;
+}
+
+const MODES = { advisory: ["Advisory", "AI recommends. You send messages yourself."], approval: ["Approval", "AI drafts every message. Nothing is sent until you approve it."], autopilot: ["Limited Autopilot", "AI sends counteroffers within your limit. Simulation only. It never approves final terms."] };
+function vDeal() {
+  const d = deal(S.ui.dealId); if (!d) return vDeals();
+  const price = d.terms ? d.terms.price : d.offer; const save = Math.max(0, d.was - price); const t = S.tx.find((x) => x.id === d.txId);
+  const sug = suggest(d);
+  let panel = "";
+  if (d.state === "open") panel = `<div class="card stack"><h2>Set your target</h2>${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+      <div class="field"><label for="target">Target price${perL(d.per)} (private, never shown to them)</label><input class="input num" id="target" inputmode="decimal" value="${d.target}"></div>
+      <button class="btn primary block" data-act="draft">${ic("spark")}${d.mode === "advisory" ? "Get AI advice" : d.mode === "autopilot" ? "Start Limited Autopilot" : "Draft my counteroffer"}</button></div>`;
+  if (d.state === "draft") panel = d.mode === "advisory"
+    ? `<div class="card stack"><div class="row between"><h2>AI recommendation</h2><span class="tag info">Advisory</span></div><p>Ask for <b class="num">${fmt(d.draft.amt)}${perS(d.per)}</b>. Suggested wording you can send yourself:</p>
+        <textarea class="input" id="body" rows="5">${esc(d.draft.text)}</textarea>
+        <div class="row"><button class="btn ghost sm" data-act="copy">Copy message</button><button class="btn primary sm grow" data-act="sentMyself">I've sent it myself</button></div><p class="muted small">In this demo, tapping "I've sent it myself" plays a simulated reply.</p></div>`
+    : `<div class="card stack" style="border-color:var(--sun)"><div class="row between"><h2>AI draft, needs your approval</h2><span class="tag sim">Not sent yet</span></div>${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+        <div class="field"><label for="amt">Ask for${perL(d.per)}</label><input class="input num" id="amt" inputmode="decimal" value="${d.draft.amt}"></div>
+        <div class="field"><label for="body">Message (edit freely)</label><textarea class="input" id="body" rows="5">${esc(d.draft.text)}</textarea></div>
+        <label class="check"><input type="checkbox" id="ok"><span>I approve sending this message on my behalf${d.simulated ? " (to a simulated provider)" : " (scripted demo business)"}.</span></label>
+        <div class="row"><button class="btn primary grow" data-act="send">Approve and send</button><button class="btn ghost" data-act="discard">Discard</button></div></div>`;
+  if (d.state === "waiting") panel = `<div class="card row"><span class="typing"><i></i><i></i><i></i></span><span class="muted">${esc(d.party)} is replying…</span></div>`;
+  if (d.state === "countered") panel = `<div class="card stack"><h2>They offered <span class="num">${fmt(d.offer)}${perS(d.per)}</span></h2>
+      <p class="hint">${sug < d.offer - 1 ? `Suggested next step: counter at <b class="num">${fmt(sug)}${perS(d.per)}</b>, halfway between your target and their offer.` : "This is close to your target. Accepting is reasonable."}</p>
+      <button class="btn primary block" data-act="${d.mode === "autopilot" ? "autopilot" : "draft"}">${d.mode === "autopilot" ? "Run Autopilot step (simulation)" : "Counter again"}</button>
+      <div class="row"><button class="btn ghost grow" data-act="acceptCounter">Accept ${fmt(d.offer)}</button><button class="btn danger" data-act="walk">Walk away</button></div></div>`;
+  if (d.state === "final") panel = termsCard(d);
+  if (d.state === "agreed") panel = `<div class="card stack" style="border-color:var(--brand)"><div class="row between"><h2>Deal agreed</h2><span class="tag ok">Both approved</span></div>
+      <p>Agreed at <b class="num">${fmt(d.terms.price)}${perS(d.per)}</b>. When the job is done or the new price shows on your bill, confirm the final amount to verify your saving.</p>
+      <button class="btn primary block" data-act="modal" data-v="verify:${d.id}">Confirm final invoice</button></div>`;
+  if (d.state === "verified" && t) panel = `<div class="card stack"><div class="row between"><h2>Saving verified</h2><span class="stamp">${ic("check")}Verified</span></div><p>You saved <b class="save num">${fmt(t.saving)}${perS(t.per)}</b>${t.projected && t.per === "mo" ? `, projected <b class="num">${fmt(t.projected)}</b> over 12 months` : ""}.</p><button class="btn primary block" data-act="modal" data-v="receipt:${t.id}">View receipt</button></div>`;
+  if (d.state === "ended") panel = `<div class="card"><p>You ended this negotiation. No fee applies.</p></div>`;
+  return `<button class="linkbtn" data-act="go" data-v="deals">← All deals</button>
+  <div class="row between"><div><h1>${esc(d.title)}</h1><p class="muted">${esc(d.party)}</p></div><span class="tag sim">${d.simulated ? "Simulated provider" : "Registered demo business · scripted replies"}</span></div>
+  <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="stat"><span class="eyebrow">Was</span><span class="v num was" style="font-size:1.15rem">${fmt(d.was)}</span></div>
+    <div class="stat"><span class="eyebrow">${d.terms ? "Agreed" : "Their offer"}</span><span class="v num" style="font-size:1.15rem">${fmt(price)}</span></div>
+    <div class="stat"><span class="eyebrow">${d.per === "mo" ? "Save / month" : "Saving"}</span><span class="v num save" style="font-size:1.15rem">${fmt(save)}</span>${d.per === "mo" ? `<span class="small muted num">${fmt(save * 12)}/yr projected</span>` : ""}</div>
+  </div>
+  <div class="cols"><div class="stack">${panel}
+    <section class="card stack"><h2>Conversation</h2><div class="thread">${d.msgs.map((m) => `<div class="msg ${m.from}">${m.from === "sys" ? "" : `<div class="who">${m.from === "you" ? "You" : m.from === "ai" ? "DealPilot AI" : esc(d.party)}${m.tag ? `<span class="tag sim">${esc(m.tag)}</span>` : ""}</div>`}${esc(m.text)}</div>`).join("")}</div></section></div>
+    <section class="card stack"><h2>How much can AI do?</h2><div class="modes">${Object.entries(MODES).map(([k, v]) => `<button class="mode" aria-pressed="${d.mode === k}" data-act="mode" data-v="${k}"><span class="radio"></span><span><b>${v[0]}</b>${k === "autopilot" ? ` <span class="tag sim">Simulation only</span>` : ""}<span class="muted small" style="display:block">${v[1]}</span></span></button>`).join("")}</div>
+      ${d.mode === "autopilot" ? `<div class="field"><label for="limit">Autopilot limit${perL(d.per)}: it won't commit above this</label><div class="row" style="flex-wrap:nowrap"><input class="input num" id="limit" inputmode="decimal" value="${d.limit}"><button class="btn ghost sm" data-act="saveLimit">Save</button></div></div>` : ""}
+      <p class="muted small">${ic("lock")} AI never transfers money, signs a contract, or approves final terms for you.</p>
+      ${active(d) && !["final", "agreed"].includes(d.state) ? `<button class="btn danger sm" data-act="walk">Walk away (no fee)</button>` : ""}</section></div>`;
+}
+function termsCard(d) {
+  const t = d.terms;
+  return `<div class="card stack" style="border-color:var(--sun)"><div class="row between"><h2>Final terms</h2><span class="tag ${t.you && t.them ? "ok" : "sim"}">${t.you && t.them ? "Approved by both" : "Awaiting approval"}</span></div>
+    <div class="receipt" style="padding:12px 14px"><div class="ln"><span>Price</span><b class="num">${fmt(t.price)}${perS(d.per)}</b></div><div class="ln"><span>You save</span><b class="save num">${fmt(Math.max(0, d.was - t.price))}${perS(d.per)}</b></div>
+      <div class="ln"><span>You</span><span>${t.you ? "Approved" : "Waiting for you"}</span></div><div class="ln"><span>${esc(d.party)}</span><span>${t.them ? "Approved" : "Waiting…"}</span></div></div>
+    ${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+    ${!t.you ? `<label class="check"><input type="checkbox" id="okTerms"><span>I approve these final terms. This is an agreement between me and the business. DealPilot is not a party to it and never moves money.</span></label>
+      <div class="row"><button class="btn primary grow" data-act="approveTerms">Approve final terms</button><button class="btn danger" data-act="walk">Decline</button></div>${d.mode === "autopilot" ? `<p class="muted small">Limited Autopilot stops here. Only you can approve final terms.</p>` : ""}` : `<p class="muted">Waiting for ${esc(d.party)} to confirm.</p>`}</div>`;
+}
+
+function guardAlerts() {
+  const a = [
+    { k: "dup", ic: "alert", cls: "bad", type: "Possible duplicate charge", title: "Two charges of $87.40 from Demo Grocer", sub: "Same day, same amount.", acts: `<button class="btn primary sm" data-act="modal" data-v="dispute">How to check</button><button class="btn ghost sm" data-act="gdismiss" data-v="dup">It's fine</button>` },
+    { k: "power", ic: "bolt", cls: "warn", type: "Bill increase", title: "Electricity is up 12.4%", sub: "$210 to $236 a month. That's $312 more a year.", acts: `<button class="btn primary sm" data-act="gneg" data-v="power">Negotiate this bill</button><button class="btn ghost sm" data-act="gdismiss" data-v="power">Dismiss</button>` },
+    { k: "stream", ic: "repeat", cls: "warn", type: "Price rise", title: "StreamFlix went from $22.99 to $24.99", sub: "Renews in 12 days.", acts: `<button class="btn primary sm" data-act="gneg" data-v="stream">Negotiate or downgrade</button><button class="btn ghost sm" data-act="gdismiss" data-v="stream">Keep as is</button>` },
+  ];
+  if (S.guard.checked && !S.guard.claimed) a.unshift({ k: "phones", ic: "bag", cls: "", type: "Price drop", title: "Your headphones dropped to $399", sub: "You paid $449 nine days ago. You're inside the 30-day adjustment window.", acts: `<button class="btn primary sm" data-act="modal" data-v="claim">Claim $50 back</button>` });
+  return a.filter((x) => !S.guard.gone[x.k]);
+}
+const SUBS = [["stream", "StreamFlix Premium", 24.99, "Up from $22.99"], ["gym", "FitLife Gym", 64.95, "Charged monthly"], ["cloud", "CloudBox Storage", 4.49, "Charged monthly"]];
+function vGuardian() {
+  const tab = S.ui.gtab; const alerts = guardAlerts(); const total = SUBS.reduce((n, s) => n + s[2], 0);
+  const tabs = [["alerts", `Alerts (${alerts.length})`], ["subs", "Subscriptions"], ["renewals", "Renewals"], ["watch", "Price watch"]];
+  let body = "";
+  if (tab === "alerts") body = alerts.length ? alerts.map((a) => `<article class="card stack"><div class="row" style="align-items:flex-start;flex-wrap:nowrap"><span class="badge-ic ${a.cls}">${ic(a.ic)}</span><div class="grow"><span class="eyebrow">${a.type}</span><h3>${a.title}</h3><p class="muted small">${a.sub}</p></div></div><div class="row">${a.acts}</div></article>`).join("") : `<div class="card"><p>All clear. Nothing needs your attention.</p></div>`;
+  if (tab === "subs") body = `<section class="card"><div class="row between"><h2>Recurring charges</h2><b class="num">${fmt(r2(total))}/mo</b></div><p class="muted small num">That's ${fmt(r2(total * 12))} a year.</p><div>${SUBS.map((s) => `<div class="listrow"><span class="badge-ic">${ic("repeat")}</span><span class="grow"><b>${s[1]}</b><span class="muted small" style="display:block">${s[3]}</span></span><b class="num">${fmt(s[2])}</b><button class="btn ghost sm" data-act="gneg" data-v="${s[0]}">Negotiate</button></div>`).join("")}</div></section>`;
+  if (tab === "renewals") body = `<section class="card"><h2>Coming up</h2><div>
+      <div class="listrow"><span class="badge-ic warn">${ic("clock")}</span><span class="grow"><b>StreamFlix Premium</b><span class="muted small" style="display:block">Renews in 12 days · $24.99/mo</span></span><button class="btn ghost sm" data-act="gneg" data-v="stream">Negotiate</button></div>
+      <div class="listrow"><span class="badge-ic">${ic("shield")}</span><span class="grow"><b>Car insurance</b><span class="muted small" style="display:block">Renews in 25 days · $1,420/yr</span></span><button class="btn primary sm" data-act="gneg" data-v="car">Negotiate before it renews</button></div></div></section>`;
+  if (tab === "watch") { const now = S.guard.checked ? 399 : 449;
+    body = `<section class="card stack"><div class="row between"><div><span class="eyebrow">Retail purchase</span><h2>Noise-cancelling headphones</h2><p class="muted small">Demo Electronics · bought 9 days ago · 30-day adjustment window</p></div><span class="tag sim">Simulated price feed</span></div>
+      <div class="row between" style="align-items:flex-end"><div><span class="lbl">You paid</span><div class="price num ${S.guard.checked ? "was" : ""}">$449</div></div>
+        <svg viewBox="0 0 220 70" width="220" height="70" role="img" aria-label="Price history: $449 then ${S.guard.checked ? "$399" : "unchanged"}" style="max-width:48%"><line x1="6" y1="60" x2="214" y2="60" stroke="var(--line)" stroke-width="1"/><polyline fill="none" stroke="var(--brand)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" points="${S.guard.checked ? "8,14 130,14 150,52 212,52" : "8,14 212,14"}"/><circle cx="212" cy="${S.guard.checked ? 52 : 14}" r="5" fill="var(--brand)"/><text x="8" y="34" font-size="11" fill="var(--muted)">$449</text>${S.guard.checked ? `<text x="170" y="44" font-size="11" fill="var(--muted)">$399</text>` : ""}</svg>
+        <div style="text-align:right"><span class="lbl">Price now</span><div class="price num ${S.guard.checked ? "save" : ""}">${fmt(now)}</div></div></div>
+      ${S.guard.claimed ? `<p class="hint">Claim recorded. ${S.tx.some((t) => t.dealId === "phones") ? "Refund verified." : `Confirm the refund in <button class="linkbtn" data-act="go" data-v="savings">Savings</button>.`}</p>` : S.guard.checked ? `<p class="hint"><b>$50 less than you paid.</b> You can ask the retailer for a price adjustment.</p><button class="btn primary block" data-act="modal" data-v="claim">Claim $50 back</button>` : `<button class="btn primary block" data-act="checkPrice">Check the price now</button><p class="muted small">In the live app, prices come from approved retailer feeds or what you enter. DealPilot never scrapes websites.</p>`}</section>`; }
+  return `<div class="row between"><div><h1>Money Guardian</h1><p class="muted">Watching your bills, subscriptions and purchases.</p></div>${DEMO}</div>
+  <p class="note">No bank login needed. In this prototype all figures are fictional. DealPilot never moves your money.</p>
+  <div class="pill-tabs" role="tablist">${tabs.map((t) => `<button role="tab" aria-selected="${tab === t[0]}" data-act="gtab" data-v="${t[0]}">${t[1]}</button>`).join("")}</div>${body}`;
+}
+
+function vGroup() {
+  const n = groupCount(), price = groupPrice(), g = S.group;
+  return `<div class="row between"><div><h1>Rooftop solar, Sydney group buy</h1><p class="muted">6.6 kW systems with a 10-year workmanship warranty.</p></div><span class="tag sim">Simulated group</span></div>
+  <section class="card stack">
+    <div class="row between"><div><span class="eyebrow">Members</span><div class="price num">${n} <span class="muted" style="font-size:1rem">of 10</span></div></div><div style="text-align:right"><span class="eyebrow">${price ? "Group price unlocked" : "Standard price"}</span><div class="price num ${price ? "save" : ""}">${fmt(price || 7500)}</div>${price ? `<span class="was num small">$7,500</span>` : ""}</div></div>
+    <div class="bar" aria-label="${n} of 10 members"><i style="width:${Math.min(100, n * 10)}%"></i><span class="mark" style="left:50%"></span><span class="mark" style="left:calc(100% - 3px)"></span></div>
+    <div class="row">
+      <div class="tier ${n < 5 ? "on" : ""}"><span class="eyebrow">On your own</span><div class="price num" style="font-size:1.15rem">$7,500</div><span class="small muted">Standard price</span></div>
+      <div class="tier ${n >= 5 && n < 10 ? "on" : ""}"><span class="eyebrow">5+ members</span><div class="price num" style="font-size:1.15rem">$6,600</div><span class="small save">Save $900 each</span></div>
+      <div class="tier ${n >= 10 ? "on" : ""}"><span class="eyebrow">10+ members</span><div class="price num" style="font-size:1.15rem">$6,100</div><span class="small save">Save $1,400 each</span></div>
+    </div>
+    <p class="muted small">Offer from SunPeak Solar (simulated business). Closes in 14 days. Includes placeholder demo members.</p>
+  </section>
+  <section class="card stack">
+    <div class="row between"><h2>Your place</h2><span class="tag ${g.joined ? "ok" : ""}">${g.taken ? "Price taken up" : g.joined ? "Member · non-binding" : "Not a member"}</span></div>
+    <p class="hint">${ic("lock")} Joining is free and non-binding. No deposit, no commitment. You can leave at any time, and other members never see who you are.</p>
+    ${g.taken ? `<p>You took up the group price of <b class="num">$6,100</b>. Once installed, confirm the invoice in <button class="linkbtn" data-act="go" data-v="savings">Savings</button>.</p>`
+      : !g.joined ? `<p>${n === 4 ? "You'd be member five, which unlocks <b>$6,600</b> for everyone." : ""}</p><button class="btn primary block" data-act="join">Join the group</button>`
+      : `${price ? `<label class="check"><input type="checkbox" id="okGroup"><span>Take up the group price of <b class="num">${fmt(price)}</b>. Still non-binding until you sign with the installer yourself.</span></label>${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}<button class="btn primary block" data-act="takeGroup">Take up ${fmt(price)}</button>` : ""}
+         ${n < 10 ? `<button class="btn ghost block" data-act="grow">Simulate 5 neighbours joining</button>` : ""}<button class="btn ghost block" data-act="leave">Leave group</button>`}
+  </section>`;
+}
+
+function receiptHTML(t) {
+  const net = r2(t.saving - t.fee);
+  return `<div class="receipt num"><div class="row between"><b>${esc(t.title)}</b><span class="stamp">${ic("check")}Verified</span></div>
+    <div class="ln"><span>Original price</span><span class="was">${fmt(t.was)}${perS(t.per)}</span></div>
+    <div class="ln"><span>Final agreed price</span><b>${fmt(t.final)}${perS(t.per)}</b></div>
+    <div class="ln"><span>Verified saving${t.per ? " (first " + (t.per === "mo" ? "month" : "year") + ")" : ""}</span><b class="save">${fmt(t.saving)}</b></div>
+    <div class="ln"><span>Administration fee</span><span>${t.fee ? fmt(t.fee) : "$0.00"}</span></div>
+    <div class="perf"></div>
+    <div class="ln net"><span>Your net benefit</span><span>${fmt(net)}</span></div>
+    ${t.projected && t.per === "mo" ? `<div class="ln"><span class="muted">Projected over 12 months <span class="tag">Projection</span></span><span class="muted">${fmt(t.projected)}</span></div>` : ""}
+    <p class="muted small" style="margin-top:6px">${esc(t.why)}</p></div>`;
+}
+function vSavings() {
+  const s = summary(); const pend = S.deals.filter((d) => d.state === "agreed");
+  return `<div class="row between"><div><h1>Your savings</h1><p class="muted">Only savings you've confirmed count as realised.</p></div>${DEMO}</div>
+  <div class="grid2 grid4">
+    <div class="stat big"><span class="eyebrow">Realised</span><span class="v num">${fmt(s.realised)}</span><span class="small">Verified, in your pocket</span></div>
+    <div class="stat"><span class="eyebrow">Recurring / month</span><span class="v num">${fmt(s.monthly)}</span><span class="small muted">From verified bills</span></div>
+    <div class="stat"><span class="eyebrow">Projected 12 months</span><span class="v num">${fmt(s.projected)}</span><span class="small muted">Projection, not yet realised</span></div>
+    <div class="stat"><span class="eyebrow">Pending</span><span class="v num">${fmt(s.pending)}</span><span class="small muted">${pend.length} to confirm</span></div>
+  </div>
+  ${pend.length ? `<section class="card"><h2>Waiting for your confirmation</h2><div>${pend.map((d) => `<div class="listrow"><span class="grow"><b>${esc(d.title)}</b><span class="muted small num" style="display:block">Agreed ${fmt(d.terms.price)}${perS(d.per)}, was ${fmt(d.was)}</span></span><button class="btn primary sm" data-act="modal" data-v="verify:${d.id}">Confirm invoice</button></div>`).join("")}</div></section>` : ""}
+  <section class="stack"><h2>Verified savings</h2>${S.tx.map((t) => `<button class="card listrow" style="border:1px solid var(--line);padding:14px 16px" data-act="modal" data-v="receipt:${t.id}"><span class="badge-ic">${ic("won")}</span><span class="grow"><b>${esc(t.title)}</b><span class="muted small" style="display:block">${esc(t.when)} · fee ${fmt(t.fee)}${t.simulated ? " · simulated deal" : ""}</span></span><b class="save num">${fmt(t.saving)}${perS(t.per)}</b></button>`).join("")}</section>
+  <p class="muted small">Fees recorded so far: <b class="num">${fmt(s.fees)}</b>. $1.50 applies once per completed, verified, qualifying saving, capped at the saving. This prototype never collects a payment.</p>`;
+}
+
+function vDemo() {
+  return `<div><h1>Explore the demo</h1><p class="muted">Six short journeys. Each one sets up the scene and guides you with a bar at the top.</p></div>
+  <div class="stack">${J.map((j) => `<article class="card row" style="align-items:flex-start;flex-wrap:nowrap"><span class="badge-ic">${ic(j.icon)}</span><div class="grow stack" style="gap:6px"><span class="eyebrow">Journey ${j.n} · ${j.n === 5 ? "Business" : "Customer"}</span><h3>${j.title}</h3><p class="muted small">${j.sub}</p><div><button class="btn primary sm" data-act="journey" data-v="${j.n}">Start ${ic("arrow")}</button></div></div></article>`).join("")}</div>
+  <div class="row"><button class="btn ghost" data-act="modal" data-v="reset">Reset all demo data</button><button class="btn ghost" data-act="go" data-v="about">About this prototype</button></div>`;
+}
+function vAbout() {
+  const rows = [
+    ["Data", "Local, fictional and reset on reload", "Supabase with real accounts, email verification and two-step sign-in"],
+    ["Uploads", "Files stay on your device. A sample extraction is shown", "Files are virus-scanned, stored privately and analysed, with AI consent"],
+    ["Business replies", "Scripted or simulated after a short delay", "Real verified businesses reply from their own portal"],
+    ["Finding a deal", "One guided flow: category, upload, check, choose a path", "Separate Documents, Requests and Negotiations pages"],
+    ["Extraction fields", "Adds included, excluded, conditions and ways to save", "Provider, total, billing period, line items, key terms and risks"],
+    ["Comparing offers", "Cards with a plain-language verdict and a warning on risky offers, plus a side-by-side table", "A scored table with a Best overall badge and credential flags"],
+    ["Negotiation", "Chat-style thread with the next action pinned on top", "Timeline with separate side panels"],
+    ["Money Guardian", "Alerts, subscriptions, renewals and price watch in one place", "Separate Price monitor and Money Guardian pages"],
+    ["Receipts", "A docket-style receipt showing net benefit", "A savings table and ledger"],
+    ["Guided journeys", "A coach bar that tracks your progress", "A static list of journey links"],
+    ["Not in this prototype", "Sign-in, business verification workflow, admin tools, energy plan comparison, privacy controls", "All present in the app"],
+  ];
+  return `<div><h1>About this prototype</h1><p class="muted">A product-experience prototype for evaluating design. It does not replace the DealPilot application.</p></div>
+  <section class="card stack"><h2>Rules kept exactly as in the app</h2><ul style="margin:0;padding-left:20px"><li>$1.50 once per completed, verified, qualifying saving, capped at the saving. Simulated deals never incur a fee.</li><li>Both parties must approve final terms. Autopilot can propose but never approve.</li><li>Realised savings are shown separately from projections.</li><li>Sealed bidding: businesses never see customer identity, target price or competing bids.</li><li>The lowest price is never ranked first when a licence or insurance is missing.</li><li>No payment is ever collected and no deposits are taken for group buying.</li></ul></section>
+  <section class="stack"><h2>Where this differs from the current app</h2><div class="tablewrap"><table><thead><tr><th>Area</th><th>This prototype</th><th>Current app</th></tr></thead><tbody>${rows.map((r) => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table></div></section>`;
+}
+
+// ───────────────────────── business views ─────────────────────────
+function vBiz() {
+  const b = S.biz; const r = b.reqs.find((x) => x.id === S.ui.bizReq);
+  if (r) { const dr = S.ui.bizDraft;
+    return `<button class="linkbtn" data-act="bizBack">← All requests</button>
+    <div class="row between"><div><h1>${esc(r.title)}</h1><p class="muted">${esc(r.area)}</p></div><span class="tag sim">Demo request</span></div>
+    <div class="cols"><section class="card stack"><h2>Job details</h2><ul style="margin:0;padding-left:20px">${r.details.map((d) => `<li>${esc(d)}</li>`).join("")}</ul>
+      <div class="receipt" style="padding:12px 14px"><div class="ln"><span>Customer's current quote</span><b class="num">${fmt(r.quote)}</b></div><div class="ln"><span>Competing offers</span><span>${r.competing} (sealed)</span></div></div>
+      <p class="hint">${ic("lock")} Sealed bidding. You can't see who the customer is, their target price, or what competitors bid. Their name is shared only after they accept your offer.</p></section>
+    ${r.bid ? `<section class="card stack"><div class="row between"><h2>Your offer</h2><span class="tag ok">${esc(r.bid.status)}</span></div><div class="price num">${fmt(r.bid.price)}</div>${r.id === "b1" ? `<button class="btn primary" data-act="go" data-v="biz-inbox">Open negotiation</button>` : `<p class="muted">Submitted. You'll be notified when the customer responds.</p>`}</section>`
+      : `<section class="card stack"><div class="row between"><h2>Submit your bid</h2><button class="btn ghost sm" data-act="bizAI">${ic("spark")}Draft with AI</button></div>
+        ${dr ? `<p class="hint">AI draft loaded. Check every field. Nothing is sent until you approve.</p>` : ""}${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+        <div class="grid2"><div class="field"><label for="b-price">Total price</label><input class="input num" id="b-price" inputmode="decimal" value="${dr ? dr.price : ""}"></div><div class="field"><label for="b-days">Completed in (days)</label><input class="input num" id="b-days" inputmode="numeric" value="${dr ? dr.days : ""}"></div></div>
+        <div class="field"><label for="b-scope">Scope</label><textarea class="input" id="b-scope" rows="3">${dr ? esc(dr.scope) : ""}</textarea></div>
+        <div class="grid2"><div class="field"><label for="b-mat">Materials</label><input class="input" id="b-mat" value="${dr ? esc(dr.mat) : ""}"></div><div class="field"><label for="b-war">Warranty (months)</label><input class="input num" id="b-war" inputmode="numeric" value="${dr ? dr.war : ""}"></div></div>
+        <label class="check"><input type="checkbox" id="b-ok"><span>I'm authorised by Ben's Fencing & Gates and I approve this offer.</span></label>
+        <button class="btn primary block" data-act="bizSubmit">Approve and submit bid</button></section>`}</div>`; }
+  return `<div class="row between"><div><h1>Customer requests</h1><p class="muted">Jobs that match your trade and area.</p></div><span class="tag ok">${ic("check")}Verified demo business</span></div>
+  <div class="stack">${b.reqs.map((x) => `<button class="card listrow" style="border:1px solid var(--line);padding:14px 16px" data-act="bizOpen" data-v="${x.id}"><span class="badge-ic">${ic("hammer")}</span><span class="grow"><b>${esc(x.title)}</b><span class="muted small" style="display:block">${esc(x.area)} · current quote ${fmt(x.quote)} · ${x.competing} competing</span></span><span class="tag ${x.bid ? "ok" : "sim"}">${x.bid ? esc(x.bid.status) : "New"}</span></button>`).join("")}</div>
+  <p class="muted small">Customers are anonymous until they accept an offer. All requests here are fictional.</p>`;
+}
+function vBizInbox() {
+  const n = S.biz.neg; let panel = "";
+  if (n.state === "asked") panel = n.draft
+    ? `<div class="card stack" style="border-color:var(--sun)"><div class="row between"><h2>AI-drafted counteroffer</h2><span class="tag sim">Not sent yet</span></div>${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+        <div class="field"><label for="n-price">Your counteroffer</label><input class="input num" id="n-price" inputmode="decimal" value="${n.draft.price}"></div>
+        <div class="field"><label for="n-msg">Message (edit freely)</label><textarea class="input" id="n-msg" rows="4">${esc(n.draft.msg)}</textarea></div>
+        <label class="check"><input type="checkbox" id="n-ok"><span>I approve this response on behalf of my business.</span></label>
+        <div class="row"><button class="btn primary grow" data-act="negSend">Approve and send</button><button class="btn ghost" data-act="negDiscard">Reject draft</button></div></div>`
+    : `<div class="card stack"><h2>Customer asked for <span class="num">${fmt(n.ask)}</span></h2>${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+        <div class="field"><label for="n-floor">Lowest price you'd accept (private)</label><input class="input num" id="n-floor" inputmode="decimal" value="4700"></div>
+        <button class="btn primary block" data-act="negDraft">${ic("spark")}Draft a counteroffer with AI</button>
+        <div class="row"><button class="btn ghost grow" data-act="negAccept">Accept ${fmt(n.ask)}</button><button class="btn danger" data-act="negDecline">Decline</button></div></div>`;
+  if (n.state === "sent") panel = `<div class="card row"><span class="typing"><i></i><i></i><i></i></span><span class="muted">Waiting for the customer…</span></div>`;
+  if (n.state === "final") panel = `<div class="card stack" style="border-color:var(--sun)"><div class="row between"><h2>Final terms</h2><span class="tag sim">Awaiting customer</span></div><div class="receipt" style="padding:12px 14px"><div class="ln"><span>Price</span><b class="num">${fmt(n.terms)}</b></div><div class="ln"><span>Your business</span><span>Approved</span></div><div class="ln"><span>Customer</span><span>Waiting…</span></div></div></div>`;
+  if (n.state === "won") panel = `<div class="card stack" style="border-color:var(--brand)"><div class="row between"><h2>Job won at <span class="num">${fmt(n.terms)}</span></h2><span class="tag ok">Both approved</span></div><p>The customer's contact details are now shared with you. DealPilot charges businesses nothing during launch.</p><button class="btn primary" data-act="go" data-v="biz-won">See accepted offers</button></div>`;
+  if (n.state === "declined") panel = `<div class="card"><p>You declined this negotiation.</p></div>`;
+  return `<div class="row between"><div><h1>Negotiation inbox</h1><p class="muted">Replace 30 m Colorbond side and rear fence</p></div><span class="tag sim">Scripted demo customer</span></div>
+  <div class="grid2"><div class="stat"><span class="eyebrow">Your current offer</span><span class="v num">${fmt(n.offer)}</span></div><div class="stat"><span class="eyebrow">Customer asked</span><span class="v num">${fmt(n.ask)}</span></div></div>
+  <div class="cols"><div class="stack">${panel}<section class="card stack"><h2>Messages</h2><div class="thread">${n.msgs.map((m) => `<div class="msg ${m.from}">${m.from === "sys" ? "" : `<div class="who">${m.from === "you" ? "You" : "Customer"}</div>`}${esc(m.text)}</div>`).join("")}</div></section></div>
+  <section class="card stack"><h2>What you can't see</h2><p class="muted small">${ic("lock")} The customer's name, their private target price, their AI's notes, and other businesses' bids stay hidden. That keeps bidding fair for everyone.</p></section></div>`;
+}
+function vBizGroups() {
+  const t = S.biz.tiers;
+  return `<div class="row between"><div><h1>Group-buying tiers</h1><p class="muted">Offer volume pricing to a group of customers.</p></div><span class="tag sim">Simulated group</span></div>
+  <section class="card stack"><h2>Elm Street shared boundary fencing</h2><p class="muted">4 households · typical price $3,000 each · closes in 21 days</p>
+    ${t ? `<div class="row">${t.map((x) => `<div class="tier on"><span class="eyebrow">${x.min}+ households</span><div class="price num" style="font-size:1.15rem">${fmt(x.price)}</div><span class="small save">Saves ${fmt(3000 - x.price)} each</span></div>`).join("")}</div><p class="hint">Published. Group members were notified (simulated). Customers can take up a tier without any deposit.</p><button class="btn ghost" data-act="tiersEdit">Change tiers</button>`
+    : `${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}<div class="grid2">
+        <div class="tier"><span class="eyebrow">Tier 1</span><div class="field"><label for="t1m">Min households</label><input class="input num" id="t1m" inputmode="numeric" value="4"></div><div class="field"><label for="t1p">Price each</label><input class="input num" id="t1p" inputmode="decimal" value="2650"></div></div>
+        <div class="tier"><span class="eyebrow">Tier 2</span><div class="field"><label for="t2m">Min households</label><input class="input num" id="t2m" inputmode="numeric" value="6"></div><div class="field"><label for="t2p">Price each</label><input class="input num" id="t2p" inputmode="decimal" value="2450"></div></div></div>
+      <label class="check"><input type="checkbox" id="t-ok"><span>I approve this volume offer on behalf of my business.</span></label><button class="btn primary block" data-act="tiersPublish">Publish tiers</button>`}</section>`;
+}
+function vBizWon() {
+  const b = S.biz; const sub = b.reqs.filter((r) => r.bid).length; const won = b.won.length;
+  return `<div><h1>Accepted offers</h1><p class="muted">Jobs you've won and how customers are finding you.</p></div>
+  <div class="grid2 grid4"><div class="stat"><span class="eyebrow">Matching requests</span><span class="v num">${b.reqs.length}</span></div><div class="stat"><span class="eyebrow">Bids submitted</span><span class="v num">${sub}</span></div><div class="stat big"><span class="eyebrow">Jobs won</span><span class="v num">${won}</span></div><div class="stat"><span class="eyebrow">Win rate</span><span class="v num">${sub ? Math.round((won / sub) * 100) : 0}%</span></div></div>
+  <section class="card"><h2>Won jobs</h2><div>${won ? b.won.map((w) => `<div class="listrow"><span class="badge-ic">${ic("won")}</span><span class="grow"><b>${esc(w.title)}</b><span class="muted small" style="display:block">Customer: Alex D. (shared after acceptance) · demo</span></span><b class="num">${fmt(w.price)}</b></div>`).join("") : `<p class="muted" style="padding:10px 0">No accepted offers yet. Respond in your <button class="linkbtn" data-act="go" data-v="biz-inbox">negotiation inbox</button>.</p>`}</div></section>
+  <p class="muted small">Businesses pay nothing during launch. Any future commission would be disclosed and would never affect how offers are ranked.</p>`;
+}
+
+// ───────────────────────── modals ─────────────────────────
+function modal() {
+  const m = S.ui.modal; if (!m) return "";
+  const [type, id] = m.split(":"); let body = "";
+  const close = `<button class="btn ghost block" data-act="close">Close</button>`;
+  if (type === "how") body = `<h2>How DealPilot works</h2><ol class="steps" style="grid-template-columns:1fr"><li><div><b>Tell us what you're paying.</b></div></li><li><div><b>DealPilot finds and negotiates better offers.</b></div></li><li><div><b>You choose the deal.</b></div></li><li><div><b>Pay $1.50 only when a qualifying saving is verified.</b></div></li></ol><button class="btn primary block" data-act="go" data-v="find">Find me a better deal</button>${close}`;
+  if (type === "menu") body = `<h2>Menu</h2><div>${(S.portal === "customer" ? [["dashboard", "Dashboard", "home"], ["find", "Find me a better deal", "plus"], ["deals", "Your deals", "tag"], ["guardian", "Money Guardian", "shield"], ["group", "Group buying", "users"], ["savings", "Savings", "wallet"]] : NAV.business.map((x) => [x[0], x[1], x[2]])).concat([["demo", "Explore the demo", "compass"], ["welcome", "Welcome screen", "info"], ["about", "About this prototype", "info"]]).map((x) => `<button class="listrow" data-act="go" data-v="${x[0]}"><span class="badge-ic">${ic(x[2])}</span><b class="grow">${x[1]}</b>${ic("arrow")}</button>`).join("")}</div><button class="btn ghost block" data-act="modal" data-v="reset">Reset all demo data</button>`;
+  if (type === "reset") body = `<h2>Reset the demo?</h2><p>Everything returns to its starting state.</p><div class="row"><button class="btn primary grow" data-act="reset">Reset</button><button class="btn ghost" data-act="close">Cancel</button></div>`;
+  if (type === "accept") { const r = req(S.ui.reqId), o = r.offers.find((x) => x.id === id); const risky = o.licence === "missing" || o.insurance === "missing";
+    body = `<h2>Accept ${esc(o.biz)} at <span class="num">${fmt(o.price)}</span>?</h2>${risky ? `<p class="err" style="font-weight:500">This business has not provided a licence number and its insurance is not confirmed.</p>` : ""}<p>You'll save <b class="save num">${fmt(r.amount - o.price)}</b> on your ${fmt(r.amount)} quote. The business must also approve the final terms before the deal is agreed.</p>${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+      <label class="check"><input type="checkbox" id="okAccept"><span>I accept this offer${risky ? " and understand the risks above" : ""}.</span></label><div class="row"><button class="btn primary grow" data-act="acceptOffer" data-v="${o.id}">Accept offer</button><button class="btn ghost" data-act="close">Cancel</button></div>`; }
+  if (type === "verify") { const d = deal(id);
+    body = `<h2>Confirm the final amount</h2><p class="muted">Agreed at ${fmt(d.terms.price)}${perS(d.per)}. Enter what your ${d.per ? "new bill" : "final invoice"} actually says. Your saving is calculated from it.</p>${S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : ""}
+      <div class="field"><label for="final">Final amount${perL(d.per)}</label><input class="input num" id="final" inputmode="decimal" value="${d.terms.price}"></div>
+      <label class="check"><input type="checkbox" id="okVerify"><span>I confirm this deal was completed at this amount.</span></label>
+      <p class="muted small">${d.simulated ? "This is a simulated deal, so no fee applies." : "A $1.50 administration fee, capped at your saving, will be recorded. No payment is taken in this demo."}</p>
+      <div class="row"><button class="btn primary grow" data-act="doVerify" data-v="${d.id}">Verify my saving</button><button class="btn ghost" data-act="close">Cancel</button></div>`; }
+  if (type === "receipt") { const t = S.tx.find((x) => x.id === id); body = `<h2>Savings receipt</h2>${receiptHTML(t)}<p class="note">Demonstration only. No payment was collected.</p>${close}`; }
+  if (type === "claim") body = `<h2>Claim $50 back</h2><ol style="margin:0;padding-left:20px"><li>Find your receipt from Demo Electronics.</li><li>Ask for a price adjustment under their 30-day policy, in store or online.</li><li>Come back and confirm the refund amount.</li></ol><p class="muted small">Policies differ by retailer. DealPilot doesn't contact the retailer for you in this flow.</p><div class="row"><button class="btn primary grow" data-act="claimDone">I've requested it</button><button class="btn ghost" data-act="close">Not now</button></div>`;
+  if (type === "dispute") body = `<h2>Checking a duplicate charge</h2><ol style="margin:0;padding-left:20px"><li>Check your receipt: did you shop twice that day?</li><li>If not, contact Demo Grocer with the date and amount.</li><li>If they can't resolve it, ask your bank to dispute the second charge.</li></ol><p class="muted small">DealPilot never contacts your bank or moves money.</p><div class="row"><button class="btn primary grow" data-act="gdismiss" data-v="dup">Mark as checked</button><button class="btn ghost" data-act="close">Close</button></div>`;
+  return `<div class="overlay" data-act="backdrop"><div class="sheet" role="dialog" aria-modal="true">${body}</div></div>`;
+}
+
+// ───────────────────────── shell ─────────────────────────
+const NAV = {
+  customer: [["dashboard", "Home", "home"], ["deals", "Deals", "tag"], ["find", "New", "plus"], ["guardian", "Guardian", "shield"], ["savings", "Savings", "wallet"]],
+  business: [["biz", "Requests", "inbox"], ["biz-inbox", "Inbox", "chat"], ["biz-groups", "Group tiers", "users"], ["biz-won", "Won", "won"]],
+};
+const VIEWS = { welcome: vWelcome, dashboard: vDashboard, find: vFind, offers: vOffers, deals: vDeals, deal: vDeal, guardian: vGuardian, group: vGroup, savings: vSavings, demo: vDemo, about: vAbout, biz: vBiz, "biz-inbox": vBizInbox, "biz-groups": vBizGroups, "biz-won": vBizWon };
+const PARENT = { offers: "deals", deal: "deals" };
+function render() {
+  if (!VIEWS[route]) route = "welcome";
+  const cur = PARENT[route] || route; const nav = NAV[S.portal];
+  const side = S.portal === "customer" ? [["dashboard", "Dashboard", "home"], ["find", "Find a better deal", "plus"], ["deals", "Your deals", "tag"], ["guardian", "Money Guardian", "shield"], ["group", "Group buying", "users"], ["savings", "Savings", "wallet"]] : nav;
+  document.getElementById("app").innerHTML = `
+  <header class="top"><div class="top-in gut">
+    <button class="brand" data-act="go" data-v="welcome" aria-label="DealPilot home"><span class="brand-mark">${ic("tag")}</span>DealPilot</button><span class="spacer"></span>
+    <div class="seg" role="group" aria-label="Portal"><button aria-pressed="${S.portal === "customer"}" data-act="portal" data-v="customer">Customer</button><button aria-pressed="${S.portal === "business"}" data-act="portal" data-v="business">Business</button></div>
+    <button class="iconbtn" data-act="modal" data-v="menu" aria-label="Menu">${ic("menu")}</button>
+  </div></header>
+  ${coach()}
+  <div class="demo-strip gut">Interactive prototype · all businesses, offers and savings are fictional</div>
+  <div class="frame gut">
+    <nav class="side" aria-label="Main">${side.map((x) => `<button aria-current="${cur === x[0] ? "page" : "false"}" data-act="go" data-v="${x[0]}">${ic(x[2])}${x[1]}</button>`).join("")}<hr><button aria-current="${route === "demo" ? "page" : "false"}" data-act="go" data-v="demo">${ic("compass")}Explore the demo</button><button aria-current="${route === "about" ? "page" : "false"}" data-act="go" data-v="about">${ic("info")}About this prototype</button></nav>
+    <main class="main">${VIEWS[route]()}</main>
+  </div>
+  <nav class="tabs" aria-label="Main">${nav.map((x) => x[0] === "find" ? `<button class="fab" data-act="go" data-v="find" aria-label="Find me a better deal"><span class="dot">${ic("plus")}</span><b>New</b></button>` : `<button aria-current="${cur === x[0] ? "page" : "false"}" data-act="go" data-v="${x[0]}">${ic(x[2])}${x[1]}</button>`).join("")}</nav>
+  ${modal()}`;
+}
+
+// ───────────────────────── actions ─────────────────────────
+const A = {
+  go: (v) => go(v),
+  portal(v) { S.portal = v; go(v === "business" ? "biz" : "dashboard"); toast(v === "business" ? "Business portal: Ben's Fencing & Gates" : "Customer portal"); },
+  modal(v) { S.ui.modal = v; S.ui.err = null; if (v.startsWith("receipt")) S.ui.sawReceipt = true; render(); },
+  close() { S.ui.modal = null; S.ui.err = null; render(); },
+  backdrop(v, e) { if (e.target.classList.contains("overlay")) A.close(); },
+  reset() { S = fresh(); toast("Demo reset"); go("welcome"); },
+  actGo(v) { if (deal(v)) return A.openDeal(v); go(v); },
+  // find
+  startFind(v) { S.find = { step: 2, cat: v, file: null, busy: false, ex: null, sample: false }; go("find"); },
+  findStep(v) { S.find.step = Number(v); S.ui.err = null; render(); },
+  pickCat(v) { S.find.cat = v; S.find.step = 2; render(); },
+  useSample() { analyse(S.find.cat === "trades" ? "fencing-quote-sample.pdf" : "sample-" + S.find.cat + ".pdf", true); },
+  confirmEx() {
+    const amount = num(val("ex-amount"));
+    if (!(amount > 0)) return fail("Enter the quoted amount as a number, for example 5500.");
+    if (!val("ex-provider").trim()) return fail("Add the provider's name.");
+    const lines = (id) => val(id).split("\n").map((x) => x.trim()).filter(Boolean);
+    Object.assign(S.find.ex, { provider: val("ex-provider").trim(), amount, per: val("ex-per"), title: val("ex-title").trim() || "My request", scope: val("ex-scope").trim(), inc: lines("ex-inc"), exc: lines("ex-exc"), cond: lines("ex-cond") });
+    S.find.step = 4; S.ui.err = null; toast("Details confirmed"); render();
+  },
+  findPath(v) {
+    const f = S.find, e = f.ex; const fence = f.cat === "trades" && f.sample && e.amount === 5500;
+    if (v === "offers") {
+      const id = fence ? "fence" : "r" + ++uid;
+      S.requests = S.requests.filter((r) => r.id !== id); if (fence) S.deals = S.deals.filter((d) => d.reqId !== "fence");
+      S.requests.unshift({ id, cat: f.cat, status: "inviting", ...e, offers: fence ? FENCE_OFFERS() : genericOffers(e.amount) });
+      S.ui.reqId = id; S.ui.oview = "cards"; go("offers");
+      later(() => { req(id).status = "offers"; log(`3 offers arrived for ${e.title}`, "Compare them now", "offers"); toast("3 offers have arrived"); }, 1800);
+    } else {
+      const d = newDeal({ title: e.title, party: e.provider.replace(/\s*\(fictional\)/, ""), simulated: true, was: e.amount, per: e.per, offer: e.amount, target: Math.round(e.amount * 0.8), floor: Math.round(e.amount * 0.88), cat: f.cat });
+      d.msgs.push({ from: "ai", text: `You pay ${fmt(e.amount)}${perL(e.per)} with ${d.party}. Based on the details you confirmed, I suggest a target of ${fmt(d.target)}${perL(e.per)}. You can change it.` });
+      S.ui.dealId = d.id; go("deal");
+    }
+    S.find = { step: 1, cat: null, file: null, busy: false, ex: null, sample: false };
+  },
+  // offers
+  pickReq(v) { S.ui.reqId = v; go("offers"); },
+  oview(v) { S.ui.oview = v; render(); },
+  toggle(v) { S.ui.open[v] = !S.ui.open[v]; render(); },
+  decline(v) { req(S.ui.reqId).offers.find((o) => o.id === v).declined = true; toast("Offer declined"); render(); },
+  undecline(v) { req(S.ui.reqId).offers.find((o) => o.id === v).declined = false; render(); },
+  askBetter(v) {
+    const r = req(S.ui.reqId), o = r.offers.find((x) => x.id === v);
+    const d = newDeal({ reqId: r.id, offerId: o.id, title: r.id === "fence" ? "Fence replacement" : r.title, party: o.biz, simulated: o.simulated, was: r.amount, per: r.per, offer: o.price, target: Math.round((o.price * 0.9) / 100) * 100 || Math.round(o.price * 0.9), floor: o.floor });
+    d.msgs.push({ from: "ai", text: `${o.biz} offered ${fmt(o.price)} against your ${fmt(r.amount)} quote. Other offers go lower, which gives you leverage. I suggest asking for ${fmt(d.target)}.` });
+    S.ui.dealId = d.id; go("deal");
+  },
+  acceptOffer(v) {
+    if (!checked("okAccept")) return fail("Tick the box to confirm you accept this offer.");
+    const r = req(S.ui.reqId), o = r.offers.find((x) => x.id === v);
+    const d = newDeal({ reqId: r.id, offerId: o.id, title: r.id === "fence" ? "Fence replacement" : r.title, party: o.biz, simulated: o.simulated, was: r.amount, per: r.per, offer: o.price, target: o.price, floor: o.floor });
+    S.ui.dealId = d.id; go("deal"); acceptCounter(d); render();
+  },
+  // deals
+  openDeal(v) { S.ui.dealId = v; go("deal"); },
+  mode(v) { const d = deal(S.ui.dealId); d.mode = v; S.mode = v; if (d.state === "draft" && v === "autopilot") { d.draft = null; d.state = d.asks ? "countered" : "open"; } toast(MODES[v][0] + " mode"); render(); },
+  saveLimit() { const n = num(val("limit")); if (!(n > 0)) return toast("Enter a limit as a number", true); deal(S.ui.dealId).limit = n; toast("Autopilot limit saved"); render(); },
+  draft() {
+    const d = deal(S.ui.dealId);
+    if (d.state === "open") { const t = num(val("target")); if (!(t > 0) || t >= d.offer) return fail(`Your target must be below ${fmt(d.offer)}.`); d.target = t; }
+    S.ui.err = null;
+    if (d.mode === "autopilot") return A.autopilot();
+    makeDraft(d); render();
+  },
+  autopilot() {
+    const d = deal(S.ui.dealId); const amt = suggest(d);
+    if (d.asks > 0 && amt >= d.offer - 1) { d.msgs.push({ from: "ai", text: `Autopilot proposes accepting ${fmt(d.offer)}${perS(d.per)}. Only you can approve the final terms.`, tag: "Limited Autopilot" }); d.terms = { price: d.offer, you: false, them: true, by: "ai" }; d.state = "final"; return render(); }
+    if (amt > d.limit) { d.msgs.push({ from: "ai", text: `Autopilot paused: ${fmt(amt)} is above your limit of ${fmt(d.limit)}. Here's a draft for your approval instead.`, tag: "Limited Autopilot" }); makeDraft(d); d.mode = "approval"; return render(); }
+    sendAsk(d, amt, draftText(d.party, d.was, d.offer, amt, d.per, d.asks === 0), "Sent by Limited Autopilot · simulation"); toast("Autopilot sent a counteroffer (simulation)"); render();
+  },
+  send() {
+    const d = deal(S.ui.dealId); const amt = num(val("amt")); const text = val("body").trim();
+    if (!(amt > 0) || amt >= d.offer) return fail(`Ask for less than their current ${fmt(d.offer)}${perS(d.per)}.`);
+    if (!text) return fail("The message can't be empty.");
+    if (!checked("ok")) return fail("Tick the box to approve sending this message.");
+    S.ui.err = null; sendAsk(d, amt, text); toast("Approved and sent"); render();
+  },
+  sentMyself() { const d = deal(S.ui.dealId); sendAsk(d, d.draft.amt, val("body").trim() || d.draft.text, "Sent by you"); render(); },
+  copy() { const t = val("body"); const done = () => toast("Message copied"); if (navigator.clipboard) navigator.clipboard.writeText(t).then(done).catch(() => { document.getElementById("body").select(); toast("Select and copy the text"); }); else { document.getElementById("body").select(); toast("Select and copy the text"); } },
+  discard() { const d = deal(S.ui.dealId); d.draft = null; d.state = d.asks ? "countered" : "open"; S.ui.err = null; render(); },
+  acceptCounter() { acceptCounter(deal(S.ui.dealId)); render(); },
+  approveTerms() { const d = deal(S.ui.dealId); if (!checked("okTerms")) return fail("Tick the box to approve the final terms."); S.ui.err = null; d.terms.you = true; d.msgs.push({ from: "you", text: `I approve the final terms: ${fmt(d.terms.price)}${perS(d.per)}.` }); finalise(d); render(); },
+  walk() { const d = deal(S.ui.dealId); d.state = "ended"; d.draft = null; d.msgs.push({ from: "sys", text: "You ended this negotiation. No fee applies." }); if (d.reqId && req(d.reqId)) req(d.reqId).status = "offers"; toast("Negotiation ended. No fee."); render(); },
+  doVerify(v) {
+    const d = deal(v); const final = num(val("final"));
+    if (!(final > 0)) return fail("Enter the final amount as a number.");
+    if (!checked("okVerify")) return fail("Tick the box to confirm the deal was completed.");
+    const t = verify(d, r2(final)); S.ui.err = null; S.ui.modal = "receipt:" + t.id; S.ui.sawReceipt = true; toast(t.saving > 0 ? `Saving verified: ${fmt(t.saving)}` : "Recorded. No saving, so no fee."); render();
+  },
+  // guardian
+  gtab(v) { S.ui.gtab = v; if (route !== "guardian") return go("guardian"); render(); },
+  gdismiss(v) { S.guard.gone[v] = true; S.ui.modal = null; toast("Marked as checked"); render(); },
+  gneg(v) {
+    const defs = { power: ["Electricity bill", "Demo Energy Retailer", 236, "mo"], stream: ["StreamFlix Premium", "StreamFlix", 24.99, "mo"], gym: ["Gym membership", "FitLife Gym", 64.95, "mo"], cloud: ["Cloud storage", "CloudBox", 4.49, "mo"], car: ["Car insurance renewal", "Demo Insurer", 1420, "yr"] };
+    let d = S.deals.find((x) => x.key === v && active(x));
+    if (!d) { const x = defs[v]; const rnd = (n) => (x[2] > 50 ? Math.round(n) : r2(n));
+      d = newDeal({ key: v, title: x[0], party: x[1], simulated: true, was: x[2], per: x[3], offer: x[2], target: rnd(x[2] * 0.8), floor: rnd(x[2] * 0.88) });
+      d.msgs.push({ from: "ai", text: `You pay ${fmt(x[2])}${perL(x[3])} with ${x[1]}. I suggest a target of ${fmt(d.target)}${perL(x[3])}.` }); }
+    S.ui.dealId = d.id; go("deal");
+  },
+  checkPrice() { S.guard.checked = true; log("Price drop: headphones now $399", "You paid $449", "guardian"); toast("Price dropped to $399"); render(); },
+  claimDone() {
+    S.guard.claimed = true; S.ui.modal = null;
+    S.deals.unshift({ id: "phones", key: "phones", title: "Headphones price adjustment", party: "Demo Electronics", simulated: true, was: 449, per: "", offer: 399, target: 399, floor: 399, mode: "advisory", limit: 0, state: "agreed", asks: 0, draft: null, terms: { price: 399, you: true, them: true, by: "you" }, msgs: [{ from: "ai", text: "Ask Demo Electronics for a $50 price adjustment with your receipt. Once refunded, confirm the amount." }] });
+    log("Price adjustment requested", "Confirm the refund when it arrives", "savings"); toast("Claim recorded. Confirm the refund in Savings."); go("savings");
+  },
+  // group
+  join() { S.group.joined = true; log("You joined the solar group buy", "5 members: $6,600 unlocked", "group"); toast("You're in. $6,600 unlocked for everyone."); render(); },
+  leave() { S.group.joined = false; S.ui.err = null; toast("You left the group"); render(); },
+  grow() { S.group.extra += 5; toast("5 simulated neighbours joined. $6,100 unlocked."); render(); },
+  takeGroup() {
+    if (!checked("okGroup")) return fail("Tick the box to take up the group price.");
+    const p = groupPrice(); S.group.taken = true; S.ui.err = null;
+    S.deals.unshift({ id: "solar", key: "solar", title: "Rooftop solar, group price", party: "SunPeak Solar", simulated: true, was: 7500, per: "", offer: p, target: p, floor: p, mode: "approval", limit: 0, state: "agreed", asks: 0, draft: null, terms: { price: p, you: true, them: true, by: "you" }, msgs: [{ from: "sys", text: `You took up the group price of ${fmt(p)}. SunPeak pre-approved these terms when it published the offer (simulated).` }] });
+    log(`Group price taken up: ${fmt(p)}`, "Non-binding", "group"); toast("Group price taken up. Non-binding."); render();
+  },
+  // journeys
+  journey(v) { const j = J.find((x) => x.n === Number(v)); S.ui.journey = j.n; j.start(); toast(`Journey ${j.n} started`); },
+  exitJourney() { S.ui.journey = null; render(); },
+  coachGo(v) { if (v === "deal") { const j = S.ui.journey; S.ui.dealId = j === 2 ? "internet" : j === 6 ? "fence6" : S.ui.dealId; } if (v === "offers") S.ui.reqId = "fence"; if (v.startsWith("biz")) S.portal = "business"; go(v); },
+  // business
+  bizOpen(v) { S.ui.bizReq = v; S.ui.bizDraft = null; S.ui.err = null; render(); window.scrollTo(0, 0); },
+  bizBack() { S.ui.bizReq = null; S.ui.bizDraft = null; S.ui.err = null; render(); },
+  bizAI() { const r = S.biz.reqs.find((x) => x.id === S.ui.bizReq); S.ui.bizDraft = { price: Math.round((r.quote * 0.92) / 50) * 50, days: 10, scope: r.title + ". " + r.details.join(". ") + ".", mat: "To Australian Standards, as specified", war: 84 }; S.ui.err = null; toast("AI draft ready for your review"); render(); },
+  bizSubmit() {
+    const r = S.biz.reqs.find((x) => x.id === S.ui.bizReq); const price = num(val("b-price"));
+    if (!(price > 0)) return fail("Enter your total price.");
+    if (!val("b-scope").trim()) return fail("Describe the scope of work.");
+    if (!checked("b-ok")) return fail("Tick the box to confirm a person at your business approves this offer.");
+    r.bid = { price, status: "Submitted" }; S.ui.bizDraft = null; S.ui.err = null; toast("Bid submitted to the customer"); render();
+  },
+  negDraft() {
+    const n = S.biz.neg; const floor = num(val("n-floor"));
+    if (!(floor > 0) || floor >= n.offer) return fail(`Enter a floor below your current offer of ${fmt(n.offer)}.`);
+    const price = Math.max(floor, Math.round((n.ask + n.offer) / 2));
+    n.draft = { price, msg: `Thanks for the request. We can't go to ${fmt(n.ask)}, but we can do ${fmt(price)} with the same scope and 7-year warranty if you confirm this week.` }; S.ui.err = null; render();
+  },
+  negDiscard() { S.biz.neg.draft = null; S.ui.err = null; toast("Draft rejected"); render(); },
+  negSend() {
+    const n = S.biz.neg; const price = num(val("n-price")); const msg = val("n-msg").trim();
+    if (!(price > 0) || price >= n.offer) return fail(`A counteroffer must be lower than your current offer of ${fmt(n.offer)}.`);
+    if (price <= n.ask) return fail(`That's at or below the customer's ask of ${fmt(n.ask)}. Accept it instead.`);
+    if (!checked("n-ok")) return fail("Tick the box to approve this response.");
+    n.msgs.push({ from: "you", text: msg || `We can offer ${fmt(price)}.`, amt: price }); n.offer = price; n.draft = null; n.sent++; n.state = "sent"; S.ui.err = null; toast("Counteroffer sent"); render();
+    later(() => {
+      if (price <= 4800 && n.sent > 1) { n.msgs.push({ from: "them", text: `${fmt(price)} works. I approve those terms.` }); n.terms = price; n.state = "final"; later(() => bizWin(), 900); }
+      else { const ask = Math.min(price - 25, Math.max(n.ask, 4725)); n.ask = ask; n.msgs.push({ from: "them", text: `Thanks. I can commit today at ${fmt(ask)}. If that works, please confirm.` }); n.state = "asked"; toast("The customer replied"); }
+    }, 1500);
+  },
+  negAccept() { const n = S.biz.neg; n.msgs.push({ from: "you", text: `Accepted ${fmt(n.ask)}.` }); n.terms = n.ask; n.offer = n.ask; n.state = "final"; toast("Accepted. Waiting for the customer to approve final terms."); render(); later(() => bizWin(), 1500); },
+  negDecline() { S.biz.neg.state = "declined"; toast("Negotiation declined"); render(); },
+  tiersPublish() {
+    const t = [{ min: num(val("t1m")), price: num(val("t1p")) }, { min: num(val("t2m")), price: num(val("t2p")) }];
+    if (t.some((x) => !(x.min >= 2) || !(x.price > 0))) return fail("Each tier needs at least 2 households and a price.");
+    if (t[1].min <= t[0].min || t[1].price >= t[0].price) return fail("The larger tier must need more households and cost less.");
+    if (t.some((x) => x.price >= 3000)) return fail("Every tier must be below the typical price of $3,000.");
+    if (!checked("t-ok")) return fail("Tick the box to approve this volume offer.");
+    S.biz.tiers = t; S.ui.err = null; toast("Tiers published to the group"); render();
+  },
+  tiersEdit() { S.biz.tiers = null; render(); },
+};
+function bizWin() { const n = S.biz.neg; n.state = "won"; n.msgs.push({ from: "sys", text: "The customer approved the final terms. Both parties have approved." }); const r = S.biz.reqs[0]; r.bid = { price: n.terms, status: "Won" }; if (!S.biz.won.some((w) => w.id === "b1")) S.biz.won.unshift({ id: "b1", title: r.title, price: n.terms }); if (S.portal === "business") toast("Job won"); }
+function analyse(name, sample) {
+  const f = S.find; f.file = name; f.busy = true; f.sample = sample; render();
+  later(() => { f.busy = false; f.ex = JSON.parse(JSON.stringify(SAMPLE[f.cat])); f.step = 3; if (!sample) toast("Showing a sample extraction for you to edit"); }, 2100);
+}
+
+// ───────────────────────── events ─────────────────────────
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  if (el.dataset.act === "backdrop" && e.target !== el) return;
+  const fn = A[el.dataset.act]; if (fn) fn(el.dataset.v, e);
+});
+document.addEventListener("change", (e) => { if (e.target.id === "file" && e.target.files[0]) analyse(e.target.files[0].name, false); });
+document.addEventListener("dragover", (e) => { const d = e.target.closest && e.target.closest("#drop"); if (d) { e.preventDefault(); d.classList.add("over"); } });
+document.addEventListener("dragleave", (e) => { const d = e.target.closest && e.target.closest("#drop"); if (d) d.classList.remove("over"); });
+document.addEventListener("drop", (e) => { const d = e.target.closest && e.target.closest("#drop"); if (d) { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file) analyse(file.name, false); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.ui.modal) A.close(); });
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (VIEWS[h] && h !== route) { route = h; if (h.startsWith("biz")) S.portal = "business"; render(); } });
+const h0 = location.hash.slice(1); if (VIEWS[h0] && !["deal"].includes(h0)) { route = h0; if (h0.startsWith("biz")) S.portal = "business"; }
+render();
+})();
+</script>
