@@ -210,6 +210,47 @@ td.no { color: var(--bad); font-weight: 700 } td.yes { font-weight: 700 }
 #toasts { position: fixed; z-index: 50; left: 0; right: 0; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px)) }
 .toast { background: var(--block); color: var(--on-block); border-left: 10px solid var(--lime); padding: 12px 16px; font-weight: 600; font-size: .92rem; animation: rise .25s both; max-width: 100% } .toast.bad { border-left-color: var(--bad) }
 @media (min-width: 900px) { #toasts { bottom: 28px; align-items: flex-end } }
+/* ── Refinement: calmer type, lighter rules, intentional light and dark surfaces ── */
+.poster { text-transform: none; font-stretch: 82%; font-size: clamp(2.1rem, 9.4vw, 3.8rem); line-height: 1 }
+h1 { font-size: clamp(1.6rem, 6.2vw, 2.5rem); line-height: 1.04 }
+.fig.xl { font-size: clamp(2.6rem, 12vw, 4.4rem) } .fig.l { font-size: clamp(1.8rem, 7.6vw, 2.7rem) } .fig.m { font-size: 1.6rem }
+.fig { white-space: normal; overflow-wrap: anywhere }
+.label { text-transform: none; letter-spacing: .01em; font-size: .74rem }
+.proto { text-transform: none; letter-spacing: .01em; font-size: .7rem; padding-block: 6px }
+.main { gap: 40px; padding-block: 16px calc(92px + env(safe-area-inset-bottom, 0px)) }
+.rows > :first-child { border-top: 1px solid var(--hair) } .rows > :last-child { border-bottom: 1px solid var(--hair) }
+.slip { border-top: 1px solid var(--hair); padding-top: 24px } .head { border-bottom-width: 1px }
+.r { padding: 18px 0 } .r .ttl, h2, .say { overflow-wrap: anywhere }
+.nav button { min-height: 46px; font-family: var(--text); font-size: .8rem; font-weight: 600; text-transform: none; letter-spacing: 0; border-top-width: 3px }
+.path li { text-transform: none; letter-spacing: 0; font-size: .72rem }
+.menu-b { font-family: var(--text); font-size: .9rem; font-weight: 600; letter-spacing: 0; text-transform: none; text-decoration: none; border: 1.5px solid var(--ink); padding: 0 14px; min-height: 40px; border-radius: 2px }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.kvs { border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair) }
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 13px 0; border-top: 1px solid var(--hair) } .kv:first-child { border-top: 0 }
+.kv > :first-child { min-width: 0 } .kv > :last-child { text-align: right; flex: none; max-width: 62% } .kv small { display: block; color: var(--mute); font-size: .8rem; line-height: 1.35 }
+.block .kv, .block .kvs { border-color: var(--block-mute) } .block.light .kv, .block.light .kvs { border-color: var(--hair) }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .78rem; color: var(--mute) } .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px }
+.legend .lo { background: var(--lime); border: 1.5px solid var(--ink); transform: rotate(45deg) } .legend .la { border: 1.5px solid var(--ink) } .legend .lt2 { width: 0; border-left: 2px dashed var(--mute); height: 12px }
+.tabs4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5px; background: var(--ink); border: 1.5px solid var(--ink) }
+.tabs4 button { background: var(--bg); border: 0; min-height: 46px; padding: 6px 8px; font-weight: 600; font-size: .9rem }
+.tabs4 button[aria-selected="true"] { background: var(--ink); color: var(--bg) }
+@media (min-width: 620px) { .tabs4 { grid-template-columns: repeat(4, minmax(0, 1fr)) } }
+.viewsw { flex-wrap: wrap; overflow: visible; white-space: normal; gap: 4px 16px }
+.defs { display: grid; gap: 6px; font-size: .84rem; color: var(--mute) } .defs div { display: grid; grid-template-columns: 5.4rem minmax(0, 1fr); gap: 8px } .defs dt { font-weight: 700; color: var(--ink) } .defs dd { margin: 0 }
+.block.light { background: var(--paper); color: var(--ink); border: 1.5px solid var(--ink); box-shadow: inset 0 6px 0 var(--lime); padding-top: 26px }
+.block.light .label, .block.light .mute, .block.light .f label { color: var(--mute) }
+.block.light .b { border-color: var(--ink) } .block.light .b.go { border-color: var(--on-lime) }
+.block.light .in { background: var(--bg); border-color: var(--ink); color: var(--ink) }
+.block.light hr { border-color: var(--hair) } .block.light .aside { border-left-color: var(--ink); color: var(--mute) } .block.light .aside b { color: var(--ink) }
+.block.light .err { background: var(--bad-soft); color: var(--bad); border-color: var(--bad) }
+.block.light .sim::before { background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1.5px, transparent 1.5px 5px) }
+.block.light :focus-visible { outline-color: var(--ink) }
+.stepper { display: flex; gap: 6px } .stepper i { flex: 1; height: 4px; background: var(--hair) } .stepper i.on { background: var(--ink) }
+#toasts { bottom: calc(60px + env(safe-area-inset-bottom, 0px)) }
+.t { min-height: 44px } .wm { min-height: 44px }
+.mk span b { text-transform: none; letter-spacing: 0; font-family: var(--text); font-size: .68rem } .mk.al-l span { left: 10px } .mk.al-r span { right: 10px } .mk.was.al-r span { right: -2px } .mk.was.al-l span { left: -4px }
+thead th { text-transform: none; letter-spacing: 0; font-family: var(--text); font-size: .8rem; font-weight: 700 }
+@media (max-width: 619px) { table { min-width: 0; table-layout: fixed; font-size: .8rem } th, td { padding: 10px 7px; overflow-wrap: anywhere } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important } }
 </style>
 <div id="app"></div>
@@ -324,7 +365,7 @@ const active = (d) => !["verified", "ended"].includes(d.state);
 function log(t, s, r) { S.activity.unshift({ t, s, r }); S.activity = S.activity.slice(0, 8); }
 function toast(msg, bad) {
   const el = document.createElement("div"); el.className = "toast" + (bad ? " bad" : ""); el.textContent = msg;
-  document.getElementById("toasts").appendChild(el); setTimeout(() => el.remove(), 3200);
+  const box = document.getElementById("toasts"); while (box.children.length > 1) box.firstChild.remove(); box.appendChild(el); setTimeout(() => el.remove(), 2600);
 }
 function fail(msg) { S.ui.err = msg; render(); const e = document.querySelector(".err"); if (e) e.scrollIntoView({ block: "center", behavior: "smooth" }); }
 function later(fn, ms) { setTimeout(() => { fn(); render(); }, ms); }
@@ -401,7 +442,7 @@ function verify(d, final) {
   const saving = r2(Math.max(0, d.was - final)); const f = feeFor(d, saving);
   const t = { id: "t" + ++uid, dealId: d.id, title: `${d.title}, ${d.party}`, was: d.was, final, per: d.per, saving, projected: d.per === "mo" ? r2(saving * 12) : d.per === "yr" ? saving : null, fee: f.fee, why: f.why, simulated: d.simulated, when: "Just now" };
   S.tx.unshift(t); d.state = "verified"; d.txId = t.id;
-  log(`Saving verified: ${fmt(saving)}${perS(d.per)}`, d.title, "savings");
+  log(`Saving confirmed: ${fmt(saving)}${perS(d.per)}`, d.title, "savings");
   return t;
 }
 
@@ -415,7 +456,7 @@ const J = [
     steps: [["Approve and send the opening ask of $84", () => deal("internet").asks >= 1, "deal"], ["They countered at $102. Counter again at $93", () => deal("internet").asks >= 2, "deal"], ["Approve the final terms", () => ["agreed", "verified"].includes(deal("internet").state), "deal"], ["Verify the new bill to record $27 a month", () => deal("internet").state === "verified", "deal"]] },
   { n: 3, title: "Catch a price drop on $449 headphones", sub: "Money Guardian spots $399 inside the adjustment window.", icon: "bag",
     start() { S.guard.checked = false; S.guard.claimed = false; S.deals = S.deals.filter((d) => d.key !== "phones"); S.tx = S.tx.filter((t) => t.dealId !== "phones"); S.portal = "customer"; S.ui.gtab = "watch"; go("guardian"); },
-    steps: [["Check the price now", () => S.guard.checked, "guardian"], ["Claim the $50 price adjustment", () => S.guard.claimed, "guardian"], ["Confirm the refund to verify the saving", () => S.tx.some((t) => t.dealId === "phones"), "savings"]] },
+    steps: [["Check the price now", () => S.guard.checked, "guardian"], ["Claim the $50 price adjustment", () => S.guard.claimed, "guardian"], ["Confirm the refund to count the saving", () => S.tx.some((t) => t.dealId === "phones"), "savings"]] },
   { n: 4, title: "Join the Sydney solar group buy", sub: "More members unlock $6,600, then $6,100.", icon: "users",
     start() { S.group = { joined: false, extra: 0, taken: false }; S.deals = S.deals.filter((d) => d.key !== "solar"); S.portal = "customer"; go("group"); },
     steps: [["Join the group to unlock the 5-member price", () => S.group.joined, "group"], ["Simulate five more neighbours joining", () => S.group.extra >= 5, "group"], ["Take up the group price (non-binding)", () => S.group.taken, "group"]] },
@@ -438,19 +479,25 @@ const ar = `<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4
 const fw = `<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h12M9 3l5 5-5 5"/></svg>`;
 const cnt = (key, v, suf) => `<span class="count" data-key="${key}" data-val="${v}" data-suf="${suf || ""}">${fmt(v)}${suf || ""}</span>`;
 const errBox = () => (S.ui.err ? `<p class="err" role="alert">${esc(S.ui.err)}</p>` : "");
-function ladder(key, lo, hi, marks, summaryText) {
+function ladder(key, lo, hi, marks, summaryText, suf) {
   const span = hi - lo || 1;
-  return `<div class="ladder" role="img" aria-label="${esc(summaryText)}"><div class="track"></div>${marks.map((m) => {
-    const p = Math.max(0, Math.min(100, ((m.v - lo) / span) * 100)); const al = p < 18 ? "al-l" : p > 82 ? "al-r" : "al-c";
-    return `<div class="mk ${m.cls} ${m.row} ${al}" data-key="${key}-${m.k}" data-left="${p.toFixed(1)}" style="left:${p.toFixed(1)}%"><i></i><span><b>${m.label}</b>${fmt(m.v)}</span></div>`;
-  }).join("")}</div>`;
+  const ms = marks.map((m) => { const p = Math.max(0, Math.min(100, ((m.v - lo) / span) * 100)); return { m, p, al: p < 18 ? "al-l" : p > 82 ? "al-r" : "al-c" }; });
+  // Keep neighbouring labels on the same row from colliding: push them apart around their markers.
+  ["up", "dn"].forEach((row) => { const r = ms.filter((x) => x.m.row === row).sort((x, y) => x.p - y.p);
+    for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1]; if (b.p - a.p >= 30) continue;
+      if (a.p >= 24) { a.al = "al-r"; if (b.p <= 78) b.al = "al-l"; } else { a.al = "al-l"; if (b.p <= 78) b.al = "al-l"; } } });
+  return `<div class="ladder" role="img" aria-label="${esc(summaryText)}"><div class="track"></div>${ms.map(({ m, p, al }) =>
+    `<div class="mk ${m.cls} ${m.row} ${al}" data-key="${key}-${m.k}" data-left="${p.toFixed(1)}" style="left:${p.toFixed(1)}%"><i></i><span><b>${m.label}</b>${fmt(m.v)}${suf || ""}</span></div>`).join("")}</div>`;
 }
 function coach() {
   const j = J.find((x) => x.n === S.ui.journey); if (!j) return "";
   const i = j.steps.findIndex((s) => !s[1]()); const done = i === -1; const target = done ? "demo" : j.steps[i][2];
   return `<div class="coach"><div class="coach-in gut"><div class="grow"><span class="label">Demo ${j.n} of 6 · ${done ? "complete" : `step ${i + 1} of ${j.steps.length}`}</span>${done ? "Journey complete. Nice work." : esc(j.steps[i][0])}</div>${done ? `<button class="t" data-act="go" data-v="demo">More journeys</button>` : target === route ? "" : `<button class="t" data-act="coachGo" data-v="${target}">Take me there</button>`}<button class="x" data-act="exitJourney" aria-label="Close guide">✕</button></div></div>`;
 }
-const SAY = { open: "Set your target to begin", draft: "A counteroffer is ready for you to approve", waiting: "Waiting for their reply", countered: "They came back with a counteroffer", final: "Final terms need your approval", agreed: "Agreed. Confirm your invoice", verified: "Saving verified", ended: "Ended" };
+const DEFS = { saved: ["Saved", "confirmed by you against the final invoice"], potential: ["Potential", "estimated opportunities, not guaranteed"], pending: ["Pending", "agreed, waiting for you to confirm the invoice"], projected: ["Projected", "future recurring savings, not yet realised"] };
+const defs = (keys) => `<dl class="defs">${keys.map((k) => `<div><dt>${DEFS[k][0]}</dt><dd>${DEFS[k][1]}</dd></div>`).join("")}</dl>`;
+const kv = (k, sub, v) => `<div class="kv"><span>${k}${sub ? `<small>${sub}</small>` : ""}</span><span>${v}</span></div>`;
+const SAY = { open: "Set your target to begin", draft: "A counteroffer is ready for you to approve", waiting: "Waiting for their reply", countered: "They came back with a counteroffer", final: "Final terms need your approval", agreed: "Agreed. Confirm your invoice", verified: "Saving confirmed", ended: "Ended" };
 const DO = { open: "Set target", draft: "Review draft", waiting: "View", countered: "Respond", final: "Approve terms", agreed: "Confirm invoice", verified: "Receipt", ended: "View" };
 const STATE = SAY;
 const MODES = { advisory: ["Advisory", "AI recommends. You send every message yourself."], approval: ["Approval", "AI drafts every message. Nothing is sent until you approve it."], autopilot: ["Autopilot", "Limited Autopilot sends counteroffers within your limit. Simulation only. It never approves final terms."] };
@@ -466,37 +513,35 @@ function tableItems() {
 function vHome() {
   const s = summary(); const items = tableItems(); const al = guardAlerts().length;
   return `
-  <section class="stack loose">
-    <h1 class="poster">Your money.<br><span class="hl">Better deals.</span></h1>
-    <form class="stack" data-form="ask">
-      <label class="say" for="askq">What do you want a better price on?</label>
-      <div class="ask"><input id="askq" autocomplete="off" placeholder="my fencing quote, internet bill…"><button type="submit" aria-label="Find me a better deal">${ar}</button></div>
-      <p class="try small mute">Try ${[["trades", "a fencing quote"], ["telco", "my internet bill"], ["insurance", "car insurance"], ["energy", "electricity"], ["other", "something else"]].map((x) => `<button type="button" class="t" data-act="startFind" data-v="${x[0]}">${x[1]}</button>`).join(" · ")}</p>
+  <section class="stack">
+    <h1 class="poster">Pay less. <span class="hl">Live more.</span></h1>
+    <p class="say">Find a better deal on almost anything.</p>
+    <form data-form="ask" class="stack tight">
+      <label class="small mute" for="askq">What do you want a better price on?</label>
+      <div class="ask"><input id="askq" autocomplete="off" placeholder="e.g. my fencing quote, internet bill"><button type="submit" aria-label="Find me a better deal">${ar}</button></div>
     </form>
+    <div class="duo"><button class="b" data-act="findKind" data-v="quote">Upload a quote</button><button class="b" data-act="findKind" data-v="bill">Upload a bill</button></div>
   </section>
   <section class="stack">
-    <div class="line between base"><h2>On the table</h2><span class="sim">Demo data</span></div>
-    <div class="rows">${items.length ? items.map((x, i) => `<button class="r" data-act="${x.a}" data-v="${x.v}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(x.t)}</span><span class="small mute" style="display:block">${esc(x.s)}</span></span><span style="text-align:right"><span class="fig m">${x.from ? `<span class="label" style="display:block">from</span>` : ""}${fmt(x.fig)}<span class="small">${perS(x.per)}</span></span>${x.fig < x.was ? `<span class="small was num" style="display:block">${fmt(x.was)}</span>` : ""}</span><span class="ix"></span><span class="go-t">${x.go} ${fw}</span></button>`).join("") : `<p class="mute" style="padding:18px 0">Nothing in play. Tell us what you're paying for above.</p>`}</div>
+    <div class="line between base"><h2>In play</h2><span class="sim">Demo data</span></div>
+    <div class="rows">${items.length ? items.map((x, i) => `<button class="r" data-act="${x.a}" data-v="${x.v}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(x.t)}</span><span class="small mute" style="display:block">${esc(x.s)}</span></span><span style="text-align:right"><span class="fig m">${x.from ? `<span class="label" style="display:block">from</span>` : ""}${fmt(x.fig)}<span class="small">${perS(x.per)}</span></span>${x.fig < x.was ? `<span class="small was num" style="display:block">${fmt(x.was)}${perS(x.per)}</span>` : ""}</span><span class="ix"></span><span class="go-t">${x.go} ${fw}</span></button>`).join("") : `<p class="mute" style="padding:18px 0">Nothing in play yet. Tell us what you're paying for above.</p>`}</div>
   </section>
-  <section class="split">
-    <div class="stack">
-      <h2>Saved so far</h2>
-      <button class="stack tight" style="background:none;border:0;padding:0;text-align:left" data-act="go" data-v="savings">
-        <span class="fig xl">${cnt("home-real", s.realised)}</span>
-        <span class="ok-mark">Verified and realised</span>
-      </button>
-      <div class="line base" style="gap:22px">
-        <div class="stack tight"><span class="fig m hollow">${fmt(potential())}</span><span class="sim">Still possible, not yet real</span></div>
-        ${s.pending ? `<div class="stack tight"><span class="fig m hollow">${fmt(s.pending)}</span><span class="sim">Agreed, awaiting your invoice</span></div>` : ""}
-      </div>
+  <section class="stack">
+    <div class="line between base"><h2>Your savings</h2><span class="sim">Fictional demo figures</span></div>
+    <div class="kvs">
+      ${kv("<b>Saved</b>", "Confirmed by you against the final invoice", `<span class="fig l">${cnt("home-real", s.realised)}</span>`)}
+      ${kv("<b>Potential</b>", "Estimated opportunities, not guaranteed", `<span class="fig m hollow">${fmt(potential())}</span>`)}
+      ${s.pending ? kv("<b>Pending</b>", "Agreed, waiting for you to confirm the invoice", `<span class="fig m hollow">${fmt(s.pending)}</span>`) : ""}
+      ${s.projected ? kv("<b>Projected</b>", "Future recurring savings over 12 months", `<span class="fig m hollow">${fmt(s.projected)}</span>`) : ""}
     </div>
-    <div class="stack">
-      <h2>Worth a look</h2>
-      <div class="rows">
-        <button class="r" data-act="go" data-v="guardian"><span class="ix">${ar}</span><span><span class="ttl">Money Guardian found ${al} thing${al === 1 ? "" : "s"}</span><span class="small mute" style="display:block">A bill increase, a price rise, a possible double charge</span></span><span></span></button>
-        <button class="r" data-act="go" data-v="group"><span class="ix">${ar}</span><span><span class="ttl">Solar group buy, Sydney</span><span class="small mute" style="display:block">${groupCount()} of 10 in. ${groupPrice() ? fmt(groupPrice()) + " unlocked" : "One more unlocks $6,600"}</span></span><span></span></button>
-        <button class="r" data-act="go" data-v="demo"><span class="ix">${ar}</span><span><span class="ttl">Take a guided tour</span><span class="small mute" style="display:block">Six short journeys through DealPilot</span></span><span></span></button>
-      </div>
+    <button class="t" data-act="go" data-v="savings" style="align-self:flex-start">See how each saving was earned ${fw}</button>
+  </section>
+  <section class="stack">
+    <h2>Worth a look</h2>
+    <div class="rows">
+      <button class="r" data-act="go" data-v="guardian"><span class="ix">${ar}</span><span><span class="ttl">Money Guardian found ${al} thing${al === 1 ? "" : "s"}</span><span class="small mute" style="display:block">A bill increase, a price rise, a possible double charge</span></span><span></span></button>
+      <button class="r" data-act="go" data-v="group"><span class="ix">${ar}</span><span><span class="ttl">Solar group buy, Sydney</span><span class="small mute" style="display:block">${groupCount()} of 10 in. ${groupPrice() ? fmt(groupPrice()) + " unlocked" : "One more unlocks $6,600"}</span></span><span></span></button>
+      <button class="r" data-act="go" data-v="demo"><span class="ix">${ar}</span><span><span class="ttl">Take a guided tour</span><span class="small mute" style="display:block">Six short journeys through DealPilot</span></span><span></span></button>
     </div>
   </section>
   <section class="stack narrow">
@@ -505,11 +550,11 @@ function vHome() {
     <p class="small mute"><span class="ok-mark" style="margin-right:14px">Solid = confirmed</span><span class="sim">Hatched = simulated or not yet real</span></p>
   </section>`;
 }
-
 function vFind() {
   const f = S.find; const cat = CATS.find((c) => c.id === f.cat);
   const head = `<section class="stack narrow"><span class="label">Step ${f.step} of 4</span><div class="prog"><i style="width:${f.step * 25}%"></i></div>`;
-  if (f.step === 1) return head + `<h1>What is it?</h1><div class="rows">${CATS.map((c) => `<button class="r" data-act="pickCat" data-v="${c.id}"><span class="ix">${ic(c.ic)}</span><span class="ttl">${c.name}</span><span>${fw}</span></button>`).join("")}</div></section>`;
+  const pick = CATS.filter((c) => !f.kind || (f.kind === "bill" ? c.bill : !c.bill));
+  if (f.step === 1) return head + `<h1>${f.kind === "bill" ? "Which bill?" : f.kind === "quote" ? "What's the quote for?" : "What is it?"}</h1>${f.kind ? `<button class="t" data-act="findKind" data-v="">Show everything</button>` : ""}<div class="rows">${pick.map((c) => `<button class="r" data-act="pickCat" data-v="${c.id}"><span class="ix">${ic(c.ic)}</span><span class="ttl">${c.name}</span><span>${fw}</span></button>`).join("")}</div></section>`;
   if (f.step === 2) return head + (f.busy
     ? `<h1>Reading ${esc(f.file)}</h1><ul class="scan"><li>→ Finding the provider and total</li><li>→ Listing what's included and excluded</li><li>→ Checking conditions and fine print</li><li>→ Looking for ways to save</li></ul><span class="sim">Simulated analysis</span></section>`
     : `<h1>Show us the ${cat.bill ? "bill" : "quote"}.</h1><button class="t" data-act="findStep" data-v="1">← ${cat.name}</button>
@@ -607,30 +652,30 @@ function vDeal() {
   const price = d.terms ? d.terms.price : d.offer; const save = Math.max(0, d.was - price); const t = S.tx.find((x) => x.id === d.txId); const sug = suggest(d);
   const lastAsk = [...d.msgs].reverse().find((m) => m.from === "you" && m.amt); const lo = Math.min(d.target, price) - (d.was - Math.min(d.target, price)) * 0.12;
   const marks = [{ k: "was", v: d.was, label: "You pay now", cls: "was", row: "up" }];
-  if (price < d.was) marks.push({ k: "offer", v: price, label: d.terms ? "Agreed" : "Best offer", cls: "offer", row: "dn" });
-  if (lastAsk && lastAsk.amt !== price && !d.terms) marks.push({ k: "ask", v: lastAsk.amt, label: "Your ask", cls: "ask", row: "up" });
-  if (!d.terms && d.target < price) marks.push({ k: "target", v: d.target, label: "Your target · private", cls: "target", row: lastAsk ? "dn" : "up" });
+  if (price < d.was) marks.push({ k: "offer", v: price, label: d.terms ? "Agreed" : "Their offer", cls: "offer", row: "dn" });
+  if (lastAsk && lastAsk.amt !== price && !d.terms) marks.push({ k: "ask", v: lastAsk.amt, label: "Your counteroffer", cls: "ask", row: "up" });
+  if (!d.terms && d.target < price) marks.push({ k: "target", v: d.target, label: "Your target", cls: "target", row: lastAsk ? "dn" : "up" });
   const stage = { open: 0, draft: 0, waiting: 1, countered: 1, final: 2, agreed: 3, verified: 4, ended: -1 }[d.state];
   let next = "";
-  if (d.state === "open") next = `<div class="block"><span class="label">Your move</span><h2>Set your target</h2>${errBox()}<div class="f"><label for="target">Target price${perL(d.per)} · private, never shown to them</label><input class="in fig m" id="target" inputmode="decimal" value="${d.target}"></div>
+  if (d.state === "open") next = `<div class="block light"><span class="label">Your move</span><h2>Set your target</h2>${errBox()}<div class="f"><label for="target">Target price${perL(d.per)} · private, never shown to them</label><input class="in fig m" id="target" inputmode="decimal" value="${d.target}"></div>
       <button class="b go wide" data-act="draft">${d.mode === "advisory" ? "Get AI advice" : d.mode === "autopilot" ? "Start Limited Autopilot" : "Draft my counteroffer"} ${ar}</button></div>`;
   if (d.state === "draft") next = d.mode === "advisory"
-    ? `<div class="block"><span class="label">AI recommendation · advisory</span><h2>Ask for ${fmt(d.draft.amt)}${perS(d.per)}</h2><div class="f"><label for="body">Suggested wording to send yourself</label><textarea class="in" id="body" rows="5">${esc(d.draft.text)}</textarea></div>
+    ? `<div class="block light"><span class="label">AI recommendation · advisory</span><h2>Ask for ${fmt(d.draft.amt)}${perS(d.per)}</h2><div class="f"><label for="body">Suggested wording to send yourself</label><textarea class="in" id="body" rows="5">${esc(d.draft.text)}</textarea></div>
         <div class="line"><button class="b sm" data-act="copy">Copy message</button><button class="b go sm grow" data-act="sentMyself">I've sent it myself</button></div><p class="small mute">In this demo, that button plays a simulated reply.</p></div>`
-    : `<div class="block"><div class="line between"><span class="label">Your move</span><span class="sim">Not sent yet</span></div><h2>AI draft, needs your approval</h2>${errBox()}
+    : `<div class="block light"><div class="line between"><span class="label">Your move</span><span class="sim">Not sent yet</span></div><h2>AI draft, needs your approval</h2>${errBox()}
         <div class="f"><label for="amt">Ask for${perL(d.per)}</label><input class="in fig m" id="amt" inputmode="decimal" value="${d.draft.amt}"></div>
         <div class="f"><label for="body">Message · edit freely</label><textarea class="in" id="body" rows="5">${esc(d.draft.text)}</textarea></div>
         <label class="tick"><input type="checkbox" id="ok"><span>I approve sending this message on my behalf${d.simulated ? " (to a simulated provider)" : " (scripted demo business)"}.</span></label>
         <button class="b go wide" data-act="send">Approve and send ${fw}</button><button class="t" data-act="discard">Discard draft</button></div>`;
   if (d.state === "waiting") next = `<div class="block"><span class="label">Their move</span><p class="say">${esc(d.party)} is replying</p><p class="wait"><i></i><i></i><i></i></p></div>`;
-  if (d.state === "countered") next = `<div class="block"><span class="label">Your move</span><h2>They offered ${fmt(d.offer)}${perS(d.per)}</h2>
+  if (d.state === "countered") next = `<div class="block light"><span class="label">Your move</span><h2>They offered ${fmt(d.offer)}${perS(d.per)}</h2>
       <p class="aside">${sug < d.offer - 1 ? `<b>Suggested:</b> counter at ${fmt(sug)}${perS(d.per)}, halfway between your target and their offer.` : `<b>Suggested:</b> this is close to your target. Accepting is reasonable.`}</p>
       <button class="b go wide" data-act="${d.mode === "autopilot" ? "autopilot" : "draft"}">${d.mode === "autopilot" ? "Run Autopilot step (simulation)" : "Counter again"} ${ar}</button>
       <div class="line"><button class="b grow" data-act="acceptCounter">Accept ${fmt(d.offer)}</button><button class="t" data-act="walk">Walk away</button></div></div>`;
   if (d.state === "final") next = termsCard(d);
   if (d.state === "agreed") next = `<div class="block"><div class="line between"><span class="label">Your move</span><span class="label">Both approved</span></div><h2>Deal agreed</h2><p>Agreed at <b>${fmt(d.terms.price)}${perS(d.per)}</b>. When the job is done or the new price shows on your bill, confirm the final amount. Only then does the saving count.</p>
       <button class="b go wide" data-act="modal" data-v="verify:${d.id}">Confirm final invoice ${fw}</button></div>`;
-  if (d.state === "verified" && t) next = `<div class="block"><span class="label">Done</span><h2>Saving verified</h2><div class="fig l"><span class="hl">${fmt(t.saving)}${perS(t.per)}</span></div>${t.projected && t.per === "mo" ? `<p class="small mute">Projected ${fmt(t.projected)} over 12 months. A projection, not yet realised.</p>` : ""}<button class="b go wide" data-act="modal" data-v="receipt:${t.id}">View receipt</button></div>`;
+  if (d.state === "verified" && t) next = `<div class="block"><span class="label">Done</span><h2>Saving confirmed</h2><div class="fig l"><span class="hl">${fmt(t.saving)}${perS(t.per)}</span></div>${t.projected && t.per === "mo" ? `<p class="small mute">Projected ${fmt(t.projected)} over 12 months. A projection, not yet realised.</p>` : ""}<button class="b go wide" data-act="modal" data-v="receipt:${t.id}">View receipt</button></div>`;
   if (d.state === "ended") next = `<div class="block"><span class="label">Closed</span><p class="say">You walked away. No fee applies.</p></div>`;
   const who = (m) => (m.from === "you" ? "You" : m.from === "ai" ? "DealPilot AI · note" : esc(d.party));
   let n = 0;
@@ -638,9 +683,15 @@ function vDeal() {
     <button class="t" data-act="go" data-v="deals">← Deals</button>
     <div class="line between"><span class="label">Negotiation with ${esc(d.party)}</span>${d.simulated ? `<span class="sim">Simulated provider</span>` : `<span class="sim">Demo business · scripted replies</span>`}</div>
     <h1>${esc(d.title)}</h1>
-    ${ladder("deal-" + d.id, lo, d.was, marks, `You pay ${fmt(d.was)}. Best offer ${fmt(price)}. Target ${fmt(d.target)}.`)}
-    <div class="trio"><div><span class="label">Was</span><span class="fig m was">${fmt(d.was)}</span></div><div><span class="label">${d.terms ? "Agreed" : "Best offer"}</span><span class="fig l">${cnt("offer-" + d.id, price)}</span></div><div style="text-align:right"><span class="label">${d.state === "verified" ? "You save" : "You'd save"}${d.per === "mo" ? " / month" : ""}</span><span class="fig l">${save ? `<span class="hl">${cnt("save-" + d.id, save)}</span>` : "—"}</span></div></div>
-    ${d.per === "mo" && save ? `<p class="small mute" style="text-align:right">${fmt(save * 12)} a year if it holds. A projection.</p>` : ""}
+    ${ladder("deal-" + d.id, lo, d.was, marks, `You pay ${fmt(d.was)}. Best offer ${fmt(price)}. Target ${fmt(d.target)}.`, perS(d.per))}
+    ${d.terms ? "" : `<p class="legend"><span><i class="lo"></i>their offer</span><span><i class="la"></i>your counteroffer</span><span><i class="lt2"></i>your private target</span></p>`}
+    <div class="kvs">
+      ${kv("You pay now", "", `<span class="fig m">${fmt(d.was)}<span class="small">${perS(d.per)}</span></span>`)}
+      ${kv(d.terms ? "Agreed price" : "Their current offer", "", price < d.was || d.terms ? `<span class="fig m">${cnt("offer-" + d.id, price)}<span class="small">${perS(d.per)}</span></span>` : `<span class="mute">No offer yet</span>`)}
+      ${d.terms ? "" : kv("Your counteroffer", "", lastAsk ? `<span class="fig m">${fmt(lastAsk.amt)}<span class="small">${perS(d.per)}</span></span>` : `<span class="mute">${d.draft ? "Drafted, not sent" : "Not sent yet"}</span>`)}
+      ${kv(`<b>${d.state === "verified" ? "Saved" : d.terms ? "Pending saving" : "Potential saving"}</b>`, d.state === "verified" ? "Confirmed by you against the final invoice" : d.terms ? "Agreed, waiting for you to confirm the invoice" : "If you accepted their current offer. Not guaranteed", save ? `<span class="fig l"><span class="hl">${cnt("save-" + d.id, save)}${perS(d.per)}</span></span>` : `<span class="mute">None yet</span>`)}
+      ${d.per === "mo" && save ? kv("Projected over 12 months", "Future recurring saving, not yet realised", `<span class="fig m hollow">${fmt(save * 12)}</span>`) : ""}
+    </div>
     ${stage >= 0 ? `<ol class="path">${["Your ask", "Their reply", "Final terms", "Invoice"].map((s, i) => `<li class="${i < stage ? "done" : i === stage ? "now" : ""}">${s}</li>`).join("")}</ol>` : ""}
   </section>
   <section class="split">
@@ -651,7 +702,7 @@ function vDeal() {
       <p class="small">${MODES[d.mode][1]}</p>
       ${d.mode === "autopilot" ? `<div class="f"><label for="limit">Autopilot limit${perL(d.per)} · it won't commit above this</label><div class="line" style="flex-wrap:nowrap"><input class="in" id="limit" inputmode="decimal" value="${d.limit}"><button class="b sm" data-act="saveLimit">Save</button></div><span class="sim">Simulation only</span></div>` : ""}
       <p class="aside"><b>Always true.</b> AI never transfers money, signs a contract, or approves final terms for you.</p>
-      ${active(d) && !["final", "agreed"].includes(d.state) ? `<button class="t" data-act="walk" style="align-self:flex-start">Walk away · no fee</button>` : ""}</div>
+      ${["open", "draft", "waiting"].includes(d.state) ? `<button class="t" data-act="walk" style="align-self:flex-start">Walk away · no fee</button>` : ""}</div>
   </section>`;
 }
 
@@ -678,10 +729,10 @@ function vGuardian() {
     body = `<div class="stack" style="border-top:1.5px solid var(--ink);padding-top:20px"><div class="line between"><span class="label">Bought 9 days ago · 30-day adjustment window</span><span class="sim">Simulated price feed</span></div><h2>Noise-cancelling headphones, Demo Electronics</h2>
       ${ladder("watch", 380, 449, [{ k: "paid", v: 449, label: "You paid", cls: "was", row: "up" }, { k: "now", v: now, label: "Price now", cls: S.guard.checked ? "offer" : "pt", row: "dn" }], `You paid $449. Price now ${fmt(now)}.`)}
       <div class="line between base"><div><span class="label">Price now</span><div class="fig l">${cnt("watch-now", now)}</div></div>${S.guard.checked ? `<div style="text-align:right"><span class="label">Difference</span><div class="fig l"><span class="hl">$50</span></div></div>` : ""}</div>
-      ${S.guard.claimed ? `<p class="aside"><b>Claim recorded.</b> ${S.tx.some((t) => t.dealId === "phones") ? "Refund verified." : `Confirm the refund in <button class="t" data-act="go" data-v="savings">Savings</button>.`}</p>` : S.guard.checked ? `<p class="say">$50 less than you paid. You can ask the retailer for the difference.</p><button class="b go wide" data-act="modal" data-v="claim">Claim $50 back ${ar}</button>` : `<button class="b go wide" data-act="checkPrice">Check the price now</button><p class="small mute">In the live app, prices come from approved retailer feeds or what you enter. DealPilot never scrapes websites.</p>`}</div>`; }
+      ${S.guard.claimed ? `<p class="aside"><b>Claim recorded.</b> ${S.tx.some((t) => t.dealId === "phones") ? "Refund confirmed by you." : `Confirm the refund in <button class="t" data-act="go" data-v="savings">Savings</button>.`}</p>` : S.guard.checked ? `<p class="say">$50 less than you paid. You can ask the retailer for the difference.</p><button class="b go wide" data-act="modal" data-v="claim">Claim $50 back ${ar}</button>` : `<button class="b go wide" data-act="checkPrice">Check the price now</button><p class="small mute">In the live app, prices come from approved retailer feeds or what you enter. DealPilot never scrapes websites.</p>`}</div>`; }
   return `<section class="stack narrow"><div class="line between"><span class="label">Money Guardian</span><span class="sim">Demo data</span></div><h1>We watch.<br>You decide.</h1>
     <p class="mute">No bank login. DealPilot never moves your money.</p>
-    <div class="viewsw" role="tablist">${tabs.map((t) => `<button role="tab" aria-selected="${tab === t[0]}" data-act="gtab" data-v="${t[0]}">${t[1]}</button>`).join("")}</div>${body}</section>`;
+    <div class="tabs4" role="tablist">${tabs.map((t) => `<button role="tab" aria-selected="${tab === t[0]}" data-act="gtab" data-v="${t[0]}">${t[1]}</button>`).join("")}</div>${body}</section>`;
 }
 
 function vGroup() {
@@ -690,7 +741,7 @@ function vGroup() {
   return `<section class="stack narrow"><div class="line between"><span class="label">Group buy · closes in 14 days</span><span class="sim">Simulated group</span></div><h1>Rooftop solar, Sydney.</h1><p class="say">The more neighbours join, the further the price steps down.</p>
     <div class="stairs"><div class="s1 ${tier === 1 ? "on" : ""}"><span class="label">On your own</span><span class="fig m">$7,500</span></div><div class="s2 ${tier === 2 ? "on" : ""}"><span class="label">5+ members</span><span class="fig m">$6,600</span><span class="small">save $900</span></div><div class="s3 ${tier === 3 ? "on" : ""}"><span class="label">10+ members</span><span class="fig m">$6,100</span><span class="small">save $1,400</span></div></div>
     <div class="stack tight"><div class="line between base"><span class="label">Members</span><span class="fig m">${n}<span class="small"> of 10</span></span></div><div class="dots" role="img" aria-label="${n} of 10 members">${dots}</div><p class="small mute">6.6 kW systems, 10-year workmanship warranty. Offer from SunPeak Solar (simulated). Includes placeholder members. Nobody sees who else is in.</p></div>
-    <div class="block"><div class="line between"><span class="label">Your place</span><span class="label">${g.taken ? "Price taken up" : g.joined ? "Member · non-binding" : "Not a member"}</span></div>
+    <div class="block light"><div class="line between"><span class="label">Your place</span><span class="label">${g.taken ? "Price taken up" : g.joined ? "Member · non-binding" : "Not a member"}</span></div>
       <p class="aside"><b>Non-binding.</b> No deposit, no commitment. Leave whenever you like.</p>
       ${g.taken ? `<p>You took up the group price of <b>$6,100</b>. Once installed, confirm the invoice in <button class="t" data-act="go" data-v="savings">Savings</button>.</p>`
         : !g.joined ? `${n === 4 ? `<p class="say">You'd be member five. That unlocks $6,600 for everyone.</p>` : ""}<button class="b go wide" data-act="join">Join the group ${ar}</button>`
@@ -706,27 +757,28 @@ function trailFor(t) {
 }
 function receiptHTML(t) {
   const net = r2(t.saving - t.fee);
-  return `<div class="docket num"><span class="stamp">Verified</span><div class="label">DealPilot savings receipt</div><div style="font-weight:700;padding:6px 90px 10px 0;font-family:var(--text);font-size:1rem">${esc(t.title)}</div>
+  return `<div class="docket num"><span class="stamp">Confirmed</span><div class="label">Savings receipt · demonstration</div><div style="font-weight:700;padding:6px 90px 10px 0;font-family:var(--text);font-size:1rem">${esc(t.title)}</div>
     <div class="cut"></div><div class="ln"><span>Original price</span><span class="was">${fmt(t.was)}${perS(t.per)}</span></div><div class="ln"><span>Final agreed price</span><b>${fmt(t.final)}${perS(t.per)}</b></div>
-    <div class="ln"><span>Verified saving${t.per ? " · first " + (t.per === "mo" ? "month" : "year") : ""}</span><b>${fmt(t.saving)}</b></div><div class="ln"><span>Administration fee</span><span>${t.fee ? fmt(t.fee) : "$0.00"}</span></div>
+    <div class="ln"><span>Saving confirmed by you${t.per ? " · first " + (t.per === "mo" ? "month" : "year") : ""}</span><b>${fmt(t.saving)}</b></div><div class="ln"><span>Administration fee</span><span>${t.fee ? fmt(t.fee) : "$0.00"}</span></div>
     <div class="net"><span>Your net benefit</span><span class="fig m">${fmt(net)}</span></div>
     ${t.projected && t.per === "mo" ? `<div class="ln" style="padding-top:12px"><span class="sim">Projected over 12 months</span><span>${fmt(t.projected)}</span></div>` : ""}
     <p style="padding-top:10px;color:var(--mute);font-size:.72rem">${esc(t.why)}</p></div>${trailFor(t)}`;
 }
 function vSavings() {
   const s = summary(); const pend = S.deals.filter((d) => d.state === "agreed");
-  return `<section class="stack"><div class="line between"><span class="label">Savings</span><span class="sim">Demo data</span></div>
-    <h1>Saved so far</h1><div class="fig xl">${cnt("sav-real", s.realised)}</div><span class="ok-mark">Verified by you. Solid numbers are real.</span>
-    <div class="line base" style="gap:26px;padding-top:6px">
-      <div class="stack tight"><span class="fig l hollow">${fmt(s.projected)}</span><span class="sim">Projected over 12 months</span></div>
-      <div class="stack tight"><span class="fig l hollow">${fmt(s.pending)}</span><span class="sim">Agreed, awaiting invoice</span></div>
-      ${s.monthly ? `<div class="stack tight"><span class="fig l">${fmt(s.monthly)}</span><span class="ok-mark">Off your bills each month</span></div>` : ""}
+  return `<section class="stack narrow"><div class="line between"><span class="label">Savings</span><span class="sim">Fictional demo figures</span></div>
+    <h1>Saved so far</h1><div class="fig xl">${cnt("sav-real", s.realised)}</div><p class="mute">Savings you confirmed against a final invoice. In this prototype they are demonstrations, not real money.</p>
+    <div class="kvs">
+      ${s.monthly ? kv("<b>Saved each month</b>", "Recurring bills you've confirmed at a lower price", `<span class="fig m">${fmt(s.monthly)}<span class="small">/mo</span></span>`) : ""}
+      ${kv("<b>Pending</b>", "Agreed, waiting for you to confirm the invoice", `<span class="fig m hollow">${fmt(s.pending)}</span>`)}
+      ${kv("<b>Projected</b>", "Future recurring savings over 12 months, not yet realised", `<span class="fig m hollow">${fmt(s.projected)}</span>`)}
+      ${kv("<b>Potential</b>", "Estimated opportunities still open, not guaranteed", `<span class="fig m hollow">${fmt(potential())}</span>`)}
     </div></section>
-  ${pend.length ? `<section class="stack"><h2>Waiting for your confirmation</h2><div class="rows">${pend.map((d) => `<div class="r"><span class="ix">${ar}</span><span><span class="ttl">${esc(d.title)}</span><span class="small mute" style="display:block">Agreed ${fmt(d.terms.price)}${perS(d.per)}, was ${fmt(d.was)}</span></span><button class="b go sm" data-act="modal" data-v="verify:${d.id}">Confirm invoice</button></div>`).join("")}</div></section>` : ""}
-  <section class="stack"><h2>How you earned it</h2><div class="rows">${S.tx.map((t, i) => `<button class="r" data-act="modal" data-v="receipt:${t.id}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(t.title)}</span>${trailFor(t)}</span><span style="text-align:right"><span class="fig m">${fmt(t.saving)}<span class="small">${perS(t.per)}</span></span><span class="label" style="display:block">fee ${fmt(t.fee)}${t.simulated ? " · simulated" : ""}</span></span></button>`).join("")}</div>
-    <p class="small mute">Fees recorded so far: <b class="num">${fmt(s.fees)}</b>. $1.50 applies once per completed, verified, qualifying saving, capped at the saving. This prototype never collects a payment.</p></section>`;
+  ${pend.length ? `<section class="stack"><h2>Waiting for your confirmation</h2><div class="rows">${pend.map((d) => `<div class="r"><span class="ix">${ar}</span><span><span class="ttl">${esc(d.title)}</span><span class="small mute" style="display:block">Agreed ${fmt(d.terms.price)}${perS(d.per)}, was ${fmt(d.was)}${perS(d.per)}</span></span><span></span><span class="ix"></span><button class="b go sm" data-act="modal" data-v="verify:${d.id}" style="grid-column:2/-1;justify-self:start">Confirm invoice</button></div>`).join("")}</div></section>` : ""}
+  <section class="stack"><h2>How you earned it</h2><div class="rows">${S.tx.map((t, i) => `<button class="r" data-act="modal" data-v="receipt:${t.id}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(t.title)}</span>${trailFor(t)}</span><span style="text-align:right"><span class="fig m">${fmt(t.saving)}<span class="small">${perS(t.per)}</span></span><span class="label" style="display:block">fee ${fmt(t.fee)}</span></span></button>`).join("")}</div>
+    <p class="small mute">Fees recorded so far: <b class="num">${fmt(s.fees)}</b>. A $1.50 administration fee applies once per completed, confirmed, qualifying saving, capped at the saving. Simulated deals never incur it, and this prototype never collects a payment.</p>
+    <span class="label">What the words mean</span>${defs(["saved", "pending", "projected", "potential"])}</section>`;
 }
-
 function vDemo() {
   return `<section class="stack narrow"><span class="label">Guided tour</span><h1>Six ways in.</h1><p class="say">Each journey sets the scene. A guide bar at the top tells you the next move.</p>
     <div class="rows">${J.map((j) => `<button class="r" data-act="journey" data-v="${j.n}"><span class="fig m" style="min-width:2ch">0${j.n}</span><span><span class="ttl">${j.title}</span><span class="small mute" style="display:block">${j.n === 5 ? "Business" : "Customer"} · ${j.sub}</span></span><span>${fw}</span></button>`).join("")}</div>
@@ -737,12 +789,14 @@ function vAbout() {
     ["Data", "Local, fictional, reset on reload", "Supabase with real accounts, email verification and two-step sign-in"],
     ["Uploads", "Files stay on your device; a sample extraction is shown", "Virus-scanned, stored privately and analysed, with AI consent"],
     ["Business replies", "Scripted or simulated after a short delay", "Real verified businesses reply from their own portal"],
-    ["Home", "One question, a ledger of what's in play, earned vs possible savings", "A dashboard of four stat tiles and lists"],
+    ["Home", "One question box with upload-a-quote and upload-a-bill shortcuts, what's in play, then Saved, Potential, Pending and Projected with a definition each", "A dashboard of four stat tiles and lists"],
     ["Comparing offers", "A price rail, lettered slips with a four-cell protection strip and a plain-language verdict", "A scored table with a Best overall badge"],
-    ["Negotiation", "A price ladder, a four-stage path, one inverted next-move block, and an exchange log", "A timeline with side panels"],
+    ["Negotiation", "A price ladder, a plain read-out (you pay now, their offer, your counteroffer, saving) with billing periods, one next action at a time, and an exchange log", "A timeline with side panels"],
     ["Money Guardian", "Discoveries written as sentences, each with one action", "Separate Price monitor and Guardian pages with alert lists"],
     ["Group buying", "A price staircase and member squares", "A progress bar and tier chips"],
-    ["Savings", "Solid numbers for verified, outlined for projected, a trail of how each was earned, a docket receipt", "A savings table and ledger"],
+    ["Savings", "Solid numbers for savings you confirmed, outlined for pending, projected and potential, a trail of how each was earned, a receipt. Demo savings are confirmed by you, not independently verified", "A savings table and ledger"],
+    ["Business bidding", "Full scope first, then a three-step bid: price, what's included, review and approve", "A single bid form"],
+    ["Switching portals", "In the account menu", "Separate sign-ins for customers and businesses"],
     ["Visual language", "Solid means confirmed; hatched means simulated, self-declared or projected; lime marks the money move", "Coloured badges"],
     ["Not in this prototype", "Sign-in, business verification workflow, admin tools, energy plan comparison, privacy controls", "All present in the app"],
   ];
@@ -754,35 +808,41 @@ function vAbout() {
 // ───────────────────────── business views ─────────────────────────
 function vBiz() {
   const b = S.biz; const r = b.reqs.find((x) => x.id === S.ui.bizReq);
-  if (r) { const dr = S.ui.bizDraft;
-    return `<section class="stack"><button class="t" data-act="bizBack">← Jobs</button><div class="line between"><span class="label">${esc(r.area)}</span><span class="sim">Demo request</span></div><h1>${esc(r.title)}</h1>
-      <div class="trio"><div><span class="label">Customer's current quote</span><span class="fig l">${fmt(r.quote)}</span></div><div><span class="label">Competing bids</span><span class="fig l">${r.competing}</span></div><div style="text-align:right"><span class="label">Their prices</span><span class="fig l hollow">sealed</span></div></div></section>
-    <section class="split"><div class="stack"><h2>The job</h2><div class="rows">${r.details.map((d, i) => `<div class="r"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span>${esc(d)}</span><span></span></div>`).join("")}</div>
-      <p class="aside"><b>Sealed bidding.</b> You can't see who the customer is, their target price, or what competitors bid. Their name is shared only after they accept your offer.</p></div>
-    ${r.bid ? `<div class="block"><div class="line between"><span class="label">Your offer</span><span class="label">${esc(r.bid.status)}</span></div><div class="fig l">${fmt(r.bid.price)}</div>${r.id === "b1" ? `<button class="b go wide" data-act="go" data-v="biz-inbox">Open negotiation ${fw}</button>` : `<p class="mute">Submitted. You'll be notified when the customer responds.</p>`}</div>`
-      : `<div class="block"><div class="line between"><h2>Submit your bid</h2><button class="b sm" data-act="bizAI">Draft with AI</button></div>
-        ${dr ? `<p class="aside"><b>AI draft loaded.</b> Check every field. Nothing is sent until you approve.</p>` : ""}${errBox()}
-        <div class="line" style="flex-wrap:nowrap;align-items:flex-end"><div class="f grow"><label for="b-price">Total price</label><input class="in fig m" id="b-price" inputmode="decimal" value="${dr ? dr.price : ""}"></div><div class="f" style="width:38%"><label for="b-days">Days to complete</label><input class="in" id="b-days" inputmode="numeric" value="${dr ? dr.days : ""}"></div></div>
-        <div class="f"><label for="b-scope">Scope</label><textarea class="in" id="b-scope" rows="3">${dr ? esc(dr.scope) : ""}</textarea></div>
-        <div class="line" style="flex-wrap:nowrap;align-items:flex-end"><div class="f grow"><label for="b-mat">Materials</label><input class="in" id="b-mat" value="${dr ? esc(dr.mat) : ""}"></div><div class="f" style="width:38%"><label for="b-war">Warranty, months</label><input class="in" id="b-war" inputmode="numeric" value="${dr ? dr.war : ""}"></div></div>
+  if (r) { const dr = S.ui.bizDraft || {}; const st = S.ui.bizStep || 1;
+    const form = st === 1 ? `<h2>Your price</h2>${dr.ai ? `<p class="aside"><b>AI draft loaded.</b> Check every field. Nothing is sent until you approve.</p>` : ""}${errBox()}
+        <div class="f"><label for="b-price">Total price, including GST</label><input class="in fig m" id="b-price" inputmode="decimal" value="${esc(dr.price ?? "")}"></div>
+        <div class="f"><label for="b-days">Days to complete</label><input class="in" id="b-days" inputmode="numeric" value="${esc(dr.days ?? "")}"></div>
+        <button class="b go wide" data-act="bizNext">Continue ${fw}</button><button class="t" data-act="bizAI">Draft the whole bid with AI</button>`
+      : st === 2 ? `<h2>What's included</h2>${errBox()}
+        <div class="f"><label for="b-scope">Scope of work</label><textarea class="in" id="b-scope" rows="4">${esc(dr.scope ?? "")}</textarea></div>
+        <div class="f"><label for="b-mat">Materials</label><input class="in" id="b-mat" value="${esc(dr.mat ?? "")}"></div>
+        <div class="f"><label for="b-war">Warranty, in months</label><input class="in" id="b-war" inputmode="numeric" value="${esc(dr.war ?? "")}"></div>
+        <button class="b go wide" data-act="bizNext">Review bid ${fw}</button><button class="t" data-act="bizPrev">← Back</button>`
+      : `<h2>Review and approve</h2>${errBox()}<div class="kvs">${kv("Total price", "", `<span class="fig m">${fmt(num(dr.price))}</span>`)}${kv("Completed in", "", `${esc(dr.days)} days`)}${kv("Warranty", "", `${esc(dr.war || 0)} months`)}${kv("Materials", "", esc(dr.mat || "Not specified"))}</div><p class="small">${esc(dr.scope)}</p>
         <label class="tick"><input type="checkbox" id="b-ok"><span>I'm authorised by Ben's Fencing & Gates and I approve this offer.</span></label>
-        <button class="b go wide" data-act="bizSubmit">Approve and submit bid ${fw}</button></div>`}</section>`; }
+        <button class="b go wide" data-act="bizSubmit">Approve and submit bid ${fw}</button><button class="t" data-act="bizPrev">← Back</button>`;
+    return `<section class="stack narrow"><button class="t" data-act="bizBack">← Jobs</button><div class="line between"><span class="label">${esc(r.area)}</span><span class="sim">Demo request</span></div><h1>${esc(r.title)}</h1>
+      <div class="kvs">${kv("Customer's current quote", "The price they're trying to beat", `<span class="fig m">${fmt(r.quote)}</span>`)}${kv("Competing bids", "Sealed: you can't see their prices, and they can't see yours", `<span class="fig m">${r.competing}</span>`)}</div>
+      <h2>The full scope</h2><div class="rows">${r.details.map((d, i) => `<div class="r"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span>${esc(d)}</span><span></span></div>`).join("")}</div>
+      <p class="small mute">The customer stays anonymous until they accept your offer.</p></section>
+    <section class="stack narrow">${r.bid ? `<div class="block"><div class="line between"><span class="label">Your offer</span><span class="label">${esc(r.bid.status)}</span></div><div class="fig l">${fmt(r.bid.price)}</div>${r.id === "b1" ? `<button class="b go wide" data-act="go" data-v="biz-inbox">Open negotiation ${fw}</button>` : `<p class="mute">Submitted. You'll be notified when the customer responds.</p>`}</div>`
+      : `<div class="block light"><div class="line between"><span class="label">Your bid · step ${st} of 3</span></div><div class="stepper"><i class="on"></i><i class="${st > 1 ? "on" : ""}"></i><i class="${st > 2 ? "on" : ""}"></i></div>${form}</div>`}</section>`; }
   const open = b.reqs.filter((x) => !x.bid).length; const reply = b.neg.state === "asked" ? 1 : 0;
-  return `<section class="stack"><div class="line between"><span class="label">Trade desk · Ben's Fencing & Gates</span><span class="ok-mark">Verified demo business</span></div>
-    <h1>${open} job${open === 1 ? "" : "s"} you can bid on.${reply ? `<br><span class="hl">1 customer is waiting on you.</span>` : ""}</h1>
+  return `<section class="stack"><div class="line between"><span class="label">Ben's Fencing & Gates</span><span class="ok-mark">Verified demo business</span></div>
+    <h1>${open} job${open === 1 ? "" : "s"} you can bid on.${reply ? ` <span class="hl">1 customer is waiting on you.</span>` : ""}</h1>
     ${reply ? `<button class="b go" style="align-self:flex-start" data-act="go" data-v="biz-inbox">Reply now ${ar}</button>` : ""}</section>
-  <section class="stack"><h2>Customer requests</h2><div class="rows">${b.reqs.map((x, i) => `<button class="r" data-act="bizOpen" data-v="${x.id}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(x.title)}</span><span class="small mute" style="display:block">${esc(x.area)} · ${x.competing} competing, sealed</span></span><span style="text-align:right"><span class="fig m">${fmt(x.quote)}</span><span class="label" style="display:block">their quote</span></span><span class="ix"></span><span class="go-t">${x.bid ? esc(x.bid.status) : "Bid on this"} ${fw}</span></button>`).join("")}</div>
-    <p class="small mute">Customers are anonymous until they accept an offer. All requests here are fictional.</p></section>`;
+  <section class="stack"><div class="line between base"><h2>Customer requests</h2><span class="sim">Demo data</span></div><div class="rows">${b.reqs.map((x, i) => `<button class="r" data-act="bizOpen" data-v="${x.id}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(x.title)}</span><span class="small mute" style="display:block">${esc(x.area)} · ${x.competing} competing bid${x.competing === 1 ? "" : "s"}</span></span><span style="text-align:right"><span class="fig m">${fmt(x.quote)}</span><span class="label" style="display:block">their quote</span></span><span class="ix"></span><span class="go-t">${x.bid ? esc(x.bid.status) : "Bid on this"} ${fw}</span></button>`).join("")}</div>
+    <p class="small mute">Customers are anonymous until they accept an offer.</p></section>`;
 }
 function vBizInbox() {
   const n = S.biz.neg; let next = "";
   if (n.state === "asked") next = n.draft
-    ? `<div class="block"><div class="line between"><span class="label">Your move</span><span class="sim">Not sent yet</span></div><h2>AI-drafted counteroffer</h2>${errBox()}
+    ? `<div class="block light"><div class="line between"><span class="label">Your move</span><span class="sim">Not sent yet</span></div><h2>AI-drafted counteroffer</h2>${errBox()}
         <div class="f"><label for="n-price">Your counteroffer</label><input class="in fig m" id="n-price" inputmode="decimal" value="${n.draft.price}"></div>
         <div class="f"><label for="n-msg">Message · edit freely</label><textarea class="in" id="n-msg" rows="4">${esc(n.draft.msg)}</textarea></div>
         <label class="tick"><input type="checkbox" id="n-ok"><span>I approve this response on behalf of my business.</span></label>
         <button class="b go wide" data-act="negSend">Approve and send ${fw}</button><button class="t" data-act="negDiscard">Reject draft</button></div>`
-    : `<div class="block"><span class="label">Your move</span><h2>Customer asked for ${fmt(n.ask)}</h2>${errBox()}
+    : `<div class="block light"><span class="label">Your move</span><h2>Customer asked for ${fmt(n.ask)}</h2>${errBox()}
         <div class="f"><label for="n-floor">Lowest price you'd accept · private</label><input class="in fig m" id="n-floor" inputmode="decimal" value="4700"></div>
         <button class="b go wide" data-act="negDraft">Draft a counteroffer with AI ${ar}</button>
         <div class="line"><button class="b grow" data-act="negAccept">Accept ${fmt(n.ask)}</button><button class="t" data-act="negDecline">Decline</button></div></div>`;
@@ -793,7 +853,7 @@ function vBizInbox() {
   const lo = Math.min(n.ask, n.offer) - 120; let k = 0;
   return `<section class="stack"><div class="line between"><span class="label">Negotiation · anonymous customer</span><span class="sim">Scripted demo customer</span></div><h1>Replace 30 m Colorbond side and rear fence</h1>
     ${ladder("biz-neg", lo, 5500, [{ k: "q", v: 5500, label: "Their quote", cls: "was", row: "up" }, { k: "offer", v: n.offer, label: "Your offer", cls: "pt", row: "dn" }].concat(n.ask < n.offer ? [{ k: "ask", v: n.ask, label: "They ask", cls: "offer", row: "up" }] : []), `Your offer ${fmt(n.offer)}. Customer asks ${fmt(n.ask)}.`)}
-    <div class="trio"><div><span class="label">Your offer</span><span class="fig l">${cnt("biz-offer", n.offer)}</span></div><div><span class="label">They ask</span><span class="fig l">${cnt("biz-ask", n.ask)}</span></div><div style="text-align:right"><span class="label">Gap</span><span class="fig l">${n.offer - n.ask ? fmt(n.offer - n.ask) : "—"}</span></div></div></section>
+    <div class="kvs">${kv("Customer's original quote", "", `<span class="fig m">$5,500</span>`)}${kv("Your current offer", "", `<span class="fig m">${cnt("biz-offer", n.offer)}</span>`)}${kv("Customer is asking for", "", `<span class="fig m">${cnt("biz-ask", n.ask)}</span>`)}${kv("<b>Gap to close</b>", "", n.offer - n.ask ? `<span class="fig l"><span class="hl">${fmt(n.offer - n.ask)}</span></span>` : `<span class="mute">None</span>`)}</div></section>
   <section class="split"><div class="stack">${next}<h2>The exchange</h2><ol class="log">${n.msgs.map((m) => m.from === "sys" ? `<li class="sys">${esc(m.text)}</li>` : `<li class="${m.from}"><span class="label">${String(++k).padStart(2, "0")} · ${m.from === "you" ? "You" : "Customer"}</span>${m.amt ? `<span class="fig s">${fmt(m.amt)}</span>` : "<span></span>"}<p>${esc(m.text)}</p></li>`).join("")}</ol></div>
     <div class="stack"><h2>What stays hidden</h2><p class="aside"><b>From you:</b> the customer's name, their private target, their AI's notes and other businesses' bids.</p><p class="aside"><b>From them:</b> your floor price.</p><p class="small mute">That keeps bidding fair for everyone.</p></div></section>`;
 }
@@ -801,7 +861,7 @@ function vBizGroups() {
   const t = S.biz.tiers;
   return `<section class="stack narrow"><div class="line between"><span class="label">Group tiers · closes in 21 days</span><span class="sim">Simulated group</span></div><h1>Elm Street shared boundary fencing</h1><p class="say">4 households. Typical price $3,000 each. Offer them a volume price.</p>
     ${t ? `<div class="stairs"><div class="s1"><span class="label">Typical</span><span class="fig m">$3,000</span></div>${t.map((x, i) => `<div class="s${i + 2} on"><span class="label">${x.min}+ households</span><span class="fig m">${fmt(x.price)}</span><span class="small">saves ${fmt(3000 - x.price)}</span></div>`).join("")}</div><p class="aside"><b>Published.</b> Group members were notified (simulated). Customers can take up a tier without any deposit.</p><button class="b" data-act="tiersEdit" style="align-self:flex-start">Change tiers</button>`
-      : `<div class="block">${errBox()}<div class="line" style="flex-wrap:nowrap;align-items:flex-end"><div class="f grow"><label for="t1m">Tier 1 · min households</label><input class="in" id="t1m" inputmode="numeric" value="4"></div><div class="f grow"><label for="t1p">Price each</label><input class="in fig m" id="t1p" inputmode="decimal" value="2650"></div></div>
+      : `<div class="block light">${errBox()}<div class="line" style="flex-wrap:nowrap;align-items:flex-end"><div class="f grow"><label for="t1m">Tier 1 · min households</label><input class="in" id="t1m" inputmode="numeric" value="4"></div><div class="f grow"><label for="t1p">Price each</label><input class="in fig m" id="t1p" inputmode="decimal" value="2650"></div></div>
         <div class="line" style="flex-wrap:nowrap;align-items:flex-end"><div class="f grow"><label for="t2m">Tier 2 · min households</label><input class="in" id="t2m" inputmode="numeric" value="6"></div><div class="f grow"><label for="t2p">Price each</label><input class="in fig m" id="t2p" inputmode="decimal" value="2450"></div></div>
         <label class="tick"><input type="checkbox" id="t-ok"><span>I approve this volume offer on behalf of my business.</span></label><button class="b go wide" data-act="tiersPublish">Publish tiers ${fw}</button></div>`}</section>`;
 }
@@ -819,7 +879,7 @@ function modal() {
   const [type, id] = m.split(":"); let body = "";
   const close = `<button class="b wide" data-act="close">Close</button>`;
   if (type === "how") body = `<h1>How it works</h1><ol class="how"><li><span><b>Tell us what you're paying.</b></span></li><li><span><b>DealPilot finds and negotiates better offers.</b></span></li><li><span><b>You choose the deal.</b></span></li><li><span><b>Pay $1.50 only when a qualifying saving is verified.</b></span></li></ol><button class="b go wide" data-act="go" data-v="find">Find me a better deal ${ar}</button>${close}`;
-  if (type === "menu") body = `<span class="label">Menu</span><div class="rows">${NAV[S.portal].concat(S.portal === "customer" ? [["find", "Find a better deal"], ["group", "Group buying"]] : []).concat([["demo", "Explore the demo"], ["about", "About this prototype"]]).map((x) => `<button class="r" data-act="go" data-v="${x[0]}"><span class="ix">${ar}</span><span class="ttl">${x[1]}</span><span></span></button>`).join("")}</div><button class="t" data-act="modal" data-v="how">How it works</button><button class="t" data-act="modal" data-v="reset">Reset all demo data</button>`;
+  if (type === "menu") body = `<span class="label">Account · demo</span><p class="say">${S.portal === "customer" ? "Alex, customer" : "Ben's Fencing & Gates, business"}</p><button class="b wide" data-act="portal" data-v="${S.portal === "customer" ? "business" : "customer"}">Switch to the ${S.portal === "customer" ? "business" : "customer"} portal</button><div class="rows">${NAV[S.portal].concat(S.portal === "customer" ? [["find", "Find a better deal"], ["group", "Group buying"]] : []).concat([["demo", "Explore the demo"], ["about", "About this prototype"]]).map((x) => `<button class="r" data-act="go" data-v="${x[0]}"><span class="ix">${ar}</span><span class="ttl">${x[1]}</span><span></span></button>`).join("")}</div><button class="t" data-act="modal" data-v="how">How it works</button><button class="t" data-act="modal" data-v="reset">Reset all demo data</button>`;
   if (type === "reset") body = `<h1>Reset the demo?</h1><p>Everything returns to its starting state.</p><button class="b go wide" data-act="reset">Reset</button><button class="b wide" data-act="close">Cancel</button>`;
   if (type === "accept") { const r = req(S.ui.reqId), o = r.offers.find((x) => x.id === id); const risky = o.licence === "missing" || o.insurance === "missing";
     body = `<span class="label">Accept offer</span><h1>${esc(o.biz)} at ${fmt(o.price)}?</h1>${risky ? `<p class="err">This business has not provided a licence number and its insurance is not confirmed.</p>` : ""}<p>That's <b>${fmt(r.amount - o.price)}</b> under your ${fmt(r.amount)} quote. The business must also approve the final terms before the deal is agreed.</p>${errBox()}
@@ -829,7 +889,7 @@ function modal() {
       <div class="f"><label for="final">Final amount${perL(d.per)}</label><input class="in fig l" id="final" inputmode="decimal" value="${d.terms.price}"></div>
       <label class="tick"><input type="checkbox" id="okVerify"><span>I confirm this deal was completed at this amount.</span></label>
       <p class="small mute">${d.simulated ? "This is a simulated deal, so no fee applies." : "A $1.50 administration fee, capped at your saving, will be recorded. No payment is taken in this demo."}</p>
-      <button class="b go wide" data-act="doVerify" data-v="${d.id}">Verify my saving</button><button class="b wide" data-act="close">Cancel</button>`; }
+      <button class="b go wide" data-act="doVerify" data-v="${d.id}">Confirm my saving</button><button class="b wide" data-act="close">Cancel</button>`; }
   if (type === "receipt") { const t = S.tx.find((x) => x.id === id); body = `<span class="label">Earned</span>${receiptHTML(t)}<p class="small mute">Demonstration only. No payment was collected.</p>${close}`; }
   if (type === "claim") body = `<span class="label">Price adjustment</span><h1>Claim $50 back</h1><ol class="how"><li><span>Find your receipt from Demo Electronics.</span></li><li><span>Ask for a price adjustment under their 30-day policy, in store or online.</span></li><li><span>Come back and confirm the refund amount.</span></li></ol><p class="small mute">Policies differ by retailer. DealPilot doesn't contact the retailer for you in this flow.</p><button class="b go wide" data-act="claimDone">I've requested it</button><button class="b wide" data-act="close">Not now</button>`;
   if (type === "dispute") body = `<span class="label">Possible double charge</span><h1>Two minutes to check</h1><ol class="how"><li><span>Check your receipt. Did you shop twice that day?</span></li><li><span>If not, contact Demo Grocer with the date and amount.</span></li><li><span>If they can't fix it, ask your bank to dispute the second charge.</span></li></ol><p class="small mute">DealPilot never contacts your bank or moves money.</p><button class="b go wide" data-act="gdismiss" data-v="dup">Mark as checked</button><button class="b wide" data-act="close">Close</button>`;
@@ -867,7 +927,6 @@ function render() {
   <header class="head"><div class="head-in gut">
     <button class="wm" data-act="go" data-v="${S.portal === "business" ? "biz" : "welcome"}" aria-label="DealPilot home"><i>${ar}</i><span>deal<em>pilot</em></span></button>
     <nav class="topnav" aria-label="Main">${links()}</nav><span class="grow"></span>
-    <div class="who" role="group" aria-label="Portal"><button aria-pressed="${S.portal === "customer"}" data-act="portal" data-v="customer">Customer</button><button aria-pressed="${S.portal === "business"}" data-act="portal" data-v="business">Business</button></div>
     <button class="menu-b" data-act="modal" data-v="menu" aria-label="Menu">Menu</button>
   </div></header>
   ${coach()}
@@ -966,7 +1025,7 @@ const A = {
     const d = deal(v); const final = num(val("final"));
     if (!(final > 0)) return fail("Enter the final amount as a number.");
     if (!checked("okVerify")) return fail("Tick the box to confirm the deal was completed.");
-    const t = verify(d, r2(final)); S.ui.err = null; S.ui.modal = "receipt:" + t.id; S.ui.sawReceipt = true; toast(t.saving > 0 ? `Saving verified: ${fmt(t.saving)}` : "Recorded. No saving, so no fee."); render();
+    const t = verify(d, r2(final)); S.ui.err = null; S.ui.modal = "receipt:" + t.id; S.ui.sawReceipt = true; toast(t.saving > 0 ? `Saving confirmed: ${fmt(t.saving)}` : "Recorded. No saving, so no fee."); render();
   },
   // guardian
   gtab(v) { S.ui.gtab = v; if (route !== "guardian") return go("guardian"); render(); },
@@ -1055,6 +1114,19 @@ document.addEventListener("submit", (e) => {
   const hit = KEYS.find((k) => k[1].test(q)); const cat = hit ? hit[0] : "other";
   A.startFind(cat); toast(hit ? "Filed under " + CATS.find((c) => c.id === cat).name.toLowerCase() : "We'll treat that as a custom request");
 });
+// ───────────────────────── refinements ─────────────────────────
+A.findKind = (v) => { S.find = { step: 1, cat: null, file: null, busy: false, ex: null, sample: false, kind: v || null }; go("find"); };
+function bizSave() { const d = S.ui.bizDraft || (S.ui.bizDraft = {}); [["price", "b-price"], ["days", "b-days"], ["scope", "b-scope"], ["mat", "b-mat"], ["war", "b-war"]].forEach(([k, id]) => { const el = document.getElementById(id); if (el) d[k] = el.value.trim(); }); return d; }
+A.bizOpen = (v) => { S.ui.bizReq = v; S.ui.bizDraft = {}; S.ui.bizStep = 1; S.ui.err = null; render(); window.scrollTo(0, 0); };
+A.bizAI = () => { const r = S.biz.reqs.find((x) => x.id === S.ui.bizReq); S.ui.bizDraft = { price: String(Math.round((r.quote * 0.92) / 50) * 50), days: "10", scope: r.title + ". " + r.details.join(". ") + ".", mat: "To Australian Standards, as specified", war: "84", ai: true }; S.ui.err = null; toast("AI draft ready for your review"); render(); };
+A.bizNext = () => { const d = bizSave(); const st = S.ui.bizStep || 1;
+  if (st === 1) { if (!(num(d.price) > 0)) return fail("Enter your total price."); if (!(num(d.days) > 0)) return fail("Enter how many days the job will take."); }
+  if (st === 2 && !d.scope) return fail("Describe the scope of work.");
+  S.ui.bizStep = st + 1; S.ui.err = null; render(); };
+A.bizPrev = () => { bizSave(); S.ui.bizStep = Math.max(1, (S.ui.bizStep || 1) - 1); S.ui.err = null; render(); };
+A.bizSubmit = () => { const r = S.biz.reqs.find((x) => x.id === S.ui.bizReq); const d = S.ui.bizDraft || {};
+  if (!checked("b-ok")) return fail("Tick the box to confirm a person at your business approves this offer.");
+  r.bid = { price: num(d.price), status: "Submitted" }; S.ui.bizDraft = null; S.ui.bizStep = 1; S.ui.err = null; toast("Bid submitted to the customer"); render(); };
 // ───────────────────────── events ─────────────────────────
 document.addEventListener("click", (e) => {
   const el = e.target.closest("[data-act]"); if (!el) return;
