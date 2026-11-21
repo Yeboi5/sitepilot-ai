@@ -248,6 +248,13 @@ h1 { font-size: clamp(1.6rem, 6.2vw, 2.5rem); line-height: 1.04 }
 .stepper { display: flex; gap: 6px } .stepper i { flex: 1; height: 4px; background: var(--hair) } .stepper i.on { background: var(--ink) }
 #toasts { bottom: calc(60px + env(safe-area-inset-bottom, 0px)) }
 .t { min-height: 44px } .wm { min-height: 44px }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.tile { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 2px; padding: 14px; min-height: 96px; color: var(--ink) }
+.tile b { font-size: 1.02rem; display: flex; align-items: center; gap: 8px } .tile small { color: var(--mute); font-size: .82rem; line-height: 1.35 }
+.tile:active { background: var(--lime); color: var(--on-lime) } .tile:active small { color: var(--on-lime) }
+@media (min-width: 620px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)) } }
+.sub { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 8px } .sub h3 { margin: 0; font-size: 1rem; font-weight: 700 } .sub span { color: var(--mute); font-size: .8rem }
+.menu-g { display: grid; gap: 2px; margin-top: 10px }
 .mk span b { text-transform: none; letter-spacing: 0; font-family: var(--text); font-size: .68rem } .mk.al-l span { left: 10px } .mk.al-r span { right: 10px } .mk.was.al-r span { right: -2px } .mk.was.al-l span { left: -4px }
 thead th { text-transform: none; letter-spacing: 0; font-family: var(--text); font-size: .8rem; font-weight: 700 }
 @media (max-width: 619px) { table { min-width: 0; table-layout: fixed; font-size: .8rem } th, td { padding: 10px 7px; overflow-wrap: anywhere } }
@@ -506,12 +513,15 @@ const KEYS = [["trades", /fenc|quote|trad|reno|plumb|roof|paint|build|electricia
 // ───────────────────────── customer views ─────────────────────────
 function tableItems() {
   const out = [];
-  S.deals.filter(active).forEach((d) => out.push({ t: d.title, s: `${SAY[d.state]} · ${d.party}`, fig: d.terms ? d.terms.price : d.offer, was: d.was, per: d.per, a: "openDeal", v: d.id, go: DO[d.state], sim: d.simulated }));
-  S.requests.filter((r) => r.status === "offers").forEach((r) => { const n = r.offers.filter((o) => !o.declined); out.push({ t: r.title, s: `${n.length} offers are in. The cheapest isn't automatically the best`, fig: n.length ? Math.min(...n.map((o) => o.price)) : r.amount, was: r.amount, per: r.per, a: "pickReq", v: r.id, go: "Compare offers", from: true, sim: true }); });
+  S.deals.filter(active).forEach((d) => out.push({ t: d.title, s: `${SAY[d.state]} · ${d.party}`, fig: d.terms ? d.terms.price : d.offer, was: d.was, per: d.per, a: "openDeal", v: d.id, go: DO[d.state], sim: d.simulated, mine: d.state !== "waiting" }));
+  S.requests.filter((r) => r.status === "offers").forEach((r) => { const n = r.offers.filter((o) => !o.declined); out.push({ t: r.title, s: `${n.length} offers are in. The cheapest isn't automatically the best`, fig: n.length ? Math.min(...n.map((o) => o.price)) : r.amount, was: r.amount, per: r.per, a: "pickReq", v: r.id, go: "Compare offers", from: true, sim: true, mine: true }); });
   return out;
 }
+const itemRow = (x, i) => `<button class="r" data-act="${x.a}" data-v="${x.v}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(x.t)}</span><span class="small mute" style="display:block">${esc(x.s)}</span></span><span style="text-align:right"><span class="fig m">${x.from ? `<span class="label" style="display:block">from</span>` : ""}${fmt(x.fig)}<span class="small">${perS(x.per)}</span></span>${x.fig < x.was ? `<span class="small was num" style="display:block">${fmt(x.was)}${perS(x.per)}</span>` : ""}</span><span class="ix"></span><span class="go-t">${x.go} ${fw}</span></button>`;
+const group = (title, note, list) => list.length ? `<div class="sub"><h3>${title}</h3><span>${note}</span></div><div class="rows">${list.map(itemRow).join("")}</div>` : "";
 function vHome() {
   const s = summary(); const items = tableItems(); const al = guardAlerts().length;
+  const mine = items.filter((x) => x.mine), theirs = items.filter((x) => !x.mine);
   return `
   <section class="stack">
     <h1 class="poster">Pay less. <span class="hl">Live more.</span></h1>
@@ -520,14 +530,20 @@ function vHome() {
       <label class="small mute" for="askq">What do you want a better price on?</label>
       <div class="ask"><input id="askq" autocomplete="off" placeholder="e.g. my fencing quote, internet bill"><button type="submit" aria-label="Find me a better deal">${ar}</button></div>
     </form>
-    <div class="duo"><button class="b" data-act="findKind" data-v="quote">Upload a quote</button><button class="b" data-act="findKind" data-v="bill">Upload a bill</button></div>
+    <div class="sub"><h3>Or choose where to start</h3></div>
+    <div class="tiles">
+      <button class="tile" data-act="findKind" data-v="bill"><b>${ic("bolt")} Bills</b><small>Upload a bill: energy, internet, insurance, subscriptions</small></button>
+      <button class="tile" data-act="findKind" data-v="quote"><b>${ic("hammer")} Quotes</b><small>Upload a quote: trades, car servicing, moving</small></button>
+      <button class="tile" data-act="go" data-v="guardian"><b>${ic("bag")} Alerts</b><small>${al} thing${al === 1 ? "" : "s"} found: price drops, bill rises, renewals</small></button>
+      <button class="tile" data-act="go" data-v="group"><b>${ic("plus")} Group buys</b><small>Join neighbours for a lower price. ${groupCount()} of 10 in</small></button>
+    </div>
   </section>
   <section class="stack">
-    <div class="line between base"><h2>In play</h2><span class="sim">Demo data</span></div>
-    <div class="rows">${items.length ? items.map((x, i) => `<button class="r" data-act="${x.a}" data-v="${x.v}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(x.t)}</span><span class="small mute" style="display:block">${esc(x.s)}</span></span><span style="text-align:right"><span class="fig m">${x.from ? `<span class="label" style="display:block">from</span>` : ""}${fmt(x.fig)}<span class="small">${perS(x.per)}</span></span>${x.fig < x.was ? `<span class="small was num" style="display:block">${fmt(x.was)}${perS(x.per)}</span>` : ""}</span><span class="ix"></span><span class="go-t">${x.go} ${fw}</span></button>`).join("") : `<p class="mute" style="padding:18px 0">Nothing in play yet. Tell us what you're paying for above.</p>`}</div>
+    <div class="line between base"><h2>My deals</h2><span class="sim">Demo data</span></div>
+    ${items.length ? group("Needs you", "Your turn to act", mine) + group("Waiting on them", "Nothing to do yet", theirs) : `<p class="mute">Nothing in play yet. Tell us what you're paying for above.</p>`}
   </section>
   <section class="stack">
-    <div class="line between base"><h2>Your savings</h2><span class="sim">Fictional demo figures</span></div>
+    <div class="line between base"><h2>My savings</h2><span class="sim">Fictional demo figures</span></div>
     <div class="kvs">
       ${kv("<b>Saved</b>", "Confirmed by you against the final invoice", `<span class="fig l">${cnt("home-real", s.realised)}</span>`)}
       ${kv("<b>Potential</b>", "Estimated opportunities, not guaranteed", `<span class="fig m hollow">${fmt(potential())}</span>`)}
@@ -536,17 +552,8 @@ function vHome() {
     </div>
     <button class="t" data-act="go" data-v="savings" style="align-self:flex-start">See how each saving was earned ${fw}</button>
   </section>
-  <section class="stack">
-    <h2>Worth a look</h2>
-    <div class="rows">
-      <button class="r" data-act="go" data-v="guardian"><span class="ix">${ar}</span><span><span class="ttl">Money Guardian found ${al} thing${al === 1 ? "" : "s"}</span><span class="small mute" style="display:block">A bill increase, a price rise, a possible double charge</span></span><span></span></button>
-      <button class="r" data-act="go" data-v="group"><span class="ix">${ar}</span><span><span class="ttl">Solar group buy, Sydney</span><span class="small mute" style="display:block">${groupCount()} of 10 in. ${groupPrice() ? fmt(groupPrice()) + " unlocked" : "One more unlocks $6,600"}</span></span><span></span></button>
-      <button class="r" data-act="go" data-v="demo"><span class="ix">${ar}</span><span><span class="ttl">Take a guided tour</span><span class="small mute" style="display:block">Six short journeys through DealPilot</span></span><span></span></button>
-    </div>
-  </section>
   <section class="stack narrow">
-    <h2>How it works</h2>
-    <ol class="how"><li><span><b>Tell us what you're paying.</b> A quote, a bill or a receipt.</span></li><li><span><b>DealPilot finds and negotiates better offers.</b> Nothing is sent without your say-so.</span></li><li><span><b>You choose the deal.</b> Price, protection and timing, side by side.</span></li><li><span><b>Pay $1.50 only when a qualifying saving is verified.</b> No saving, no fee.</span></li></ol>
+    <p class="small mute">New here? <button class="t" data-act="modal" data-v="how">How it works</button> · <button class="t" data-act="go" data-v="demo">Take a guided tour</button></p>
     <p class="small mute"><span class="ok-mark" style="margin-right:14px">Solid = confirmed</span><span class="sim">Hatched = simulated or not yet real</span></p>
   </section>`;
 }
@@ -630,13 +637,14 @@ function vOffers() {
 }
 
 function vDeals() {
-  const act = S.deals.filter(active), done = S.deals.filter((d) => !active(d));
-  const row = (d, i) => `<button class="r" data-act="openDeal" data-v="${d.id}"><span class="ix">${String(i + 1).padStart(2, "0")}</span><span><span class="ttl">${esc(d.title)}</span><span class="small mute" style="display:block">${SAY[d.state]} · ${esc(d.party)}</span></span><span style="text-align:right"><span class="fig m">${fmt(d.terms ? d.terms.price : d.offer)}<span class="small">${perS(d.per)}</span></span><span class="small was num" style="display:block">${fmt(d.was)}</span></span></button>`;
-  return `<section class="stack"><h1>Deals in play</h1>
-    ${S.requests.length ? `<span class="label">Bidding boards</span><div class="rows">${S.requests.map((r) => `<button class="r" data-act="pickReq" data-v="${r.id}"><span class="ix">${ar}</span><span><span class="ttl">${esc(r.title)}</span><span class="small mute" style="display:block">${r.status === "awarded" ? "Deal agreed" : r.offers.filter((o) => !o.declined).length + " offers to compare"}</span></span><span class="fig m">${fmt(r.amount)}</span></button>`).join("")}</div>` : ""}
-    <span class="label">Negotiations</span><div class="rows">${act.length ? act.map(row).join("") : `<p class="mute" style="padding:16px 0">No active negotiations.</p>`}</div>
+  const items = tableItems(); const mine = items.filter((x) => x.mine), theirs = items.filter((x) => !x.mine);
+  const done = S.deals.filter((d) => !active(d)).map((d) => ({ t: d.title, s: `${SAY[d.state]} · ${d.party}`, fig: d.terms ? d.terms.price : d.offer, was: d.was, per: d.per, a: "openDeal", v: d.id, go: "View" }))
+    .concat(S.requests.filter((r) => r.status === "awarded").map((r) => ({ t: r.title, s: "Offers compared · deal agreed", fig: r.amount, was: r.amount, per: r.per, a: "pickReq", v: r.id, go: "View offers" })));
+  return `<section class="stack"><div class="line between base"><h1>My deals</h1><span class="sim">Demo data</span></div>
+    ${group("Needs you", "Your turn to act", mine)}${group("Waiting on them", "Nothing to do yet", theirs)}
+    ${items.length ? "" : `<p class="mute">Nothing in play right now.</p>`}
     <button class="b go" data-act="go" data-v="find" style="align-self:flex-start">Start a new one ${ar}</button>
-    ${done.length ? `<span class="label">Finished</span><div class="rows">${done.map(row).join("")}</div>` : ""}</section>`;
+    ${group("Finished", "Agreed, confirmed or ended", done)}</section>`;
 }
 
 function termsCard(d) {
@@ -680,7 +688,7 @@ function vDeal() {
   const who = (m) => (m.from === "you" ? "You" : m.from === "ai" ? "DealPilot AI · note" : esc(d.party));
   let n = 0;
   return `<section class="stack">
-    <button class="t" data-act="go" data-v="deals">← Deals</button>
+    <button class="t" data-act="go" data-v="deals">← My deals</button>
     <div class="line between"><span class="label">Negotiation with ${esc(d.party)}</span>${d.simulated ? `<span class="sim">Simulated provider</span>` : `<span class="sim">Demo business · scripted replies</span>`}</div>
     <h1>${esc(d.title)}</h1>
     ${ladder("deal-" + d.id, lo, d.was, marks, `You pay ${fmt(d.was)}. Best offer ${fmt(price)}. Target ${fmt(d.target)}.`, perS(d.per))}
@@ -789,7 +797,7 @@ function vAbout() {
     ["Data", "Local, fictional, reset on reload", "Supabase with real accounts, email verification and two-step sign-in"],
     ["Uploads", "Files stay on your device; a sample extraction is shown", "Virus-scanned, stored privately and analysed, with AI consent"],
     ["Business replies", "Scripted or simulated after a short delay", "Real verified businesses reply from their own portal"],
-    ["Home", "One question box with upload-a-quote and upload-a-bill shortcuts, what's in play, then Saved, Potential, Pending and Projected with a definition each", "A dashboard of four stat tiles and lists"],
+    ["Home", "One question box, four starting points (Bills, Quotes, Alerts, Group buys), deals grouped by whose turn it is, then Saved, Potential, Pending and Projected with a definition each", "A dashboard of four stat tiles and lists"],
     ["Comparing offers", "A price rail, lettered slips with a four-cell protection strip and a plain-language verdict", "A scored table with a Best overall badge"],
     ["Negotiation", "A price ladder, a plain read-out (you pay now, their offer, your counteroffer, saving) with billing periods, one next action at a time, and an exchange log", "A timeline with side panels"],
     ["Money Guardian", "Discoveries written as sentences, each with one action", "Separate Price monitor and Guardian pages with alert lists"],
@@ -879,7 +887,7 @@ function modal() {
   const [type, id] = m.split(":"); let body = "";
   const close = `<button class="b wide" data-act="close">Close</button>`;
   if (type === "how") body = `<h1>How it works</h1><ol class="how"><li><span><b>Tell us what you're paying.</b></span></li><li><span><b>DealPilot finds and negotiates better offers.</b></span></li><li><span><b>You choose the deal.</b></span></li><li><span><b>Pay $1.50 only when a qualifying saving is verified.</b></span></li></ol><button class="b go wide" data-act="go" data-v="find">Find me a better deal ${ar}</button>${close}`;
-  if (type === "menu") body = `<span class="label">Account · demo</span><p class="say">${S.portal === "customer" ? "Alex, customer" : "Ben's Fencing & Gates, business"}</p><button class="b wide" data-act="portal" data-v="${S.portal === "customer" ? "business" : "customer"}">Switch to the ${S.portal === "customer" ? "business" : "customer"} portal</button><div class="rows">${NAV[S.portal].concat(S.portal === "customer" ? [["find", "Find a better deal"], ["group", "Group buying"]] : []).concat([["demo", "Explore the demo"], ["about", "About this prototype"]]).map((x) => `<button class="r" data-act="go" data-v="${x[0]}"><span class="ix">${ar}</span><span class="ttl">${x[1]}</span><span></span></button>`).join("")}</div><button class="t" data-act="modal" data-v="how">How it works</button><button class="t" data-act="modal" data-v="reset">Reset all demo data</button>`;
+  if (type === "menu") body = `<span class="label">Account · demo</span><p class="say">${S.portal === "customer" ? "Alex, customer" : "Ben's Fencing & Gates, business"}</p><button class="b wide" data-act="portal" data-v="${S.portal === "customer" ? "business" : "customer"}">Switch to the ${S.portal === "customer" ? "business" : "customer"} portal</button>${(S.portal === "customer" ? [["Save", [["dashboard", "Home"], ["find", "Find a better deal"], ["group", "Group buys"]]], ["Track", [["deals", "My deals"], ["guardian", "Alerts"], ["savings", "My savings"]]]] : [["Your business", NAV.business]]).concat([["Prototype", [["demo", "Explore the demo"], ["about", "About this prototype"]]]]).map((g) => `<div class="menu-g"><span class="label">${g[0]}</span><div class="rows">${g[1].map((x) => `<button class="r" data-act="go" data-v="${x[0]}"><span class="ix">${ar}</span><span class="ttl">${x[1]}</span><span></span></button>`).join("")}</div></div>`).join("")}<button class="t" data-act="modal" data-v="how">How it works</button><button class="t" data-act="modal" data-v="reset">Reset all demo data</button>`;
   if (type === "reset") body = `<h1>Reset the demo?</h1><p>Everything returns to its starting state.</p><button class="b go wide" data-act="reset">Reset</button><button class="b wide" data-act="close">Cancel</button>`;
   if (type === "accept") { const r = req(S.ui.reqId), o = r.offers.find((x) => x.id === id); const risky = o.licence === "missing" || o.insurance === "missing";
     body = `<span class="label">Accept offer</span><h1>${esc(o.biz)} at ${fmt(o.price)}?</h1>${risky ? `<p class="err">This business has not provided a licence number and its insurance is not confirmed.</p>` : ""}<p>That's <b>${fmt(r.amount - o.price)}</b> under your ${fmt(r.amount)} quote. The business must also approve the final terms before the deal is agreed.</p>${errBox()}
@@ -898,7 +906,7 @@ function modal() {
 
 // ───────────────────────── shell ─────────────────────────
 const NAV = {
-  customer: [["dashboard", "Home"], ["deals", "Deals"], ["guardian", "Guardian"], ["savings", "Savings"]],
+  customer: [["dashboard", "Home"], ["deals", "My deals"], ["guardian", "Alerts"], ["savings", "Savings"]],
   business: [["biz", "Jobs"], ["biz-inbox", "Inbox"], ["biz-groups", "Group tiers"], ["biz-won", "Won"]],
 };
 const VIEWS = { welcome: vHome, dashboard: vHome, find: vFind, offers: vOffers, deals: vDeals, deal: vDeal, guardian: vGuardian, group: vGroup, savings: vSavings, demo: vDemo, about: vAbout, biz: vBiz, "biz-inbox": vBizInbox, "biz-groups": vBizGroups, "biz-won": vBizWon };
